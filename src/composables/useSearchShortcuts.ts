@@ -2,17 +2,21 @@ import { onBeforeUnmount, onMounted } from 'vue'
 import { useSearchStore } from '@/stores/search'
 import { usePreferencesStore } from '@/stores/preferences'
 
+type Actions = {
+  /** Appelé par « s » — enregistrer la recherche en cours. */
+  saveCurrentSearch?: () => void
+}
+
 /**
  * Raccourcis clavier de la page de recherche. Portage du `keydown` de
  * docsearch-ui/public/js/init.js — mêmes touches, mêmes garde-fous
  * (voir help.html, qui en publie la liste).
  *
- * Ceux qui pilotent des fonctionnalités pas encore migrées (s :
- * enregistrer la recherche ; ? : aide en modale) ne sont volontairement
- * pas branchés ici plutôt que branchés sur du vide — ils reviendront
- * avec elles.
+ * « ? » (aide en modale) reste non branché : l'aide est une page à part
+ * entière (/help) dans cette version, et ouvrir une modale reprenant son
+ * contenu attendra la migration de cette page.
  */
-export function useSearchShortcuts() {
+export function useSearchShortcuts(actions: Actions = {}) {
   const store = useSearchStore()
   const preferences = usePreferencesStore()
 
@@ -57,6 +61,10 @@ export function useSearchShortcuts() {
       case 'c':
       case 'C':
         if (resultsVisible) preferences.resultsCompact = !preferences.resultsCompact
+        break
+      case 's':
+      case 'S':
+        if (resultsVisible) actions.saveCurrentSearch?.()
         break
       case 'r':
       case 'R':

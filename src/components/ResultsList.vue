@@ -6,21 +6,15 @@
 import { computed, ref, watch } from 'vue'
 import { useSearchStore } from '@/stores/search'
 import { usePreferencesStore } from '@/stores/preferences'
+import { useSelectionStore } from '@/stores/selection'
 
 const emit = defineEmits<{ detail: [string] }>()
 
 const store = useSearchStore()
 const preferences = usePreferencesStore()
-
-/** Documents cochés pour une collection (cf. selectedDocs en vanilla). */
-const selectedDocs = ref<Set<string>>(new Set())
-
-function setSelected(id: string, checked: boolean) {
-  const next = new Set(selectedDocs.value)
-  if (checked) next.add(id)
-  else next.delete(id)
-  selectedDocs.value = next
-}
+// La sélection vit dans un store : la barre de sélection et la modale
+// de collection en ont besoin autant que cette liste.
+const selection = useSelectionStore()
 
 /**
  * Basculer la vue compacte doit donner une vue UNIFORME, en écrasant
@@ -33,7 +27,7 @@ watch(() => preferences.resultsCompact, () => cardsKey.value++)
 
 // La sélection ne survit pas à un changement de page : les cases
 // affichées ne correspondraient plus aux documents cochés.
-watch(() => store.page, () => (selectedDocs.value = new Set()))
+watch(() => store.page, () => selection.clear())
 
 const pages = computed(() => store.totalPages)
 
@@ -70,9 +64,9 @@ const paginationPages = computed(() =>
         v-for="result in store.results"
         :key="`${cardsKey}-${result.id}`"
         :result="result"
-        :selected="selectedDocs.has(result.id)"
+        :selected="selection.has(result.id)"
         class="fr-mb-2w"
-        @update:selected="setSelected(result.id, $event)"
+        @update:selected="selection.set(result.id, $event)"
         @detail="emit('detail', $event)"
       />
 

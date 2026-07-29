@@ -131,3 +131,122 @@
   flex: 0 0 auto;
   white-space: nowrap;
 }
+
+/* Panneaux déroulants (recherches enregistrées, collections, alertes) */
+.ds-panel {
+  position: relative;
+}
+.ds-panel__body {
+  position: absolute;
+  z-index: 10;
+  right: 0;
+  min-width: 22rem;
+  max-width: min(28rem, 90vw);
+  max-height: 26rem;
+  overflow-y: auto;
+  padding: 0.75rem;
+  background: var(--background-overlap-grey);
+  border: 1px solid var(--border-default-grey);
+}
+.ds-panel__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border-default-grey);
+}
+.ds-panel__item:last-child {
+  border-bottom: none;
+}
+.ds-panel__item-main {
+  flex: 1;
+  min-width: 0;
+}
+.ds-panel__item-button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+.ds-panel__item-name {
+  display: block;
+  font-weight: 500;
+}
+.ds-panel__alert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ds-selection,
+.ds-feedback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Fiche détail */
+.ds-detail__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.ds-detail__rows {
+  list-style: none;
+}
+.ds-detail__rows > li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  justify-content: space-between;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border-default-grey);
+}
+.ds-detail__rows > li > span:first-child {
+  color: var(--text-mention-grey);
+}
+.ds-detail__keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  justify-content: flex-end;
+}
+.ds-detail__keyword-remove {
+  margin-left: 0.25rem;
+  cursor: pointer;
+}
+.ds-detail__keyword-add {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.ds-collection__docs,
+.ds-collection__picker {
+  list-style: none;
+  max-height: 20rem;
+  overflow-y: auto;
+}
+.ds-collection__docs > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+}
+.ds-collection__create {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.ds-nps__scale {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  list-style: none;
+}
+.ds-nps__labels {
+  display: flex;
+  justify-content: space-between;
+}

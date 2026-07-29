@@ -7,10 +7,13 @@
  * ici ou dans un composable ; les ~40 handlers `onclick="..."` du HTML
  * d'origine sont devenus des `@click`.
  */
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { createSavedSearch } from '@/api/savedSearches'
+import { hasActiveCriteria } from '@/api/search'
 import { useSearchStore } from '@/stores/search'
 import { useUiConfigStore } from '@/stores/uiConfig'
 import { useSearchShortcuts } from '@/composables/useSearchShortcuts'
+import { useNps } from '@/composables/useNps'
 
 const store = useSearchStore()
 const uiConfig = useUiConfigStore()
@@ -33,16 +36,47 @@ const quickLinks = computed(() => {
   return links
 })
 
-useSearchShortcuts()
+// ── Fiche détail ────────────────────────────────────────────
+const detailId = ref<string | null>(null)
+
+// ── Collections ─────────────────────────────────────────────
+const collectionsPanel = ref<{ openAdd: () => void } | null>(null)
+
+// ── Satisfaction ────────────────────────────────────────────
+const { visible: npsVisible, maybeShow } = useNps(() => uiConfig.engagement.nps_enabled)
+const suggestionOpen = ref(false)
+
+// La popup NPS se déclenche sur une recherche RÉUSSIE : searchId n'est
+// renseigné que dans ce cas, ce qui reproduit l'appel de maybeShowNps()
+// en fin de doSearch() sans avoir à instrumenter le store.
+watch(
+  () => store.searchId,
+  (id) => {
+    if (id) maybeShow()
+  },
+)
+
+// ── Enregistrement de la recherche courante ─────────────────
+const saveError = ref<string | null>(null)
+
+async function saveCurrentSearch() {
+  if (!hasActiveCriteria(store.currentCriteria())) {
+    saveError.value = "Lancez une recherche avant de l'enregistrer."
+    return
+  }
+  const name = prompt('Nom de cette recherche :', store.query || 'Recherche sans titre')
+  if (!name || !name.trim()) return
+  saveError.value = null
+  try {
+    await createSavedSearch(store.savedSearchPayload(name.trim()))
+  } catch (e) {
+    saveError.value = e instanceof Error ? e.message : String(e)
+  }
+}
+
+useSearchShortcuts({ saveCurrentSearch })
 
 onMounted(() => uiConfig.loadAll())
-
-function onDetail(id: string) {
-  // La fiche détail (modale, aperçu, documents similaires, mots-clés)
-  // arrive avec le lot suivant : d'ici là, la page dédiée de l'API rend
-  // le document consultable sans impasse pour l'utilisateur.
-  window.location.href = `/document/${encodeURIComponent(id)}`
-}
 </script>
 
 <template>
@@ -75,12 +109,36 @@ function onDetail(id: string) {
         @search="store.searchFromFirstPage()"
       />
       <SourcesSelect />
-      <DsfrButton
-        secondary
-        label="Réinitialiser la recherche"
-        @click="store.resetSearch()"
-      />
+      <DsfrButton secondary label="Réinitialiser la recherche" @click="store.resetSearch()" />
     </div>
+
+    <nav class="ds-toolbar fr-mt-1w" aria-label="Navigation secondaire">
+      <div class="ds-toolbar__actions">
+        <DsfrButton
+          size="sm"
+          tertiary
+          no-outline
+          label="Enregistrer cette recherche"
+          @click="saveCurrentSearch"
+        />
+        <SavedSearchesPanel />
+        <CollectionsPanel
+          v-if="uiConfig.config.collections_enabled"
+          ref="collectionsPanel"
+          @detail="detailId = $event"
+        />
+        <AlertsPanel v-if="uiConfig.config.alerts_enabled" />
+        <DsfrButton
+          v-if="uiConfig.engagement.suggestions_enabled"
+          size="sm"
+          tertiary
+          no-outline
+          label="Suggérer une idée"
+          @click="suggestionOpen = true"
+        />
+      </div>
+    </nav>
+    <DsfrAlert v-if="saveError" type="error" small :description="saveError" class="fr-mt-1w" />
 
     <div class="fr-grid-row fr-grid-row--gutters fr-mt-4w">
       <div id="facets" class="fr-col-12 fr-col-md-3">
@@ -89,8 +147,10 @@ function onDetail(id: string) {
 
       <main id="main-content" class="fr-col-12 fr-col-md-9">
         <ActiveFilters />
+        <SelectionToolbar @add="collectionsPanel?.openAdd()" />
         <ResultsToolbar />
-        <ResultsList @detail="onDetail" />
+        <ResultsList @detail="detailId = $event" />
+        <FeedbackBar />
       </main>
     </div>
   </div>
@@ -100,4 +160,8 @@ function onDetail(id: string) {
     :description="uiConfig.footerText"
     :logo-text="['République', 'Française']"
   />
+
+  <DocumentDetailModal :document-id="detailId" @close="detailId = null" />
+  <NpsModal :opened="npsVisible" @close="npsVisible = false" />
+  <SuggestionModal :opened="suggestionOpen" @close="suggestionOpen = false" />
 </template>

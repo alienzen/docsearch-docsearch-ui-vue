@@ -9,6 +9,7 @@ import {
   type FixedDimension,
 } from '@/api/search'
 import type { ExportFormat, SearchFacets, SearchResult } from '@/api/types'
+import { extList, toArray, type SavedSearch } from '@/api/savedSearches'
 import { downloadBlob, extLabel } from '@/utils/format'
 import { PER_PAGE } from '@/constants'
 import { useUiConfigStore } from './uiConfig'
@@ -292,6 +293,43 @@ export const useSearchStore = defineStore('search', () => {
     uiConfig.customFacetLabels = {}
   }
 
+  /** Corps attendu par POST /saved-searches — l'état de l'écran tel quel. */
+  function savedSearchPayload(name: string) {
+    return {
+      name,
+      query: query.value,
+      ext: ext.value,
+      author: author.value,
+      keywords: keywords.value,
+      folder: folder.value,
+      source: source.value,
+      custom: custom.value,
+      date_from: dateFrom.value,
+      date_to: dateTo.value,
+      sort: sort.value,
+    }
+  }
+
+  /**
+   * Restaure une recherche enregistrée puis la relance. Les
+   * enregistrements antérieurs à la sélection cumulative contiennent des
+   * chaînes là où on attend des tableaux — d'où toArray()/extList().
+   */
+  function applySavedSearch(saved: SavedSearch) {
+    query.value = saved.query
+    ext.value = extList(saved.ext)
+    author.value = toArray(saved.author)
+    keywords.value = toArray(saved.keywords)
+    folder.value = toArray(saved.folder)
+    source.value = toArray(saved.source)
+    custom.value = saved.custom || {}
+    dateFrom.value = saved.date_from || null
+    dateTo.value = saved.date_to || null
+    sort.value = saved.sort || '_score'
+    page.value = 1
+    return doSearch()
+  }
+
   async function exportResults(format: ExportFormat) {
     const criteria = currentCriteria()
     if (!hasActiveCriteria(criteria)) return
@@ -333,5 +371,7 @@ export const useSearchStore = defineStore('search', () => {
     clearAllFilters,
     resetSearch,
     exportResults,
+    savedSearchPayload,
+    applySavedSearch,
   }
 })
