@@ -35,16 +35,15 @@
   margin-left: 0.25rem;
 }
 
-/* Barre de recherche : champ extensible, sélecteur de sources et bouton
-   de réinitialisation sur la même ligne, empilés sur mobile. */
+/* Commandes accompagnant la recherche (présélection de sources, remise
+   à zéro). La barre de recherche elle-même est dans l'en-tête, rendue
+   par DsfrHeader : plus rien ici ne doit s'étirer pour occuper sa
+   place. */
 .ds-searchbar {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: center;
   gap: 0.5rem;
-}
-.ds-searchbar > :first-child {
-  flex: 1 1 20rem;
 }
 
 /* Panneau de présélection des sources — <details> natif : la fermeture
@@ -142,50 +141,45 @@
   white-space: nowrap;
 }
 
-/* Panneaux déroulants (recherches enregistrées, collections, alertes) */
-.ds-panel {
-  position: relative;
+/* Contenu des menus déroulants de la navigation (recherches
+   enregistrées, collections, alertes). La structure — fr-nav__item,
+   fr-nav__btn, fr-collapse fr-menu, fr-menu__list — et son
+   positionnement viennent entièrement du DSFR ; il ne reste ici que la
+   mise en forme des entrées, plus riches qu'un simple lien. */
+.fr-menu__list .ds-menu__message {
+  padding: 0.75rem 1rem;
+  color: var(--text-mention-grey);
 }
-.ds-panel__body {
-  position: absolute;
-  z-index: 10;
-  right: 0;
-  min-width: 22rem;
-  max-width: min(28rem, 90vw);
-  max-height: 26rem;
-  overflow-y: auto;
-  padding: 0.75rem;
-  background: var(--background-overlap-grey);
-  border: 1px solid var(--border-default-grey);
-}
-.ds-panel__item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  padding: 0.5rem 0;
+.ds-menu__entry {
+  padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--border-default-grey);
 }
-.ds-panel__item:last-child {
+.ds-menu__entry:last-child {
   border-bottom: none;
 }
-.ds-panel__item-main {
-  flex: 1;
-  min-width: 0;
-}
-.ds-panel__item-button {
+.ds-menu__button {
   display: block;
   width: 100%;
   text-align: left;
-  cursor: pointer;
 }
-.ds-panel__item-name {
+.ds-menu__name {
   display: block;
   font-weight: 500;
 }
-.ds-panel__alert {
+.ds-menu__alert {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
+}
+/* Un menu de navigation DSFR est étroit par défaut ; ces entrées
+   portent des puces de critères et un sélecteur de fréquence. */
+.fr-nav .fr-menu {
+  min-width: 24rem;
+  max-width: min(30rem, 90vw);
+}
+.fr-nav .fr-collapse--expanded {
+  max-height: 26rem;
 }
 
 .ds-selection,

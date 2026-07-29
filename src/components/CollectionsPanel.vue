@@ -23,7 +23,6 @@ const emit = defineEmits<{ detail: [string] }>()
 
 const selection = useSelectionStore()
 
-const open = ref(false)
 const collections = ref<Collection[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -47,10 +46,7 @@ async function refresh() {
   }
 }
 
-async function togglePanel() {
-  open.value = !open.value
-  if (open.value) await refresh()
-}
+const menu = ref<{ close: () => void } | null>(null)
 
 async function remove(collection: Collection) {
   if (
@@ -73,7 +69,7 @@ async function remove(collection: Collection) {
  * n'est jamais exposé, il s'affiche « indisponible ».
  */
 async function view(collection: Collection) {
-  open.value = false
+  menu.value?.close()
   mode.value = 'view'
   current.value = collection
   documents.value = []
@@ -149,42 +145,40 @@ defineExpose({ openAdd })
 </script>
 
 <template>
-  <div class="ds-panel">
-    <DsfrButton
-      size="sm"
-      tertiary
-      no-outline
-      label="Mes collections"
-      :aria-expanded="open"
-      @click="togglePanel"
-    />
+  <NavMenuItem ref="menu" label="Mes collections" @open="refresh">
+    <li v-if="loading" class="ds-menu__message">Chargement…</li>
+    <li v-else-if="error" class="ds-menu__message">
+      <DsfrAlert type="error" small :description="error" />
+    </li>
+    <li v-else-if="!collections.length" class="ds-menu__message">
+      Aucune collection pour l'instant.
+    </li>
 
-    <div v-if="open" class="ds-panel__body">
-      <p v-if="loading" class="fr-hint-text fr-mb-0">Chargement…</p>
-      <DsfrAlert v-else-if="error" type="error" small :description="error" />
-      <p v-else-if="!collections.length" class="fr-hint-text fr-mb-0">
-        Aucune collection pour l'instant.
-      </p>
-
-      <div v-for="collection in collections" v-else :key="collection.id" class="ds-panel__item">
-        <button class="ds-panel__item-button" @click="view(collection)">
-          <span class="ds-panel__item-name">{{ collection.name }}</span>
-          <span class="fr-hint-text fr-mb-0">
-            {{ collection.doc_ids.length }} document{{ collection.doc_ids.length > 1 ? 's' : '' }}
-          </span>
-        </button>
+    <li v-for="collection in collections" v-else :key="collection.id" class="ds-menu__entry">
+      <button class="fr-nav__link ds-menu__button" @click="view(collection)">
+        <span class="ds-menu__name">{{ collection.name }}</span>
+        <span class="fr-hint-text fr-mb-0">
+          {{ collection.doc_ids.length }} document{{ collection.doc_ids.length > 1 ? 's' : '' }}
+        </span>
+      </button>
+      <div class="fr-px-2w">
         <DsfrButton
           size="sm"
           tertiary
           no-outline
-          label="✕"
+          label="Supprimer"
           :title="`Supprimer la collection ${collection.name}`"
           @click="remove(collection)"
         />
       </div>
-    </div>
+    </li>
+  </NavMenuItem>
 
-    <!-- Consultation d'une collection -->
+  <!-- Les modales sont téléportées hors du menu : à l'intérieur, elles
+       hériteraient du `visibility: hidden` que le DSFR applique à un
+       `.fr-collapse` replié, et resteraient invisibles une fois le menu
+       refermé. DsfrModal ne téléporte pas de lui-même. -->
+  <Teleport to="body">
     <DsfrModal
       :opened="mode === 'view'"
       :title="current?.name || 'Collection'"
@@ -210,7 +204,6 @@ defineExpose({ openAdd })
       </ul>
     </DsfrModal>
 
-    <!-- Ajout de la sélection à une collection -->
     <DsfrModal
       :opened="mode === 'add'"
       :title="`Ajouter ${selection.count} document${selection.count > 1 ? 's' : ''} à une collection`"
@@ -220,7 +213,11 @@ defineExpose({ openAdd })
       <p v-if="!collections.length" class="fr-hint-text">Aucune collection pour l'instant.</p>
       <ul v-else class="ds-collection__picker">
         <li v-for="collection in collections" :key="collection.id">
-          <button class="fr-btn fr-btn--tertiary fr-btn--sm" :disabled="busy" @click="addToCollection(collection.id)">
+          <button
+            class="fr-btn fr-btn--tertiary fr-btn--sm"
+            :disabled="busy"
+            @click="addToCollection(collection.id)"
+          >
             {{ collection.name }}
             <span class="fr-hint-text fr-ml-1v">{{ collection.doc_ids.length }}</span>
           </button>
@@ -239,5 +236,5 @@ defineExpose({ openAdd })
         <DsfrButton size="sm" label="Créer" :disabled="busy" @click="createAndAdd" />
       </div>
     </DsfrModal>
-  </div>
+  </Teleport>
 </template>

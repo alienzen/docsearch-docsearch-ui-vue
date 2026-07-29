@@ -87,27 +87,33 @@ onMounted(() => uiConfig.loadAll())
     ]"
   />
 
+  <!-- `show-search` place la barre de recherche dans .fr-header__tools,
+       où le DSFR l'attend (voir le site du Système de Design). C'est
+       DsfrHeader qui rend le balisage : inutile de le reproduire. -->
   <DsfrHeader
+    v-model="store.query"
     :service-title="uiConfig.headerTitle"
     :service-description="uiConfig.headerSubtitle"
     :logo-text="['République', 'Française']"
     home-to="/"
     :quick-links="quickLinks"
+    show-search
+    search-label="Rechercher un document"
+    :placeholder="uiConfig.headerSubtitle"
+    @search="store.searchFromFirstPage()"
   >
     <!-- Slot `mainnav` : la barre de navigation du DSFR, dans le
          <header> lui-même. Les panneaux déroulants (recherches
          enregistrées, collections, alertes) s'ouvrent donc depuis
          l'en-tête, comme dans docsearch-ui. -->
     <template #mainnav>
-      <nav class="ds-toolbar" aria-label="Navigation secondaire">
-        <div class="ds-toolbar__actions">
-          <DsfrButton
-            size="sm"
-            tertiary
-            no-outline
-            label="Enregistrer cette recherche"
-            @click="saveCurrentSearch"
-          />
+      <nav id="navigation" class="fr-nav" role="navigation" aria-label="Navigation secondaire">
+        <ul class="fr-nav__list">
+          <li class="fr-nav__item">
+            <button class="fr-nav__link" type="button" @click="saveCurrentSearch">
+              Enregistrer cette recherche
+            </button>
+          </li>
           <SavedSearchesPanel />
           <CollectionsPanel
             v-if="uiConfig.config.collections_enabled"
@@ -115,15 +121,12 @@ onMounted(() => uiConfig.loadAll())
             @detail="detailId = $event"
           />
           <AlertsPanel v-if="uiConfig.config.alerts_enabled" />
-          <DsfrButton
-            v-if="uiConfig.engagement.suggestions_enabled"
-            size="sm"
-            tertiary
-            no-outline
-            label="Suggérer une idée"
-            @click="suggestionOpen = true"
-          />
-        </div>
+          <li v-if="uiConfig.engagement.suggestions_enabled" class="fr-nav__item">
+            <button class="fr-nav__link" type="button" @click="suggestionOpen = true">
+              Suggérer une idée
+            </button>
+          </li>
+        </ul>
       </nav>
     </template>
   </DsfrHeader>
@@ -133,14 +136,10 @@ onMounted(() => uiConfig.loadAll())
       {{ uiConfig.currentUserLabel }}
     </p>
 
+    <!-- La barre de recherche vit désormais dans l'en-tête ; ne restent
+         ici que les commandes qui l'accompagnent, absentes du gabarit
+         DSFR : présélection de sources et remise à zéro. -->
     <div class="ds-searchbar">
-      <DsfrSearchBar
-        v-model="store.query"
-        label="Rechercher un document"
-        :placeholder="uiConfig.headerSubtitle"
-        large
-        @search="store.searchFromFirstPage()"
-      />
       <SourcesSelect />
       <DsfrButton secondary label="Réinitialiser la recherche" @click="store.resetSearch()" />
     </div>

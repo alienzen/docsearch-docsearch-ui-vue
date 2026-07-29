@@ -22,7 +22,6 @@ import { useUiConfigStore } from '@/stores/uiConfig'
 const store = useSearchStore()
 const uiConfig = useUiConfigStore()
 
-const open = ref(false)
 const notifications = ref<AlertNotification[]>([])
 const savedList = ref<SavedSearch[]>([])
 const unseen = ref(0)
@@ -45,9 +44,10 @@ async function refreshBadge() {
   }
 }
 
-async function toggle() {
-  open.value = !open.value
-  if (!open.value) return
+const menu = ref<{ close: () => void } | null>(null)
+
+/** Chargé à l'ouverture du menu. */
+async function load() {
   loading.value = true
   error.value = null
   try {
@@ -83,7 +83,7 @@ function apply(notification: AlertNotification) {
     error.value = 'Cette recherche enregistrée a été supprimée depuis.'
     return
   }
-  open.value = false
+  menu.value?.close()
   store.applySavedSearch(saved)
 }
 
@@ -91,30 +91,27 @@ onMounted(refreshBadge)
 </script>
 
 <template>
-  <div class="ds-panel">
-    <DsfrButton size="sm" tertiary no-outline :aria-expanded="open" @click="toggle">
-      Alertes
-      <span v-if="unseen > 0" class="fr-badge fr-badge--sm fr-badge--error fr-ml-1v">
-        {{ badge }}
-      </span>
-    </DsfrButton>
+  <NavMenuItem ref="menu" label="Alertes" :badge="unseen > 0 ? badge : null" @open="load">
+    <li v-if="loading" class="ds-menu__message">Chargement…</li>
+    <li v-else-if="error" class="ds-menu__message">
+      <DsfrAlert type="error" small :description="error" />
+    </li>
+    <li v-else-if="!notifications.length" class="ds-menu__message">
+      Aucune alerte pour le moment.
+    </li>
 
-    <div v-if="open" class="ds-panel__body">
-      <p v-if="loading" class="fr-hint-text fr-mb-0">Chargement…</p>
-      <DsfrAlert v-else-if="error" type="error" small :description="error" />
-      <p v-else-if="!notifications.length" class="fr-hint-text fr-mb-0">
-        Aucune alerte pour le moment.
-      </p>
-
-      <div v-for="(notification, i) in notifications" v-else :key="i" class="ds-panel__item">
-        <button class="ds-panel__item-button" @click="apply(notification)">
-          <span class="ds-panel__item-name">{{ notification.saved_search_name }}</span>
-          <span class="fr-hint-text fr-mb-0">
-            {{ notification.new_count > 1 ? `${notification.new_count} nouveaux résultats` : '1 nouveau résultat' }}
-            · {{ formatDate(notification.checked_at) }}
-          </span>
-        </button>
-      </div>
-    </div>
-  </div>
+    <li v-for="(notification, i) in notifications" v-else :key="i" class="ds-menu__entry">
+      <button class="fr-nav__link ds-menu__button" @click="apply(notification)">
+        <span class="ds-menu__name">{{ notification.saved_search_name }}</span>
+        <span class="fr-hint-text fr-mb-0">
+          {{
+            notification.new_count > 1
+              ? `${notification.new_count} nouveaux résultats`
+              : '1 nouveau résultat'
+          }}
+          · {{ formatDate(notification.checked_at) }}
+        </span>
+      </button>
+    </li>
+  </NavMenuItem>
 </template>

@@ -21,14 +21,14 @@ import { SEARCH_IN_LABELS, SORT_LABELS } from '@/constants'
 const store = useSearchStore()
 const uiConfig = useUiConfigStore()
 
-const open = ref(false)
 const list = ref<SavedSearch[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 
-async function toggle() {
-  open.value = !open.value
-  if (!open.value) return
+const menu = ref<{ close: () => void } | null>(null)
+
+/** Chargé à l'ouverture du menu, pas au montage de la page. */
+async function load() {
   loading.value = true
   error.value = null
   try {
@@ -75,7 +75,7 @@ function criteriaSummary(saved: SavedSearch): string[] {
 }
 
 function apply(saved: SavedSearch) {
-  open.value = false
+  menu.value?.close()
   store.applySavedSearch(saved)
 }
 
@@ -106,79 +106,65 @@ async function updateAlert(saved: SavedSearch, enabled: boolean, frequency: stri
   }
 }
 
-defineExpose({ close: () => (open.value = false) })
 </script>
 
 <template>
-  <div class="ds-panel">
-    <DsfrButton
-      size="sm"
-      tertiary
-      no-outline
-      label="Mes recherches"
-      :aria-expanded="open"
-      @click="toggle"
-    />
+  <NavMenuItem ref="menu" label="Mes recherches" @open="load">
+    <li v-if="loading" class="ds-menu__message">Chargement…</li>
+    <li v-else-if="error" class="ds-menu__message">
+      <DsfrAlert type="error" small :description="error" />
+    </li>
+    <li v-else-if="!list.length" class="ds-menu__message">Aucune recherche enregistrée.</li>
 
-    <div v-if="open" class="ds-panel__body">
-      <p v-if="loading" class="fr-hint-text fr-mb-0">Chargement…</p>
-      <DsfrAlert v-else-if="error" type="error" small :description="error" />
-      <p v-else-if="!list.length" class="fr-hint-text fr-mb-0">Aucune recherche enregistrée.</p>
+    <li v-for="saved in list" v-else :key="saved.id" class="ds-menu__entry">
+      <button class="fr-nav__link ds-menu__button" @click="apply(saved)">
+        <span class="ds-menu__name">{{ saved.name }}</span>
+        <span class="fr-hint-text fr-mb-0">« {{ saved.query }} »</span>
+      </button>
 
-      <div v-for="saved in list" v-else :key="saved.id" class="ds-panel__item">
-        <div class="ds-panel__item-main">
-          <button class="ds-panel__item-button" @click="apply(saved)">
-            <span class="ds-panel__item-name">{{ saved.name }}</span>
-            <span class="fr-hint-text fr-mb-0">« {{ saved.query }} »</span>
-          </button>
+      <ul v-if="criteriaSummary(saved).length" class="fr-tags-group fr-px-2w">
+        <li v-for="tag in criteriaSummary(saved)" :key="tag">
+          <span class="fr-tag fr-tag--sm">{{ tag }}</span>
+        </li>
+      </ul>
 
-          <ul v-if="criteriaSummary(saved).length" class="fr-tags-group fr-mt-1v">
-            <li v-for="tag in criteriaSummary(saved)" :key="tag">
-              <span class="fr-tag fr-tag--sm">{{ tag }}</span>
-            </li>
-          </ul>
-
-          <!-- Bloc alerte : dans l'élément mais hors du bouton qui
-               relance la recherche — en vanilla il fallait un
-               stopPropagation, ici la structure suffit. -->
-          <div class="ds-panel__alert fr-mt-1v">
-            <div class="fr-checkbox-group fr-checkbox-group--sm">
-              <input
-                :id="`alert-${saved.id}`"
-                type="checkbox"
-                :checked="saved.alert_enabled"
-                @change="
-                  updateAlert(
-                    saved,
-                    ($event.target as HTMLInputElement).checked,
-                    saved.alert_frequency || 'daily',
-                  )
-                "
-              />
-              <label class="fr-label" :for="`alert-${saved.id}`">M'alerter</label>
-            </div>
-            <select
-              class="fr-select fr-select--sm"
-              :aria-label="`Fréquence de l'alerte pour ${saved.name}`"
-              :disabled="!saved.alert_enabled"
-              :value="saved.alert_frequency === 'weekly' ? 'weekly' : 'daily'"
-              @change="updateAlert(saved, true, ($event.target as HTMLSelectElement).value)"
-            >
-              <option value="daily">tous les jours</option>
-              <option value="weekly">toutes les semaines</option>
-            </select>
-          </div>
+      <!-- Bloc alerte hors du bouton qui relance la recherche : en
+           vanilla il fallait un stopPropagation, ici la structure suffit. -->
+      <div class="ds-menu__alert fr-px-2w">
+        <div class="fr-checkbox-group fr-checkbox-group--sm">
+          <input
+            :id="`alert-${saved.id}`"
+            type="checkbox"
+            :checked="saved.alert_enabled"
+            @change="
+              updateAlert(
+                saved,
+                ($event.target as HTMLInputElement).checked,
+                saved.alert_frequency || 'daily',
+              )
+            "
+          />
+          <label class="fr-label" :for="`alert-${saved.id}`">M'alerter</label>
         </div>
-
+        <select
+          class="fr-select fr-select--sm"
+          :aria-label="`Fréquence de l'alerte pour ${saved.name}`"
+          :disabled="!saved.alert_enabled"
+          :value="saved.alert_frequency === 'weekly' ? 'weekly' : 'daily'"
+          @change="updateAlert(saved, true, ($event.target as HTMLSelectElement).value)"
+        >
+          <option value="daily">tous les jours</option>
+          <option value="weekly">toutes les semaines</option>
+        </select>
         <DsfrButton
           size="sm"
           tertiary
           no-outline
-          label="✕"
+          label="Supprimer"
           :title="`Supprimer ${saved.name}`"
           @click="remove(saved)"
         />
       </div>
-    </div>
-  </div>
+    </li>
+  </NavMenuItem>
 </template>
