@@ -22,7 +22,13 @@ const quickLinks = computed(() => {
   // Sans `to`, vue-dsfr rend un <a> sans href : non cliquable, ce qui
   // convient à une information. C'est le seul moyen de placer le badge
   // dans .fr-header__tools, DsfrHeader n'y exposant aucun slot.
-  const links: { label: string; to?: string; class?: string }[] = []
+  const links: {
+    label: string
+    to?: string
+    class?: string
+    button?: boolean
+    onClick?: () => void
+  }[] = []
   if (uiConfig.currentUserLabel) {
     links.push({
       label: uiConfig.currentUserLabel,
@@ -32,16 +38,30 @@ const quickLinks = computed(() => {
   if (uiConfig.config.help_enabled) {
     links.push({ label: 'Aide', to: '/help', class: 'fr-link--icon-left fr-icon-question-line' })
   }
-  if (uiConfig.config.chat_enabled) {
+  if (uiConfig.engagement.suggestions_enabled) {
+    // `onClick` sans `to` : vue-dsfr rend alors un bouton, ce qui
+    // convient à une action qui ouvre une modale plutôt qu'à un lien.
     links.push({
-      label: 'Assistant IA',
-      to: '/chat',
-      class: 'fr-link--icon-left fr-icon-chat-3-line',
+      label: 'Suggérer une idée',
+      button: true,
+      class: 'fr-icon-lightbulb-line fr-link--icon-left',
+      onClick: () => (suggestionOpen.value = true),
     })
   }
   if (uiConfig.showAdminLinks) {
     links.push({ label: 'Administration', to: '/admin.html' })
   }
+  return links
+})
+
+/**
+ * Le lien d'évitement vers les filtres ne doit être proposé que quand
+ * ils existent : la colonne n'est rendue qu'une fois une recherche
+ * lancée.
+ */
+const skipLinks = computed(() => {
+  const links = [{ id: '#main-content', text: 'Aller au contenu' }]
+  if (store.hasSearched) links.push({ id: '#facets', text: 'Aller aux filtres' })
   return links
 })
 
@@ -100,12 +120,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <DsfrSkipLinks
-    :links="[
-      { id: '#main-content', text: 'Aller au contenu' },
-      { id: '#facets', text: 'Aller aux filtres' },
-    ]"
-  />
+  <DsfrSkipLinks :links="skipLinks" />
 
   <!-- `show-search` place la barre de recherche dans .fr-header__tools,
        où le DSFR l'attend (voir le site du Système de Design). C'est
@@ -141,10 +156,8 @@ onMounted(() => {
             @detail="detailId = $event"
           />
           <AlertsPanel v-if="uiConfig.config.alerts_enabled" />
-          <li v-if="uiConfig.engagement.suggestions_enabled" class="fr-nav__item">
-            <button class="fr-nav__link" type="button" @click="suggestionOpen = true">
-              Suggérer une idée
-            </button>
+          <li v-if="uiConfig.config.chat_enabled" class="fr-nav__item">
+            <a class="fr-nav__link" href="/chat">Assistant IA</a>
           </li>
         </ul>
       </nav>
@@ -167,11 +180,19 @@ onMounted(() => {
     <DsfrAlert v-if="saveError" type="error" small :description="saveError" class="fr-mt-1w" />
 
     <div class="fr-grid-row fr-grid-row--gutters fr-mt-4w">
-      <div id="facets" class="fr-col-12 fr-col-md-3">
+      <!-- Les facettes n'existent que si une recherche les a produites :
+           tant qu'aucune n'a été lancée, la colonne disparaît et les
+           résultats occupent toute la largeur, plutôt que d'afficher une
+           colonne vide invitant à chercher. -->
+      <div v-if="store.hasSearched" id="facets" class="fr-col-12 fr-col-md-3">
         <FacetsSidebar />
       </div>
 
-      <main id="main-content" class="fr-col-12 fr-col-md-9">
+      <main
+        id="main-content"
+        class="fr-col-12"
+        :class="store.hasSearched ? 'fr-col-md-9' : 'fr-col-md-12'"
+      >
         <ActiveFilters />
         <SelectionToolbar @add="collectionsPanel?.openAdd()" />
         <ResultsToolbar />
