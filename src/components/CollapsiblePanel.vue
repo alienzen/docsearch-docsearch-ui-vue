@@ -51,9 +51,12 @@ function onToggle(event: Event) {
     :open="open"
     @toggle="onToggle"
   >
+    <!-- `fr-ml-1w` et non une espace littérale : Vue supprime les nœuds
+         de texte purement blancs entre une interpolation et un élément,
+         et le titre se retrouvait collé à son sous-titre. -->
     <summary class="fr-accordion__btn">
       {{ title }}
-      <small v-if="subtitle" class="fr-hint-text">{{ subtitle }}</small>
+      <small v-if="subtitle" class="fr-hint-text fr-ml-1w">{{ subtitle }}</small>
     </summary>
     <div class="fr-accordion__inner">
       <DsfrAlert v-if="error" type="error" small :description="error" />
