@@ -1,0 +1,337 @@
+import { defineStore } from 'pinia'
+import { computed, ref } from 'vue'
+import {
+  buildSearchCriteria,
+  exportResults as exportResultsApi,
+  hasActiveCriteria,
+  parseAdvancedQuery,
+  search as searchApi,
+  type FixedDimension,
+} from '@/api/search'
+import type { ExportFormat, SearchFacets, SearchResult } from '@/api/types'
+import { downloadBlob, extLabel } from '@/utils/format'
+import { PER_PAGE } from '@/constants'
+import { useUiConfigStore } from './uiConfig'
+
+// Portage de l'objet `state` de docsearch-ui/public/js/state.js et des
+// actions qui le manipulent (facets.js, search.js).
+//
+// ext/author/keywords/folder/source : sélection CUMULATIVE (plusieurs
+// valeurs à la fois, combinées en OU côté Elasticsearch). `ext` stocke
+// les valeurs brutes du champ ES (".pdf", ".docx"), identiques aux clés
+// renvoyées par facets.extensions.
+
+/** Une puce de filtre actif, avec de quoi la retirer. */
+export type FilterChip = {
+  label: string
+  clear: () => void
+}
+
+function toggleArrayValue(arr: string[], value: string): string[] {
+  return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value]
+}
+
+export const useSearchStore = defineStore('search', () => {
+  const uiConfig = useUiConfigStore()
+
+  // ── Critères ────────────────────────────────────────────────
+  /** Contenu de la barre de recherche (texte libre après analyse). */
+  const query = ref('')
+  const ext = ref<string[]>([])
+  const author = ref<string[]>([])
+  const keywords = ref<string[]>([])
+  const folder = ref<string[]>([])
+  const source = ref<string[]>([])
+  /** Facettes propres à une source SQL — {champ ES: valeurs}. */
+  const custom = ref<Record<string, string[]>>({})
+  const dateFrom = ref<string | null>(null)
+  const dateTo = ref<string | null>(null)
+  const sort = ref('_score')
+  const page = ref(1)
+
+  // ── Résultats ───────────────────────────────────────────────
+  const results = ref<SearchResult[]>([])
+  const facets = ref<SearchFacets | null>(null)
+  const total = ref(0)
+  /**
+   * Rattachent le pouce et le tracking de clic à LA recherche qui a
+   * produit les résultats affichés.
+   */
+  const searchId = ref<string | null>(null)
+  const resultIds = ref<string[]>([])
+  const loading = ref(false)
+  const error = ref<string | null>(null)
+  /** Faux tant qu'aucune recherche n'a été lancée (état initial). */
+  const hasSearched = ref(false)
+
+  const totalPages = computed(() => Math.max(1, Math.ceil(total.value / PER_PAGE)))
+
+  function currentCriteria() {
+    return buildSearchCriteria(query.value, {
+      sort: sort.value,
+      ext: ext.value,
+      author: author.value,
+      keywords: keywords.value,
+      folder: folder.value,
+      source: source.value,
+      custom: custom.value,
+      dateFrom: dateFrom.value,
+      dateTo: dateTo.value,
+    })
+  }
+
+  /**
+   * Une puce PAR valeur sélectionnée (sélection cumulative) : la retirer
+   * ne désélectionne que cette valeur-là, pas la facette entière.
+   */
+  const activeFilters = computed<FilterChip[]>(() => {
+    const chips: FilterChip[] = []
+    for (const value of ext.value) {
+      chips.push({
+        label: `Type : ${extLabel(value)}`,
+        clear: () => (ext.value = ext.value.filter((v) => v !== value)),
+      })
+    }
+    for (const value of source.value) {
+      chips.push({
+        label: `Source : ${uiConfig.sourceLabel(value)}`,
+        clear: () => (source.value = source.value.filter((v) => v !== value)),
+      })
+    }
+    for (const value of author.value) {
+      chips.push({
+        label: `Auteur : ${value}`,
+        clear: () => (author.value = author.value.filter((v) => v !== value)),
+      })
+    }
+    for (const value of keywords.value) {
+      chips.push({
+        label: `Mot-clé : ${value}`,
+        clear: () => (keywords.value = keywords.value.filter((v) => v !== value)),
+      })
+    }
+    for (const value of folder.value) {
+      chips.push({
+        label: `Dossier : ${value}`,
+        clear: () => (folder.value = folder.value.filter((v) => v !== value)),
+      })
+    }
+    for (const [field, values] of Object.entries(custom.value)) {
+      for (const value of values) {
+        chips.push({
+          label: `${uiConfig.customFacetLabels[field] || field} : ${value}`,
+          clear: () => removeCustomValue(field, value),
+        })
+      }
+    }
+    if (dateFrom.value || dateTo.value) {
+      chips.push({
+        label: `Période : ${dateFrom.value || '…'} → ${dateTo.value || '…'}`,
+        clear: () => {
+          dateFrom.value = null
+          dateTo.value = null
+        },
+      })
+    }
+    return chips
+  })
+
+  function removeCustomValue(field: string, value: string) {
+    const remaining = (custom.value[field] || []).filter((v) => v !== value)
+    if (remaining.length) custom.value[field] = remaining
+    else delete custom.value[field]
+  }
+
+  // ── Actions ─────────────────────────────────────────────────
+
+  /**
+   * Lance la recherche. Les opérateurs tapés dans la barre
+   * (`type:pdf`, `auteur:"Jean Dupont"`) sont d'abord extraits et
+   * fusionnés dans les filtres : la barre ne garde ensuite que le texte
+   * libre, et ces opérateurs deviennent des puces retirables — seule
+   * source de vérité ensuite, pour que les retirer via leur ✕ ne les
+   * fasse pas réapparaître au prochain Entrée.
+   */
+  async function doSearch() {
+    const raw = query.value.trim()
+    const { remaining, extracted } = parseAdvancedQuery(raw, uiConfig.customFacetOperators)
+
+    const dimensions: Record<FixedDimension, typeof ext> = {
+      ext,
+      author,
+      keywords,
+      folder,
+      source,
+    }
+    for (const [dim, values] of Object.entries(extracted) as [
+      FixedDimension | 'custom',
+      string[] | Record<string, string[]>,
+    ][]) {
+      if (dim === 'custom') continue
+      const target = dimensions[dim]
+      for (const value of values as string[]) {
+        if (!target.value.includes(value)) target.value = [...target.value, value]
+      }
+    }
+    for (const [field, values] of Object.entries(extracted.custom)) {
+      const current = custom.value[field] || []
+      custom.value[field] = [...current, ...values.filter((v) => !current.includes(v))]
+    }
+
+    query.value = remaining
+
+    const criteria = currentCriteria()
+    if (!hasActiveCriteria(criteria)) return
+
+    loading.value = true
+    error.value = null
+    try {
+      const data = await searchApi(criteria, page.value, PER_PAGE)
+      total.value = data.total
+      results.value = data.results
+      facets.value = data.facets
+      searchId.value = data.search_id || null
+      resultIds.value = data.results.map((r) => r.id)
+      // Libellés des facettes personnalisées de CETTE recherche : ils
+      // alimentent les puces sans redemander le libellé au serveur.
+      for (const [field, def] of Object.entries(data.facets.custom || {})) {
+        uiConfig.customFacetLabels[field] = def.label || field
+      }
+      hasSearched.value = true
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e)
+      results.value = []
+      facets.value = null
+      total.value = 0
+      hasSearched.value = true
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /** Toute modification de filtre ramène à la première page. */
+  function searchFromFirstPage() {
+    page.value = 1
+    return doSearch()
+  }
+
+  function toggleFacet(type: FixedDimension, value: string) {
+    const dimensions = { ext, author, keywords, folder, source }
+    dimensions[type].value = toggleArrayValue(dimensions[type].value, value)
+    return searchFromFirstPage()
+  }
+
+  function toggleCustomFacet(field: string, value: string) {
+    const next = toggleArrayValue(custom.value[field] || [], value)
+    if (next.length) custom.value[field] = next
+    else delete custom.value[field]
+    return searchFromFirstPage()
+  }
+
+  function applyDateRange(from: string | null, to: string | null) {
+    dateFrom.value = from || null
+    dateTo.value = to || null
+    return searchFromFirstPage()
+  }
+
+  function goToPage(newPage: number) {
+    page.value = newPage
+    return doSearch()
+  }
+
+  function setSort(value: string) {
+    sort.value = value
+    return searchFromFirstPage()
+  }
+
+  /** Retire une puce et relance — cf. clearFilterAt() en vanilla. */
+  function clearFilter(chip: FilterChip) {
+    chip.clear()
+    return searchFromFirstPage()
+  }
+
+  /** Efface facettes et période, mais garde la requête et le tri. */
+  function clearAllFilters() {
+    ext.value = []
+    author.value = []
+    keywords.value = []
+    folder.value = []
+    source.value = []
+    custom.value = {}
+    dateFrom.value = null
+    dateTo.value = null
+    return searchFromFirstPage()
+  }
+
+  /**
+   * Remise à zéro complète : contrairement à clearAllFilters(), efface
+   * aussi la requête et le tri, et ramène l'affichage à son état
+   * initial (aucune recherche lancée). Ne touche PAS aux préférences
+   * d'affichage (vue compacte, facettes repliées), qui vivent dans
+   * usePreferencesStore.
+   */
+  function resetSearch() {
+    query.value = ''
+    ext.value = []
+    author.value = []
+    keywords.value = []
+    folder.value = []
+    source.value = []
+    custom.value = {}
+    dateFrom.value = null
+    dateTo.value = null
+    sort.value = '_score'
+    page.value = 1
+    results.value = []
+    facets.value = null
+    total.value = 0
+    searchId.value = null
+    resultIds.value = []
+    error.value = null
+    hasSearched.value = false
+    uiConfig.customFacetLabels = {}
+  }
+
+  async function exportResults(format: ExportFormat) {
+    const criteria = currentCriteria()
+    if (!hasActiveCriteria(criteria)) return
+    const { blob, filename } = await exportResultsApi(criteria, format)
+    downloadBlob(blob, filename)
+  }
+
+  return {
+    query,
+    ext,
+    author,
+    keywords,
+    folder,
+    source,
+    custom,
+    dateFrom,
+    dateTo,
+    sort,
+    page,
+    results,
+    facets,
+    total,
+    totalPages,
+    searchId,
+    resultIds,
+    loading,
+    error,
+    hasSearched,
+    activeFilters,
+    currentCriteria,
+    doSearch,
+    searchFromFirstPage,
+    toggleFacet,
+    toggleCustomFacet,
+    applyDateRange,
+    goToPage,
+    setSort,
+    clearFilter,
+    clearAllFilters,
+    resetSearch,
+    exportResults,
+  }
+})
