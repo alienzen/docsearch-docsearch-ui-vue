@@ -250,3 +250,121 @@
   display: flex;
   justify-content: space-between;
 }
+
+/* ── Assistant (démonstration) ─────────────────────────────── */
+.ds-chat__messages {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: 55vh;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+.ds-chat__msg {
+  display: flex;
+}
+.ds-chat__msg--user {
+  justify-content: flex-end;
+}
+.ds-chat__bubble {
+  max-width: 75%;
+  padding: 0.75rem 1rem;
+  background: var(--background-alt-grey);
+  border: 1px solid var(--border-default-grey);
+}
+.ds-chat__msg--user .ds-chat__bubble {
+  background: var(--background-action-high-blue-france);
+  color: var(--text-inverted-blue-france);
+  border-color: transparent;
+}
+.ds-chat__sources {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-default-grey);
+  font-size: 0.75rem;
+}
+.ds-chat__input {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+.ds-chat__input > :first-child {
+  flex: 1;
+}
+
+/* ── Statistiques ──────────────────────────────────────────── */
+.ds-stats__toolbar {
+  display: flex;
+  justify-content: flex-end;
+}
+.ds-stats__panel {
+  margin-bottom: 1rem;
+}
+.ds-stats__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.75rem;
+}
+.ds-stats__card {
+  padding: 0.75rem;
+  border: 1px solid var(--border-default-grey);
+}
+.ds-stats__value {
+  margin-bottom: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* Histogramme des recherches par jour — barres en CSS pur : une
+   quinzaine de valeurs ne justifie pas d'embarquer une bibliothèque de
+   graphiques. */
+.ds-stats__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.4rem;
+  height: 7rem;
+  list-style: none;
+}
+.ds-stats__bar {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+}
+.ds-stats__bar-fill {
+  width: 100%;
+  min-height: 2px;
+  background: var(--background-action-high-blue-france);
+}
+.ds-stats__bar-count,
+.ds-stats__bar-label {
+  font-size: 0.625rem;
+  color: var(--text-mention-grey);
+  white-space: nowrap;
+}
+
+/* Les tableaux larges défilent dans leur propre conteneur : la page
+   elle-même ne doit jamais défiler horizontalement. */
+.ds-stats__table {
+  overflow-x: auto;
+}
+.ds-stats__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+.ds-stats__filters > .fr-input-group {
+  flex: 1 1 16rem;
+}
+.ds-stats__pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.ds-stats__pager > :first-child {
+  flex: 1;
+}

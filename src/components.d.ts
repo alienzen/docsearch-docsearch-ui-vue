@@ -37,6 +37,14 @@ declare module 'vue' {
     SavedSearchesPanel: typeof import('./components/SavedSearchesPanel.vue')['default']
     SelectionToolbar: typeof import('./components/SelectionToolbar.vue')['default']
     SourcesSelect: typeof import('./components/SourcesSelect.vue')['default']
+    StatsAuditLogPanel: typeof import('./components/stats/StatsAuditLogPanel.vue')['default']
+    StatsNpsPanel: typeof import('./components/stats/StatsNpsPanel.vue')['default']
+    StatsPager: typeof import('./components/stats/StatsPager.vue')['default']
+    StatsPanel: typeof import('./components/stats/StatsPanel.vue')['default']
+    StatsSearchLogsPanel: typeof import('./components/stats/StatsSearchLogsPanel.vue')['default']
+    StatsSuggestionsPanel: typeof import('./components/stats/StatsSuggestionsPanel.vue')['default']
+    StatsSummaryPanel: typeof import('./components/stats/StatsSummaryPanel.vue')['default']
+    StatsZeroResultsPanel: typeof import('./components/stats/StatsZeroResultsPanel.vue')['default']
     SuggestionModal: typeof import('./components/SuggestionModal.vue')['default']
   }
 }

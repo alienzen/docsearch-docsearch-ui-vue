@@ -24,6 +24,13 @@ export type UiConfig = {
   sort_enabled: boolean
   show_current_user_enabled: boolean
   show_current_user_groups_enabled: boolean
+  // Famille « administration » (admin.html, stats.html, admin-help.html)
+  // — bascules distinctes de celles de la recherche : masquer le badge
+  // utilisateur côté public ne doit pas le masquer côté admin, où il sert
+  // à vérifier sous quelle identité on agit.
+  footer_enabled_admin: boolean
+  show_current_user_enabled_admin: boolean
+  show_current_user_groups_enabled_admin: boolean
   header_logo_url: string
   header_logo_text: string
   header_subtitle_text: string
@@ -53,6 +60,9 @@ const DEFAULT_UI_CONFIG: UiConfig = {
   sort_enabled: true,
   show_current_user_enabled: true,
   show_current_user_groups_enabled: true,
+  footer_enabled_admin: true,
+  show_current_user_enabled_admin: true,
+  show_current_user_groups_enabled_admin: true,
   header_logo_url: '',
   header_logo_text: '',
   header_subtitle_text: '',
@@ -105,14 +115,28 @@ export const useUiConfigStore = defineStore('uiConfig', () => {
    */
   const showAdminLinks = computed(() => isAdmin.value && config.value.admin_links_enabled)
 
-  /** Badge « Connecté : … », suffixe des groupes masquable séparément. */
-  const currentUserLabel = computed(() => {
-    if (!config.value.show_current_user_enabled || !currentUser.value.user) return ''
+  /**
+   * Badge « Connecté : … ». Le suffixe des groupes est masquable
+   * séparément du badge lui-même. `family` choisit le jeu de bascules :
+   * les pages d'administration ont les leurs.
+   */
+  function userLabel(family: 'search' | 'admin') {
+    const enabled =
+      family === 'admin'
+        ? config.value.show_current_user_enabled_admin
+        : config.value.show_current_user_enabled
+    const withGroups =
+      family === 'admin'
+        ? config.value.show_current_user_groups_enabled_admin
+        : config.value.show_current_user_groups_enabled
+    if (!enabled || !currentUser.value.user) return ''
     const groups = currentUser.value.groups
-    const suffix =
-      config.value.show_current_user_groups_enabled && groups.length ? ` · ${groups.join(', ')}` : ''
+    const suffix = withGroups && groups.length ? ` · ${groups.join(', ')}` : ''
     return `Connecté : ${currentUser.value.user}${suffix}`
-  })
+  }
+
+  const currentUserLabel = computed(() => userLabel('search'))
+  const currentUserLabelAdmin = computed(() => userLabel('admin'))
 
   const headerTitle = computed(() => config.value.header_logo_text || 'DocSearch')
   const headerSubtitle = computed(
@@ -149,8 +173,12 @@ export const useUiConfigStore = defineStore('uiConfig', () => {
     } catch {
       /* repli sur les valeurs par défaut */
     }
-    // Titre de l'onglet et favicon : personnalisables depuis l'admin.
-    document.title = `${headerTitle.value} — ${headerSubtitle.value}`
+    // Favicon personnalisable depuis l'admin — commun à toutes les
+    // pages. Le TITRE de l'onglet, lui, n'est pas posé ici : il est
+    // propre à chaque page (« Statistiques de recherche », « Assistant
+    // IA »…), et l'écraser avec celui de la recherche renommait tous les
+    // onglets « DocSearch — Explorez, trouvez, comprenez ». La page de
+    // recherche l'applique elle-même, voir applySearchTitle().
     const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
     if (favicon) favicon.href = config.value.favicon_url || '/favicon.svg'
   }
@@ -203,10 +231,19 @@ export const useUiConfigStore = defineStore('uiConfig', () => {
     }
   }
 
+  /**
+   * Titre de l'onglet de la page de RECHERCHE, dont le nom et le
+   * sous-titre sont personnalisables depuis l'administration. Les autres
+   * pages gardent le titre écrit dans leur fichier HTML.
+   */
+  function applySearchTitle() {
+    document.title = `${headerTitle.value} — ${headerSubtitle.value}`
+  }
+
   /** Tout ce qui est chargé au démarrage de la page de recherche. */
   function loadAll() {
     return Promise.all([
-      loadUiConfig(),
+      loadUiConfig().then(applySearchTitle),
       loadEngagementConfig(),
       loadIsAdmin(),
       loadSearchableSources(),
@@ -224,6 +261,7 @@ export const useUiConfigStore = defineStore('uiConfig', () => {
     customFacetLabels,
     showAdminLinks,
     currentUserLabel,
+    currentUserLabelAdmin,
     headerTitle,
     headerSubtitle,
     footerText,
@@ -234,6 +272,7 @@ export const useUiConfigStore = defineStore('uiConfig', () => {
     loadIsAdmin,
     loadSearchableSources,
     loadCustomFacets,
+    applySearchTitle,
     loadAll,
   }
 })

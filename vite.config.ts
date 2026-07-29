@@ -97,6 +97,8 @@ export default defineConfig({
       input: {
         index: fileURLToPath(new URL('./index.html', import.meta.url)),
         help: fileURLToPath(new URL('./help.html', import.meta.url)),
+        chat: fileURLToPath(new URL('./chat.html', import.meta.url)),
+        stats: fileURLToPath(new URL('./stats.html', import.meta.url)),
       },
     },
   },
