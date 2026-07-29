@@ -93,7 +93,40 @@ onMounted(() => uiConfig.loadAll())
     :logo-text="['République', 'Française']"
     home-to="/"
     :quick-links="quickLinks"
-  />
+  >
+    <!-- Slot `mainnav` : la barre de navigation du DSFR, dans le
+         <header> lui-même. Les panneaux déroulants (recherches
+         enregistrées, collections, alertes) s'ouvrent donc depuis
+         l'en-tête, comme dans docsearch-ui. -->
+    <template #mainnav>
+      <nav class="ds-toolbar" aria-label="Navigation secondaire">
+        <div class="ds-toolbar__actions">
+          <DsfrButton
+            size="sm"
+            tertiary
+            no-outline
+            label="Enregistrer cette recherche"
+            @click="saveCurrentSearch"
+          />
+          <SavedSearchesPanel />
+          <CollectionsPanel
+            v-if="uiConfig.config.collections_enabled"
+            ref="collectionsPanel"
+            @detail="detailId = $event"
+          />
+          <AlertsPanel v-if="uiConfig.config.alerts_enabled" />
+          <DsfrButton
+            v-if="uiConfig.engagement.suggestions_enabled"
+            size="sm"
+            tertiary
+            no-outline
+            label="Suggérer une idée"
+            @click="suggestionOpen = true"
+          />
+        </div>
+      </nav>
+    </template>
+  </DsfrHeader>
 
   <div class="fr-container fr-my-4w">
     <p v-if="uiConfig.currentUserLabel" class="fr-hint-text fr-mb-1w">
@@ -112,32 +145,6 @@ onMounted(() => uiConfig.loadAll())
       <DsfrButton secondary label="Réinitialiser la recherche" @click="store.resetSearch()" />
     </div>
 
-    <nav class="ds-toolbar fr-mt-1w" aria-label="Navigation secondaire">
-      <div class="ds-toolbar__actions">
-        <DsfrButton
-          size="sm"
-          tertiary
-          no-outline
-          label="Enregistrer cette recherche"
-          @click="saveCurrentSearch"
-        />
-        <SavedSearchesPanel />
-        <CollectionsPanel
-          v-if="uiConfig.config.collections_enabled"
-          ref="collectionsPanel"
-          @detail="detailId = $event"
-        />
-        <AlertsPanel v-if="uiConfig.config.alerts_enabled" />
-        <DsfrButton
-          v-if="uiConfig.engagement.suggestions_enabled"
-          size="sm"
-          tertiary
-          no-outline
-          label="Suggérer une idée"
-          @click="suggestionOpen = true"
-        />
-      </div>
-    </nav>
     <DsfrAlert v-if="saveError" type="error" small :description="saveError" class="fr-mt-1w" />
 
     <div class="fr-grid-row fr-grid-row--gutters fr-mt-4w">
