@@ -5,6 +5,11 @@
     "types": ["vite/client"],
     "allowArbitraryExtensions": true,
 
+    /* Doit rester le miroir de resolve.alias dans vite.config.ts.
+       Pas de "baseUrl" : déprécié en TS 6, supprimé en TS 7 — les
+       chemins sont donc relatifs à ce fichier. */
+    "paths": { "@/*": ["./src/*"] },
+
     /* Linting */
     "noUnusedLocals": true,
     "noUnusedParameters": true,

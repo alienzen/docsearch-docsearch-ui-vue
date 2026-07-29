@@ -1,13 +1,33 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>docsearch-ui-vue</title>
+    <title>DocSearch — Explorez, trouvez, comprenez</title>
+    <!-- Applique le thème clair/sombre mémorisé AVANT le premier rendu,
+         pour éviter un flash au thème clair (même rôle que le script
+         inline de docsearch-ui, mais sur le mécanisme natif DSFR
+         `data-fr-theme` au lieu des 7 thèmes maison `data-theme`).
+         Doit rester inline et non-module : un module est différé, donc
+         s'exécuterait trop tard. `vue-dsfr-scheme` est la clé de
+         stockage par défaut de useScheme() — la changer ici sans la
+         changer dans useScheme() ferait réapparaître le flash. -->
+    <script>
+      try {
+        var scheme = localStorage.getItem('vue-dsfr-scheme') || 'system'
+        var theme =
+          scheme === 'system'
+            ? window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light'
+            : scheme
+        document.documentElement.setAttribute('data-fr-theme', theme)
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
+    <script type="module" src="/src/pages/search/main.ts"></script>
   </body>
 </html>

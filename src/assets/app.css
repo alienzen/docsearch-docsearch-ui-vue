@@ -1,0 +1,24 @@
+/* Le strict complément à DSFR — tout ce qui est représentable avec les
+   classes et tokens `fr-*` doit l'être, pas ici. Ce fichier remplace
+   les ~1300 lignes de CSS maison de docsearch-ui (index.css,
+   theme-search.css, custom-sources.css) : s'il regrossit, c'est le
+   signe qu'on réimplémente du DSFR à la main. */
+
+/* Sidebar de facettes collante — remplace syncSidebarOffset(), le
+   recalcul JS de hauteur de header de docsearch-ui/public/js/config.js. */
+.ds-facets {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+
+/* Vue compacte de la liste de résultats (préférence utilisateur
+   persistée, voir usePreferencesStore). */
+.ds-results--compact .fr-card__desc,
+.ds-results--compact .ds-result__excerpt {
+  display: none;
+}
+.ds-results--compact .fr-card__body {
+  padding-block: 0.5rem;
+}
