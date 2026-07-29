@@ -17,6 +17,7 @@ import { getFileSources } from '@/api/admin'
 import { ApiError } from '@/api/client'
 import { useUiConfigStore } from '@/stores/uiConfig'
 import { useAdminGroupsStore, useAdminPanelsStore } from '@/stores/adminPanels'
+import { useAdminShortcuts } from '@/composables/useAdminShortcuts'
 
 const uiConfig = useUiConfigStore()
 const panels = useAdminPanelsStore()
@@ -76,6 +77,20 @@ function toggleAll() {
   groups.collapsed = collapse ? [...GROUP_IDS] : []
 }
 
+/**
+ * Recharge tous les panneaux. Chacun charge ses données au montage :
+ * changer cette clé les remonte, ce qui les recharge tous sans avoir à
+ * exposer une méthode `refresh` sur chacun d'eux.
+ */
+const reloadKey = ref(0)
+
+function reloadAll() {
+  reloadKey.value++
+  loadFileSources()
+}
+
+useAdminShortcuts({ reload: reloadAll, toggleAll })
+
 onMounted(() => {
   panels.known = PANEL_IDS
   groups.known = GROUP_IDS
@@ -111,8 +126,11 @@ onMounted(() => {
 
     <template v-else>
       <div class="ds-stats__toolbar">
+        <DsfrButton size="sm" tertiary no-outline label="Recharger" @click="reloadAll" />
         <DsfrButton size="sm" tertiary no-outline :label="toggleAllLabel" @click="toggleAll" />
       </div>
+
+      <div :key="reloadKey">
 
       <AdminGroup id="group-overview" title="Vue d'ensemble">
         <AdminStatusPanel />
@@ -140,6 +158,7 @@ onMounted(() => {
         <AdminUiConfigPanel />
         <AdminConfigPanel />
       </AdminGroup>
+      </div>
     </template>
   </main>
 

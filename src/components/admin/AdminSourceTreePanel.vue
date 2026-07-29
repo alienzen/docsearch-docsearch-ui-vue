@@ -14,7 +14,10 @@ async function loadRoot() {
   loading.value = true
   error.value = null
   try {
-    entries.value = (await getSourceTree(selected.value, '')).entries
+    // `?? []` : une réponse inattendue (endpoint indisponible, source
+    // supprimée entre-temps) ne doit pas faire planter le rendu du
+    // panneau — il affiche « dossier vide » plutôt qu'un écran cassé.
+    entries.value = (await getSourceTree(selected.value, '')).entries ?? []
   } catch (e) {
     error.value = e instanceof Error ? e.message : String(e)
     entries.value = []

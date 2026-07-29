@@ -100,6 +100,7 @@ export default defineConfig({
         chat: fileURLToPath(new URL('./chat.html', import.meta.url)),
         stats: fileURLToPath(new URL('./stats.html', import.meta.url)),
         admin: fileURLToPath(new URL('./admin.html', import.meta.url)),
+        'admin-help': fileURLToPath(new URL('./admin-help.html', import.meta.url)),
       },
     },
   },

@@ -25,7 +25,9 @@ async function toggle(source: string, entry: TreeEntry) {
   loading.value[entry.path] = true
   delete errors.value[entry.path]
   try {
-    children.value[entry.path] = (await getSourceTree(source, entry.path)).entries
+    // `?? []` : même précaution qu'au niveau racine, une réponse
+    // inattendue affiche « dossier vide » au lieu de casser le rendu.
+    children.value[entry.path] = (await getSourceTree(source, entry.path)).entries ?? []
   } catch (e) {
     errors.value[entry.path] = e instanceof Error ? e.message : String(e)
   } finally {
