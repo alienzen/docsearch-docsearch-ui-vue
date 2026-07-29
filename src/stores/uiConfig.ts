@@ -169,6 +169,21 @@ export const useUiConfigStore = defineStore('uiConfig', () => {
   const currentUserLabelAdmin = computed(() => userLabel('admin'))
 
   /**
+   * Badge « Connecté : … » sous forme d'entrée de `quickLinks`, la seule
+   * façon de le placer dans .fr-header__tools — DsfrHeader n'y expose
+   * aucun slot. Sans `to`, vue-dsfr rend un <a> sans href : non
+   * cliquable, ce qui convient à une information.
+   *
+   * Renvoie un tableau (vide ou d'un élément) pour se déverser
+   * directement dans la liste de liens de chaque page.
+   */
+  function userQuickLinks(family: 'search' | 'admin') {
+    const label = family === 'admin' ? currentUserLabelAdmin.value : currentUserLabel.value
+    if (!label) return []
+    return [{ label, class: 'fr-link--icon-left fr-icon-account-line ds-header__user' }]
+  }
+
+  /**
    * Lignes du bloc-marque. DsfrLogo rend chaque élément du tableau sur
    * sa propre ligne : on découpe donc le réglage sur les retours à la
    * ligne, l'administrateur saisissant « République⏎Française » pour
@@ -334,6 +349,7 @@ export const useUiConfigStore = defineStore('uiConfig', () => {
     showAdminLinks,
     currentUserLabel,
     currentUserLabelAdmin,
+    userQuickLinks,
     logoText,
     headerTitle,
     headerSubtitle,

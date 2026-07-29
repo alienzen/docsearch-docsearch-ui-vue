@@ -107,6 +107,7 @@ onMounted(() => {
     :logo-text="uiConfig.logoText"
     home-to="/"
     :quick-links="[
+      ...uiConfig.userQuickLinks('admin'),
       { label: 'Statistiques', to: '/stats.html' },
       { label: 'Aide', to: '/admin-help' },
       {
@@ -118,10 +119,6 @@ onMounted(() => {
   />
 
   <main id="main-content" class="fr-container fr-my-4w">
-    <p v-if="uiConfig.currentUserLabelAdmin" class="fr-hint-text">
-      {{ uiConfig.currentUserLabelAdmin }}
-    </p>
-
     <DsfrAlert v-if="accessDenied" type="error" title="Accès refusé" :description="accessDenied" />
 
     <template v-else>

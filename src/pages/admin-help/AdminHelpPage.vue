@@ -32,6 +32,7 @@ onMounted(async () => {
     :logo-text="uiConfig.logoText"
     home-to="/"
     :quick-links="[
+      ...uiConfig.userQuickLinks('admin'),
       {
         label: 'Administration',
         to: '/admin.html',
@@ -41,10 +42,6 @@ onMounted(async () => {
   />
 
   <main id="main-content" class="fr-container ds-prose fr-my-4w">
-    <p v-if="uiConfig.currentUserLabelAdmin" class="fr-hint-text">
-      {{ uiConfig.currentUserLabelAdmin }}
-    </p>
-
     <h1 class="fr-h3">Aide administrateur</h1>
 
     <h2 class="fr-h5">Raccourcis clavier</h2>

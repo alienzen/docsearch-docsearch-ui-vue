@@ -54,6 +54,7 @@ onMounted(() => {
     :logo-text="uiConfig.logoText"
     home-to="/"
     :quick-links="[
+      ...uiConfig.userQuickLinks('admin'),
       {
         label: 'Administration',
         to: '/admin.html',
@@ -63,10 +64,6 @@ onMounted(() => {
   />
 
   <main id="main-content" class="fr-container fr-my-4w">
-    <p v-if="uiConfig.currentUserLabelAdmin" class="fr-hint-text">
-      {{ uiConfig.currentUserLabelAdmin }}
-    </p>
-
     <DsfrAlert
       v-if="accessDenied"
       type="error"

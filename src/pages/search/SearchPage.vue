@@ -20,22 +20,13 @@ const store = useSearchStore()
 const uiConfig = useUiConfigStore()
 
 const quickLinks = computed(() => {
-  // Sans `to`, vue-dsfr rend un <a> sans href : non cliquable, ce qui
-  // convient à une information. C'est le seul moyen de placer le badge
-  // dans .fr-header__tools, DsfrHeader n'y exposant aucun slot.
   const links: {
     label: string
     to?: string
     class?: string
     button?: boolean
     onClick?: () => void
-  }[] = []
-  if (uiConfig.currentUserLabel) {
-    links.push({
-      label: uiConfig.currentUserLabel,
-      class: 'fr-link--icon-left fr-icon-account-line ds-header__user',
-    })
-  }
+  }[] = [...uiConfig.userQuickLinks('search')]
   if (uiConfig.config.help_enabled) {
     links.push({ label: 'Aide', to: '/help', class: 'fr-link--icon-left fr-icon-question-line' })
   }
