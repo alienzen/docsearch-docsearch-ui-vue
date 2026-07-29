@@ -162,6 +162,8 @@ onMounted(() => {
     </template>
   </main>
 
+  <BackToTop />
+
   <DsfrFooter
     v-if="uiConfig.config.footer_enabled_admin"
     description="DocSearch — Administration"

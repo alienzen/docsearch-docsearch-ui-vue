@@ -14,6 +14,7 @@ import { useSearchStore } from '@/stores/search'
 import { useUiConfigStore } from '@/stores/uiConfig'
 import { useSearchShortcuts } from '@/composables/useSearchShortcuts'
 import { useNps } from '@/composables/useNps'
+import { useHeaderHeight } from '@/composables/useHeaderHeight'
 
 const store = useSearchStore()
 const uiConfig = useUiConfigStore()
@@ -112,6 +113,8 @@ async function saveCurrentSearch() {
 }
 
 useSearchShortcuts({ saveCurrentSearch })
+// L'en-tête est collant : sa hauteur décale la colonne de facettes.
+useHeaderHeight()
 
 onMounted(() => {
   headerSearch.value = document.querySelector('.fr-header__search')
@@ -207,6 +210,8 @@ onMounted(() => {
     :description="uiConfig.footerText"
     :logo-text="['République', 'Française']"
   />
+
+  <BackToTop />
 
   <DocumentDetailModal :document-id="detailId" @close="detailId = null" />
   <NpsModal :opened="npsVisible" @close="npsVisible = false" />
