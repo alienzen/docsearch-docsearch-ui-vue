@@ -25,6 +25,12 @@ const uiConfig = useUiConfigStore()
 const notifications = ref<AlertNotification[]>([])
 const savedList = ref<SavedSearch[]>([])
 const unseen = ref(0)
+/**
+ * Nombre TOTAL de notifications, lues comprises. Pilote l'affichage de
+ * l'entrée, là où `unseen` ne pilote que le badge : une alerte déjà
+ * consultée reste consultable.
+ */
+const total = ref(0)
 const loading = ref(false)
 const error = ref<string | null>(null)
 
@@ -38,7 +44,9 @@ const badge = computed(() => (unseen.value > 9 ? '9+' : String(unseen.value)))
 async function refreshBadge() {
   if (!uiConfig.config.alerts_enabled) return
   try {
-    unseen.value = (await listAlerts()).filter((n) => !n.seen).length
+    const notifs = await listAlerts()
+    total.value = notifs.length
+    unseen.value = notifs.filter((n) => !n.seen).length
   } catch {
     // API indisponible : le badge reste à son dernier état connu.
   }
@@ -56,6 +64,7 @@ async function load() {
     // et le nom, pas les critères.
     const [notifs, saved] = await Promise.all([listAlerts(), listSavedSearches()])
     notifications.value = notifs
+    total.value = notifs.length
     savedList.value = saved
     // Ouvrir le panneau vaut consultation : tout est marqué comme lu,
     // plutôt que d'exiger un clic par notification.
@@ -91,13 +100,16 @@ onMounted(refreshBadge)
 </script>
 
 <template>
-  <NavMenuItem ref="menu" label="Alertes" :badge="unseen > 0 ? badge : null" @open="load">
+  <NavMenuItem
+    v-if="total"
+    ref="menu"
+    label="Alertes"
+    :badge="unseen > 0 ? badge : null"
+    @open="load"
+  >
     <li v-if="loading" class="ds-menu__message">Chargement…</li>
     <li v-else-if="error" class="ds-menu__message">
       <DsfrAlert type="error" small :description="error" />
-    </li>
-    <li v-else-if="!notifications.length" class="ds-menu__message">
-      Aucune alerte pour le moment.
     </li>
 
     <li v-for="(notification, i) in notifications" v-else :key="i" class="ds-menu__entry">

@@ -7,7 +7,7 @@
  * (consulter une collection / y ajouter la sélection). Ici, deux modes
  * explicites : `mode` vaut 'view' ou 'add'.
  */
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import {
   addDocuments,
   createCollection,
@@ -47,6 +47,12 @@ async function refresh() {
 }
 
 const menu = ref<{ close: () => void } | null>(null)
+
+// Chargé au montage : l'entrée de navigation est masquée quand il n'y a
+// aucune collection, ce qui suppose d'en connaître le nombre avant tout
+// clic. La MODALE d'ajout reste, elle, toujours disponible — c'est par
+// elle qu'on crée sa première collection.
+onMounted(refresh)
 
 async function remove(collection: Collection) {
   if (
@@ -145,13 +151,10 @@ defineExpose({ openAdd })
 </script>
 
 <template>
-  <NavMenuItem ref="menu" label="Mes collections" @open="refresh">
+  <NavMenuItem v-if="collections.length" ref="menu" label="Mes collections" @open="refresh">
     <li v-if="loading" class="ds-menu__message">Chargement…</li>
     <li v-else-if="error" class="ds-menu__message">
       <DsfrAlert type="error" small :description="error" />
-    </li>
-    <li v-else-if="!collections.length" class="ds-menu__message">
-      Aucune collection pour l'instant.
     </li>
 
     <li v-for="collection in collections" v-else :key="collection.id" class="ds-menu__entry">

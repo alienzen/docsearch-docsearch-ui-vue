@@ -107,7 +107,6 @@ onMounted(() => {
     :logo-text="uiConfig.logoText"
     home-to="/"
     :quick-links="[
-      ...uiConfig.userQuickLinks('admin'),
       { label: 'Statistiques', to: '/stats.html', class: 'fr-link--icon-left fr-icon-bar-chart-line' },
       { label: 'Aide', to: '/admin-help', class: 'fr-link--icon-left fr-icon-question-line' },
       {
@@ -115,6 +114,9 @@ onMounted(() => {
         to: '/',
         class: 'fr-link--icon-left fr-icon-arrow-left-line',
       },
+      // En dernier : le badge se place ainsi tout à droite des outils
+      // d'en-tête, à l'écart des liens d'action.
+      ...uiConfig.userQuickLinks('admin'),
     ]"
   />
 

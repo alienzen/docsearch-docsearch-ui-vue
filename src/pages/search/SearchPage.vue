@@ -12,12 +12,14 @@ import { createSavedSearch } from '@/api/savedSearches'
 import { hasActiveCriteria } from '@/api/search'
 import { useSearchStore } from '@/stores/search'
 import { useUiConfigStore } from '@/stores/uiConfig'
+import { usePreferencesStore } from '@/stores/preferences'
 import { useSearchShortcuts } from '@/composables/useSearchShortcuts'
 import { useNps } from '@/composables/useNps'
 import { useHeaderHeight } from '@/composables/useHeaderHeight'
 
 const store = useSearchStore()
 const uiConfig = useUiConfigStore()
+const preferences = usePreferencesStore()
 
 const quickLinks = computed(() => {
   const links: {
@@ -25,10 +27,25 @@ const quickLinks = computed(() => {
     to?: string
     class?: string
     button?: boolean
+    target?: string
+    rel?: string
+    title?: string
     onClick?: () => void
-  }[] = [...uiConfig.userQuickLinks('search')]
+  }[] = []
   if (uiConfig.config.help_enabled) {
-    links.push({ label: 'Aide', to: '/help', class: 'fr-link--icon-left fr-icon-question-line' })
+    // Nouvel onglet : l'aide se consulte EN REGARD des résultats, sans
+    // quitter la recherche en cours ni avoir à la relancer au retour.
+    // `rel="noopener"` par principe, la page ouverte n'ayant aucun
+    // besoin d'accéder à celle-ci ; `title` signale la nouvelle fenêtre,
+    // ce que le RGAA impose et qu'une icône ne suffit pas à porter.
+    links.push({
+      label: 'Aide',
+      to: '/help',
+      target: '_blank',
+      rel: 'noopener',
+      title: 'Aide — nouvelle fenêtre',
+      class: 'fr-link--icon-left fr-icon-question-line',
+    })
   }
   if (uiConfig.engagement.suggestions_enabled) {
     // `onClick` sans `to` : vue-dsfr rend alors un bouton, ce qui
@@ -47,17 +64,32 @@ const quickLinks = computed(() => {
     links.push({ label: 'Statistiques', to: '/stats.html', class: 'fr-link--icon-left fr-icon-bar-chart-line' })
     links.push({ label: 'Administration', to: '/admin.html', class: 'fr-link--icon-left fr-icon-settings-5-line' })
   }
+  // En dernier : le badge « Connecté : … » se place ainsi tout à droite
+  // des outils d'en-tête, à l'écart des liens d'action.
+  links.push(...uiConfig.userQuickLinks('search'))
   return links
 })
 
+// ── Aide ────────────────────────────────────────────────────
+/** Raccourci « ? » : même destination que le lien de l'en-tête. */
+function openHelp() {
+  window.open('/help', '_blank', 'noopener')
+}
+
 /**
- * Le lien d'évitement vers les filtres ne doit être proposé que quand
- * ils existent : la colonne n'est rendue qu'une fois une recherche
- * lancée.
+ * La colonne de facettes n'est rendue qu'une fois une recherche lancée,
+ * et si l'utilisateur ne l'a pas repliée depuis la barre d'outils.
+ */
+const facetsVisible = computed(() => store.hasSearched && !preferences.facetsHidden)
+
+/**
+ * Le lien d'évitement vers les filtres suit exactement la présence de la
+ * colonne : proposé alors qu'elle est repliée, il pointerait vers une
+ * ancre inexistante.
  */
 const skipLinks = computed(() => {
   const links = [{ id: '#main-content', text: 'Aller au contenu' }]
-  if (store.hasSearched) links.push({ id: '#facets', text: 'Aller aux filtres' })
+  if (facetsVisible.value) links.push({ id: '#facets', text: 'Aller aux filtres' })
   return links
 })
 
@@ -115,7 +147,7 @@ async function saveCurrentSearch() {
   }
 }
 
-useSearchShortcuts({ saveCurrentSearch })
+useSearchShortcuts({ saveCurrentSearch, openHelp })
 // L'en-tête est collant : sa hauteur décale la colonne de facettes.
 useHeaderHeight()
 
@@ -189,20 +221,41 @@ onMounted(() => {
   <div class="fr-container fr-my-4w">
     <DsfrAlert v-if="saveError" type="error" small :description="saveError" class="fr-mt-1w" />
 
-    <div class="fr-grid-row fr-grid-row--gutters fr-mt-4w">
+    <!-- Grille propre plutôt que `fr-grid-row` + `fr-col-md-3/9` : la
+         largeur de la colonne devient réglable, ce qu'un pas de douzième
+         ne permet pas. En dessous du point de rupture, la règle CSS
+         retombe sur une colonne unique — même rendu qu'avec la grille
+         DSFR, la poignée n'ayant pas de sens au doigt. -->
+    <div
+      class="ds-search-layout fr-mt-4w"
+      :class="{ 'ds-search-layout--split': facetsVisible }"
+      :style="{ '--ds-facets-width': `${preferences.facetsWidth}px` }"
+    >
       <!-- Les facettes n'existent que si une recherche les a produites :
            tant qu'aucune n'a été lancée, la colonne disparaît et les
            résultats occupent toute la largeur, plutôt que d'afficher une
            colonne vide invitant à chercher. -->
-      <div v-if="store.hasSearched" id="facets" class="fr-col-12 fr-col-md-3">
+      <!-- `v-if` et non `display: none` : la colonne est `position:
+           sticky` et calée sur --ds-header-height ; masquée en CSS, elle
+           laisserait un élément collant de hauteur nulle dans le flux.
+           La démonter ne coûte rien, l'état des facettes vivant dans le
+           store et le pli des sections dans les préférences. -->
+      <div v-if="facetsVisible" id="facets">
         <FacetsSidebar />
       </div>
 
-      <main
-        id="main-content"
-        class="fr-col-12"
-        :class="store.hasSearched ? 'fr-col-md-9' : 'fr-col-md-12'"
-      >
+      <FacetsResizer v-if="facetsVisible" />
+
+      <main id="main-content">
+        <!-- Uniquement avant la première recherche : dès qu'il y a des
+             résultats, la place revient à ceux-ci. Animation désactivée
+             par l'administrateur, l'invitation reste — sinon la page
+             d'accueil serait entièrement vide. -->
+        <template v-if="!store.hasSearched">
+          <EmptySearchState v-if="uiConfig.config.empty_state_animation_enabled" />
+          <p v-else class="fr-text--sm">Lancez une recherche pour voir les résultats.</p>
+        </template>
+
         <ActiveFilters />
         <SelectionToolbar @add="collectionsPanel?.openAdd()" />
         <ResultsToolbar />

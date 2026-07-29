@@ -38,6 +38,15 @@ const TOGGLES: { key: keyof UiConfig; label: string }[] = [
   { key: 'custom_keywords_enabled', label: 'Mots-clés personnalisés sur les documents' },
   { key: 'alerts_enabled', label: 'Alertes sur les recherches enregistrées' },
   { key: 'sort_enabled', label: 'Sélecteur de tri des résultats' },
+  {
+    key: 'empty_state_animation_enabled',
+    label: "Animation d'accueil sur la page de recherche vide",
+  },
+  {
+    key: 'empty_state_force_motion_enabled',
+    label:
+      '… en ignorant le réglage système « réduire les animations » (déconseillé : critère RGAA)',
+  },
   { key: 'show_current_user_enabled', label: 'Badge « Connecté : … » côté recherche' },
   { key: 'show_current_user_groups_enabled', label: '… avec ses groupes' },
   { key: 'show_current_user_enabled_admin', label: 'Badge « Connecté : … » côté administration' },

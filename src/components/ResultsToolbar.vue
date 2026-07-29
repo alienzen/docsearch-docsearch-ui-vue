@@ -8,18 +8,28 @@ import { computed, ref } from 'vue'
 import { useSearchStore } from '@/stores/search'
 import { usePreferencesStore } from '@/stores/preferences'
 import { useUiConfigStore } from '@/stores/uiConfig'
-import { SORT_OPTIONS } from '@/constants'
+import { SORT_OPTIONS, TOTAL_HITS_CAP } from '@/constants'
 import type { ExportFormat } from '@/api/types'
 
 const store = useSearchStore()
 const preferences = usePreferencesStore()
 const uiConfig = useUiConfigStore()
 
+/**
+ * Le moteur a cessé de compter : la recherche est trop large pour que
+ * le total affiché ait un sens.
+ */
+const capped = computed(() => store.total >= TOTAL_HITS_CAP)
+
 const countLabel = computed(() => {
   const total = store.total.toLocaleString('fr-FR')
   const plural = store.total > 1 ? 's' : ''
   const forQuery = store.query ? ` pour « ${store.query} »` : ''
-  return `${total} résultat${plural}${forQuery}`
+  // « Plus de » et non le nombre nu : afficher « 10 000 résultats » pour
+  // un décompte interrompu à 10 000 serait faux, le corpus pouvant en
+  // contenir dix fois plus.
+  const count = capped.value ? `Plus de ${total} résultats` : `${total} résultat${plural}`
+  return `${count}${forQuery}`
 })
 
 // Même information qu'en bas de liste, répétée ici pour rester visible
@@ -48,6 +58,20 @@ async function exportAs(format: ExportFormat) {
     </p>
 
     <div class="ds-toolbar__actions">
+      <!-- Cette bascule vit ICI et non dans la colonne de facettes :
+           placée dedans, elle disparaîtrait avec elle et il n'y aurait
+           plus aucun moyen de la rouvrir. `aria-expanded` porte l'état,
+           ce qui évite un libellé changeant à chaque clic. -->
+      <button
+        class="fr-btn fr-btn--sm fr-btn--secondary fr-btn--icon-left fr-icon-filter-line"
+        type="button"
+        aria-controls="facets"
+        :aria-expanded="!preferences.facetsHidden"
+        @click="preferences.facetsHidden = !preferences.facetsHidden"
+      >
+        Filtres
+      </button>
+
       <DsfrSelect
         v-if="uiConfig.config.sort_enabled"
         :model-value="store.sort"
@@ -57,7 +81,9 @@ async function exportAs(format: ExportFormat) {
         @update:model-value="store.setSort(String($event))"
       />
 
+      <!-- Rien à densifier quand la liste est vide. -->
       <DsfrButton
+        v-if="store.total > 0"
         size="sm"
         secondary
         :label="preferences.resultsCompact ? 'Vue détaillée' : 'Vue compacte'"
@@ -69,6 +95,17 @@ async function exportAs(format: ExportFormat) {
         <DsfrButton size="sm" secondary label="Export DOCX" @click="exportAs('docx')" />
       </template>
     </div>
+
+    <!-- Avertissement plutôt qu'information : le tri par pertinence
+         perd de son intérêt sur un ensemble aussi large, et l'export ne
+         portera que sur les documents effectivement rapatriés. -->
+    <DsfrAlert
+      v-if="capped"
+      type="warning"
+      small
+      description="Votre recherche renvoie trop de résultats pour être comptée précisément. Affinez-la avec les filtres ou des mots-clés supplémentaires pour obtenir un décompte exact et des résultats plus pertinents."
+      class="fr-mt-1w"
+    />
 
     <DsfrAlert
       v-if="exportError"

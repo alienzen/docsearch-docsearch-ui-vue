@@ -5,16 +5,17 @@ import { usePreferencesStore } from '@/stores/preferences'
 type Actions = {
   /** Appelé par « s » — enregistrer la recherche en cours. */
   saveCurrentSearch?: () => void
+  /** Appelé par « ? » — ouvrir l'aide dans un nouvel onglet. */
+  openHelp?: () => void
 }
 
 /**
  * Raccourcis clavier de la page de recherche. Portage du `keydown` de
- * docsearch-ui/public/js/init.js — mêmes touches, mêmes garde-fous
- * (voir help.html, qui en publie la liste).
+ * docsearch-ui/public/js/init.js — mêmes touches, mêmes garde-fous.
  *
- * « ? » (aide en modale) reste non branché : l'aide est une page à part
- * entière (/help) dans cette version, et ouvrir une modale reprenant son
- * contenu attendra la migration de cette page.
+ * La liste publiée par SearchHelp.vue doit rester le reflet exact de ce
+ * qui est branché ici : une aide qui décrit une touche inopérante est
+ * pire que pas d'aide.
  */
 export function useSearchShortcuts(actions: Actions = {}) {
   const store = useSearchStore()
@@ -62,9 +63,25 @@ export function useSearchShortcuts(actions: Actions = {}) {
       case 'C':
         if (resultsVisible) preferences.resultsCompact = !preferences.resultsCompact
         break
+      case 'f':
+      case 'F':
+        // La colonne n'existe qu'une fois une recherche lancée : hors de
+        // là, la touche basculerait une préférence sans rien changer à
+        // l'écran.
+        if (resultsVisible) preferences.facetsHidden = !preferences.facetsHidden
+        break
       case 's':
       case 'S':
         if (resultsVisible) actions.saveCurrentSearch?.()
+        break
+      case '?':
+        // Pas de garde `resultsVisible` : consulter la syntaxe avant de
+        // formuler sa première recherche est justement le cas utile.
+        // L'ouverture d'onglet part d'un événement clavier, donc d'une
+        // interaction utilisateur : les bloqueurs de fenêtres surgissantes
+        // la laissent passer.
+        e.preventDefault()
+        actions.openHelp?.()
         break
       case 'r':
       case 'R':

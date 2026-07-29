@@ -51,11 +51,10 @@ const paginationPages = computed(() =>
   <div>
     <DsfrAlert v-if="store.error" type="error" :description="store.error" class="fr-mb-2w" />
 
-    <p v-else-if="!store.hasSearched" class="fr-text--sm">
-      Lancez une recherche pour voir les résultats.
-    </p>
-
-    <p v-else-if="!store.results.length" class="fr-text--sm">
+    <!-- Rien avant la première recherche : l'invitation à en lancer une
+         est portée par EmptySearchState, au-dessus. Deux messages
+         disaient la même chose à quelques lignes d'écart. -->
+    <p v-else-if="store.hasSearched && !store.results.length" class="fr-text--sm">
       Aucun résultat ne correspond à ces critères.
     </p>
 

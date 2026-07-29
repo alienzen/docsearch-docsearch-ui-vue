@@ -138,31 +138,38 @@ async function updateAlert(saved: SavedSearch, enabled: boolean, frequency: stri
       <!-- Bloc alerte hors du bouton qui relance la recherche : en
            vanilla il fallait un stopPropagation, ici la structure suffit. -->
       <div class="ds-menu__alert fr-px-2w">
-        <div class="fr-checkbox-group fr-checkbox-group--sm">
-          <input
-            :id="`alert-${saved.id}`"
-            type="checkbox"
-            :checked="saved.alert_enabled"
-            @change="
-              updateAlert(
-                saved,
-                ($event.target as HTMLInputElement).checked,
-                saved.alert_frequency || 'daily',
-              )
-            "
-          />
-          <label class="fr-label" :for="`alert-${saved.id}`">M'alerter</label>
-        </div>
-        <select
-          class="fr-select fr-select--sm"
-          :aria-label="`Fréquence de l'alerte pour ${saved.name}`"
-          :disabled="!saved.alert_enabled"
-          :value="saved.alert_frequency === 'weekly' ? 'weekly' : 'daily'"
-          @change="updateAlert(saved, true, ($event.target as HTMLSelectElement).value)"
-        >
-          <option value="daily">tous les jours</option>
-          <option value="weekly">toutes les semaines</option>
-        </select>
+        <!-- Le réglage d'alerte ne s'affiche que si la fonctionnalité est
+             active : sans elle, aucun panneau « Alertes » ne les
+             restituerait et la case cochée serait sans effet visible.
+             Le flag `alert_enabled` déjà posé côté API est conservé tel
+             quel — il reprendra effet si l'admin réactive. -->
+        <template v-if="uiConfig.config.alerts_enabled">
+          <div class="fr-checkbox-group fr-checkbox-group--sm">
+            <input
+              :id="`alert-${saved.id}`"
+              type="checkbox"
+              :checked="saved.alert_enabled"
+              @change="
+                updateAlert(
+                  saved,
+                  ($event.target as HTMLInputElement).checked,
+                  saved.alert_frequency || 'daily',
+                )
+              "
+            />
+            <label class="fr-label" :for="`alert-${saved.id}`">M'alerter</label>
+          </div>
+          <select
+            class="fr-select fr-select--sm"
+            :aria-label="`Fréquence de l'alerte pour ${saved.name}`"
+            :disabled="!saved.alert_enabled"
+            :value="saved.alert_frequency === 'weekly' ? 'weekly' : 'daily'"
+            @change="updateAlert(saved, true, ($event.target as HTMLSelectElement).value)"
+          >
+            <option value="daily">tous les jours</option>
+            <option value="weekly">toutes les semaines</option>
+          </select>
+        </template>
         <DsfrButton
           size="sm"
           tertiary

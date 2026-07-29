@@ -32,12 +32,14 @@ onMounted(async () => {
     :logo-text="uiConfig.logoText"
     home-to="/"
     :quick-links="[
-      ...uiConfig.userQuickLinks('admin'),
       {
         label: 'Administration',
         to: '/admin.html',
         class: 'fr-link--icon-left fr-icon-settings-5-line',
       },
+      // En dernier : le badge se place ainsi tout à droite des outils
+      // d'en-tête, à l'écart des liens d'action.
+      ...uiConfig.userQuickLinks('admin'),
     ]"
   />
 

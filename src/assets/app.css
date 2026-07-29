@@ -76,6 +76,310 @@
   max-width: 58rem;
 }
 
+/* ── Accueil animé de la page de recherche vide ───────────────
+   Trois variantes tirées au sort par EmptySearchState.vue. Toutes les
+   couleurs viennent des jetons DSFR : le bloc suit donc le thème clair
+   ou sombre sans règle dédiée. */
+.ds-empty {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  overflow: hidden;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+.ds-empty__text {
+  position: relative;
+  max-width: 32rem;
+}
+
+/* Variante « pictogramme » ---------------------------------- */
+.ds-empty__picto {
+  width: 12rem;
+  max-width: 60vw;
+  height: auto;
+}
+.ds-empty__sheet {
+  fill: var(--background-alt-blue-france);
+  stroke: var(--border-active-blue-france);
+  stroke-width: 2;
+}
+.ds-empty__lines rect {
+  fill: var(--border-default-grey);
+}
+.ds-empty__lens circle {
+  fill: none;
+  stroke: var(--text-active-blue-france);
+  stroke-width: 4;
+}
+.ds-empty__lens line {
+  stroke: var(--text-active-blue-france);
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+/* Réservé à la variante « pictogramme » : la variante « balayage »
+   partage le dessin de la loupe mais lui donne sa propre dérive. */
+.ds-empty--picto .ds-empty__lens {
+  animation: ds-sweep 6s ease-in-out infinite;
+  /* L'origine par défaut est le coin de la boîte SVG : sans ce recentrage
+     sur la loupe, la rotation la ferait décrire un grand arc hors cadre. */
+  transform-origin: 78px 46px;
+}
+.ds-empty__sheet--2 {
+  animation: ds-float 6s ease-in-out infinite;
+}
+@keyframes ds-sweep {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  35% {
+    transform: translate(-26px, 8px) rotate(-8deg);
+  }
+  70% {
+    transform: translate(-8px, -10px) rotate(5deg);
+  }
+}
+@keyframes ds-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+/* Variante « suggestions » ---------------------------------- */
+.ds-empty__examples {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  /* Hauteur réservée : sans elle, le passage d'un exemple au suivant
+     décale verticalement le bloc à chaque rotation. */
+  min-height: 2rem;
+}
+.ds-empty__examples button {
+  animation: ds-fade-in 0.4s ease-out;
+}
+@keyframes ds-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+/* Variante « balayage » ------------------------------------- */
+.ds-empty__scan {
+  width: 20rem;
+}
+.ds-empty__dots rect {
+  fill: var(--border-default-grey);
+  /* Opacité de repos non nulle : le semis reste lisible même quand
+     l'animation est neutralisée — la leçon des cercles concentriques,
+     qui naissaient transparents et disparaissaient alors complètement. */
+  opacity: 0.55;
+  animation: ds-glow 6.3s ease-in-out infinite;
+}
+@keyframes ds-glow {
+  0%,
+  70%,
+  100% {
+    opacity: 0.55;
+  }
+  35% {
+    opacity: 1;
+  }
+}
+/* La loupe traverse le semis d'un bord à l'autre, très lentement. */
+.ds-empty--scan .ds-empty__lens {
+  animation: ds-scan 16s ease-in-out infinite;
+}
+@keyframes ds-scan {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(92px, 4px);
+  }
+}
+
+/* Variante « boussole » ------------------------------------- */
+.ds-empty__dial {
+  fill: var(--background-alt-blue-france);
+  stroke: var(--border-active-blue-france);
+  stroke-width: 2;
+}
+.ds-empty__ticks line {
+  stroke: var(--border-default-grey);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.ds-empty__needle-n {
+  fill: var(--text-active-blue-france);
+}
+.ds-empty__needle-s {
+  fill: var(--border-default-grey);
+}
+.ds-empty__hub {
+  fill: var(--background-default-grey);
+  stroke: var(--text-active-blue-france);
+  stroke-width: 2;
+}
+.ds-empty__needle {
+  /* Sans recentrage, l'aiguille pivoterait autour du coin du dessin. */
+  transform-origin: 60px 48px;
+  animation: ds-needle 7s ease-in-out infinite;
+}
+@keyframes ds-needle {
+  0%,
+  100% {
+    transform: rotate(-16deg);
+  }
+  50% {
+    transform: rotate(16deg);
+  }
+}
+
+/* Variante « constellation » -------------------------------- */
+.ds-empty__path {
+  fill: none;
+  stroke: var(--border-active-blue-france);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  /* Longueur approchée du tracé ; l'animation le redessine en boucle.
+     Au repos le décalage vaut 0, donc le chemin est entier — l'animation
+     n'est jamais ce qui le rend visible. */
+  stroke-dasharray: 170;
+  stroke-dashoffset: 0;
+  animation: ds-draw 8s ease-in-out infinite;
+}
+@keyframes ds-draw {
+  0% {
+    stroke-dashoffset: 170;
+  }
+  60%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+.ds-empty__stars circle {
+  fill: var(--text-active-blue-france);
+  opacity: 0.55;
+  animation: ds-glow 4s ease-in-out infinite;
+}
+
+/* Variante « ampoule » -------------------------------------- */
+.ds-empty__glass {
+  fill: var(--background-alt-blue-france);
+  stroke: var(--border-active-blue-france);
+  stroke-width: 2;
+}
+.ds-empty__filament {
+  fill: none;
+  stroke: var(--text-active-blue-france);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.ds-empty__socket {
+  fill: var(--border-default-grey);
+}
+.ds-empty__socket-line {
+  stroke: var(--border-default-grey);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.ds-empty__rays line {
+  stroke: var(--text-active-blue-france);
+  stroke-width: 3;
+  stroke-linecap: round;
+  /* Même valeur de repos que les images-clés de ds-glow : sinon le rai
+     sauterait d'un cran au démarrage de l'animation. */
+  opacity: 0.55;
+  animation: ds-glow 4s ease-in-out infinite;
+}
+
+/* Réglage système « réduire les animations » : le bloc reste, le
+   mouvement s'arrête. Doublure CSS du test JS d'EmptySearchState — celui-ci
+   ne peut couper que la rotation des suggestions, pilotée par minuterie. */
+/* `:not(.ds-empty--force-motion)` sur chaque sélecteur : la bascule
+   d'administration « ignorer le réglage système » désarme tout ce bloc,
+   repli statique compris. */
+@media (prefers-reduced-motion: reduce) {
+  .ds-empty:not(.ds-empty--force-motion) *,
+  .ds-empty:not(.ds-empty--force-motion) *::before,
+  .ds-empty:not(.ds-empty--force-motion) *::after {
+    animation: none !important;
+  }
+}
+
+/* Grille de la page de recherche. Une colonne par défaut — cas des
+   petits écrans et des pages sans facettes ; deux colonnes plus la
+   poignée dès le point de rupture DSFR `md` (48em), la première étant
+   pilotée par --ds-facets-width. */
+.ds-search-layout {
+  display: grid;
+  gap: 1rem;
+}
+@media (min-width: 48em) {
+  .ds-search-layout--split {
+    /* `minmax(0, 1fr)` et non `1fr` : sans le minimum à zéro, un titre
+       de résultat insécable imposerait sa largeur à la colonne et
+       ferait déborder la grille au lieu de se tronquer. */
+    grid-template-columns: var(--ds-facets-width, 18rem) auto minmax(0, 1fr);
+    gap: 0;
+  }
+  .ds-search-layout--split > #main-content {
+    padding-left: 1rem;
+  }
+}
+
+/* Poignée de redimensionnement. Masquée hors grille à deux colonnes :
+   au doigt, on ne redimensionne pas, et la colonne y occupe déjà toute
+   la largeur. */
+.ds-resizer {
+  display: none;
+}
+@media (min-width: 48em) {
+  .ds-resizer {
+    display: block;
+    width: 0.5rem;
+    cursor: col-resize;
+    /* Tablette : le glissement doit redimensionner, pas faire défiler
+       la page. */
+    touch-action: none;
+    /* Le trait est un fond centré sur une zone de saisie plus large :
+       2 px seraient conformes au dessin, mais impossibles à viser. */
+    background: linear-gradient(var(--border-default-grey), var(--border-default-grey))
+      center / 1px 100% no-repeat;
+  }
+  .ds-resizer:hover,
+  .ds-resizer:focus-visible,
+  .ds-resizer--active {
+    background-image: linear-gradient(
+      var(--background-action-high-blue-france),
+      var(--background-action-high-blue-france)
+    );
+    background-size: 3px 100%;
+  }
+}
+/* Pendant le glissement, le pointeur balaie les résultats : sans ça, le
+   navigateur en sélectionne le texte au passage. La règle porte sur le
+   document — la poser sur la poignée ne protégerait que la poignée. */
+body.ds-resizing {
+  user-select: none;
+  cursor: col-resize;
+}
+
 /* Colonne de facettes collante, décalée sous l'en-tête lui aussi
    collant — sans ce décalage elle se figerait derrière lui. La hauteur
    est publiée par useHeaderHeight() ; le repli à 0px vaut pour les pages

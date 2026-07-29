@@ -8,6 +8,22 @@ import { ref, watch } from 'vue'
 // utilisateur retrouve ses réglages après la bascule vers cette interface.
 const COMPACT_RESULTS_KEY = 'docsearch-compact-results'
 const FACET_COLLAPSED_KEY = 'docsearch-collapsed-facets'
+// Clé DISTINCTE de la précédente : celle-ci replie la colonne entière,
+// l'autre mémorise le pli de chaque section. Les mêler ferait qu'un
+// identifiant de section et le drapeau global se marcheraient dessus.
+const FACETS_HIDDEN_KEY = 'docsearch-facets-hidden'
+const FACETS_WIDTH_KEY = 'docsearch-facets-width'
+
+/**
+ * Largeur de la colonne de facettes, en pixels. Les bornes ne sont pas
+ * décoratives : en deçà, un libellé de facette n'est plus lisible ;
+ * au-delà, la colonne mangerait les résultats sur un portable. Elles
+ * s'appliquent aussi À LA LECTURE, une valeur stockée pouvant provenir
+ * d'un écran bien plus large que celui du jour.
+ */
+export const FACETS_WIDTH_MIN = 220
+export const FACETS_WIDTH_MAX = 520
+export const FACETS_WIDTH_DEFAULT = 288
 
 // localStorage peut être indisponible (navigation privée verrouillée,
 // stockage désactivé par stratégie de groupe). Toutes les lectures et
@@ -18,6 +34,28 @@ function readCompact(): boolean {
     return localStorage.getItem(COMPACT_RESULTS_KEY) === '1'
   } catch {
     return false
+  }
+}
+
+function readFacetsHidden(): boolean {
+  try {
+    return localStorage.getItem(FACETS_HIDDEN_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function clampFacetsWidth(value: number): number {
+  if (!Number.isFinite(value)) return FACETS_WIDTH_DEFAULT
+  return Math.min(FACETS_WIDTH_MAX, Math.max(FACETS_WIDTH_MIN, Math.round(value)))
+}
+
+function readFacetsWidth(): number {
+  try {
+    const raw = localStorage.getItem(FACETS_WIDTH_KEY)
+    return raw === null ? FACETS_WIDTH_DEFAULT : clampFacetsWidth(Number(raw))
+  } catch {
+    return FACETS_WIDTH_DEFAULT
   }
 }
 
@@ -40,6 +78,25 @@ export const usePreferencesStore = defineStore('preferences', () => {
    */
   const collapsedFacets = ref<string[]>(readCollapsedFacets())
 
+  /**
+   * Colonne de facettes entièrement repliée, pour laisser toute la
+   * largeur aux résultats. Distinct de `collapsedFacets`, qui ne joue
+   * que sur le pli de chaque section : les deux niveaux se cumulent, et
+   * les sections retrouvent leur état à la réouverture de la colonne.
+   */
+  const facetsHidden = ref(readFacetsHidden())
+
+  /** Largeur de la colonne de facettes, en pixels, toujours bornée. */
+  const facetsWidth = ref(readFacetsWidth())
+
+  function setFacetsWidth(value: number) {
+    facetsWidth.value = clampFacetsWidth(value)
+  }
+
+  function resetFacetsWidth() {
+    facetsWidth.value = FACETS_WIDTH_DEFAULT
+  }
+
   function toggleFacetSection(id: string) {
     collapsedFacets.value = collapsedFacets.value.includes(id)
       ? collapsedFacets.value.filter((x) => x !== id)
@@ -58,6 +115,22 @@ export const usePreferencesStore = defineStore('preferences', () => {
     }
   })
 
+  watch(facetsHidden, (value) => {
+    try {
+      localStorage.setItem(FACETS_HIDDEN_KEY, value ? '1' : '0')
+    } catch {
+      /* idem */
+    }
+  })
+
+  watch(facetsWidth, (value) => {
+    try {
+      localStorage.setItem(FACETS_WIDTH_KEY, String(value))
+    } catch {
+      /* idem */
+    }
+  })
+
   watch(collapsedFacets, (value) => {
     try {
       localStorage.setItem(FACET_COLLAPSED_KEY, JSON.stringify(value))
@@ -66,5 +139,14 @@ export const usePreferencesStore = defineStore('preferences', () => {
     }
   })
 
-  return { resultsCompact, collapsedFacets, toggleFacetSection, isFacetCollapsed }
+  return {
+    resultsCompact,
+    facetsHidden,
+    facetsWidth,
+    setFacetsWidth,
+    resetFacetsWidth,
+    collapsedFacets,
+    toggleFacetSection,
+    isFacetCollapsed,
+  }
 })
