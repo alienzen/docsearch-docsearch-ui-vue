@@ -10,6 +10,10 @@
  */
 import { nextTick, onMounted, ref } from 'vue'
 import { findResponse, SUGGESTIONS, type CannedResponse } from './cannedResponses'
+import { useUiConfigStore } from '@/stores/uiConfig'
+
+// Chargée pour la marque seulement (voir HelpPage).
+const uiConfig = useUiConfigStore()
 
 type Message = {
   role: 'user' | 'ai'
@@ -54,6 +58,7 @@ function send() {
 }
 
 onMounted(() => {
+  uiConfig.loadUiConfig()
   messages.value.push({
     role: 'ai',
     answer: [
@@ -70,7 +75,7 @@ onMounted(() => {
   <DsfrHeader
     service-title="DocSearch"
     service-description="Assistant IA"
-    :logo-text="['République', 'Française']"
+    :logo-text="uiConfig.logoText"
     home-to="/"
     :quick-links="[
       {

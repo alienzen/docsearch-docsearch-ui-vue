@@ -31,11 +31,22 @@ export type UiConfig = {
   footer_enabled_admin: boolean
   show_current_user_enabled_admin: boolean
   show_current_user_groups_enabled_admin: boolean
-  header_logo_url: string
+  /**
+   * Texte du bloc-marque DSFR (.fr-logo), en-tête et pied de page. Une
+   * ligne de saisie = une ligne affichée.
+   */
+  logo_text: string
   header_logo_text: string
   header_subtitle_text: string
+  // `header_logo_url` (logo personnalisé dans l'en-tête) n'est
+  // volontairement PAS repris : l'en-tête DSFR porte le bloc-marque
+  // « République Française », auquel un second logo libre se substituait
+  // mal. L'API renvoie toujours la clé — elle est simplement ignorée,
+  // comme les anciennes valeurs de `theme`.
   favicon_url: string
   footer_text: string
+  /** Mention tout en bas du pied de page. Vide = ligne masquée. */
+  footer_bottom_text: string
   sources_mount: string
   sources_mount_display: string
   /**
@@ -81,11 +92,12 @@ const DEFAULT_UI_CONFIG: UiConfig = {
   footer_enabled_admin: true,
   show_current_user_enabled_admin: true,
   show_current_user_groups_enabled_admin: true,
-  header_logo_url: '',
+  logo_text: 'République\nFrançaise',
   header_logo_text: '',
   header_subtitle_text: '',
   favicon_url: '',
   footer_text: '',
+  footer_bottom_text: '',
   sources_mount: '/sources',
   sources_mount_display: '',
 }
@@ -155,6 +167,19 @@ export const useUiConfigStore = defineStore('uiConfig', () => {
 
   const currentUserLabel = computed(() => userLabel('search'))
   const currentUserLabelAdmin = computed(() => userLabel('admin'))
+
+  /**
+   * Lignes du bloc-marque. DsfrLogo rend chaque élément du tableau sur
+   * sa propre ligne : on découpe donc le réglage sur les retours à la
+   * ligne, l'administrateur saisissant « République⏎Française » pour
+   * obtenir deux lignes.
+   */
+  const logoText = computed(() =>
+    (config.value.logo_text || 'République\nFrançaise')
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean),
+  )
 
   const headerTitle = computed(() => config.value.header_logo_text || 'DocSearch')
   const headerSubtitle = computed(
@@ -309,6 +334,7 @@ export const useUiConfigStore = defineStore('uiConfig', () => {
     showAdminLinks,
     currentUserLabel,
     currentUserLabelAdmin,
+    logoText,
     headerTitle,
     headerSubtitle,
     footerText,

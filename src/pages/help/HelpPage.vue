@@ -2,6 +2,16 @@
 // Portage de docsearch-ui/public/help.html. Le contenu est repris tel
 // quel ; seule la présentation change (composants et classes DSFR au
 // lieu du <style> maison de 35 lignes).
+//
+// La configuration est chargée uniquement pour la marque : sans elle,
+// cette page afficherait le bloc-marque générique pendant que les autres
+// affichent celui de l'installation.
+import { onMounted } from 'vue'
+import { useUiConfigStore } from '@/stores/uiConfig'
+
+const uiConfig = useUiConfigStore()
+onMounted(() => uiConfig.loadUiConfig())
+
 const shortcuts: [string, string][] = [
   ['/', 'Mettre le focus sur la barre de recherche'],
   ['Échap', 'Fermer la fenêtre ou le panneau ouvert'],
@@ -29,7 +39,7 @@ const operators: [string, string, string][] = [
   <DsfrHeader
     service-title="DocSearch"
     service-description="Explorez, trouvez, comprenez"
-    :logo-text="['République', 'Française']"
+    :logo-text="uiConfig.logoText"
     home-to="/"
     :quick-links="[
       {

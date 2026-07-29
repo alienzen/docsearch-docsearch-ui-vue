@@ -14,6 +14,14 @@
   box-sizing: border-box;
 }
 
+/* Mention de bas de page éditable : DsfrFooter accole toujours un lien
+   de licence au texte, que les pages neutralisent en vidant
+   `licence-name`. On masque ce lien devenu vide pour n'afficher que la
+   mention libre, sans « Etalab 2.0 » codé en dur ni ancre vide. */
+.fr-footer__bottom-copy .fr-link-licence {
+  display: none;
+}
+
 /* Bouton « Haut de page » flottant (voir BackToTop.vue). Au-dessus des
    contenus, mais SOUS l'en-tête collant et ses menus déroulants. */
 .ds-back-to-top {

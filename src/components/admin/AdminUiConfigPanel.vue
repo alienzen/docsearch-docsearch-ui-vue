@@ -44,12 +44,29 @@ const TOGGLES: { key: keyof UiConfig; label: string }[] = [
   { key: 'show_current_user_groups_enabled_admin', label: '… avec ses groupes' },
 ]
 
-const TEXT_FIELDS: { key: keyof UiConfig; label: string; hint?: string }[] = [
-  { key: 'header_logo_url', label: 'Logo personnalisé (en-tête)' },
+const TEXT_FIELDS: {
+  key: keyof UiConfig
+  label: string
+  hint?: string
+  /** Rendu en zone de saisie multiligne plutôt qu'en champ d'une ligne. */
+  multiline?: boolean
+}[] = [
+  {
+    key: 'logo_text',
+    label: 'Texte du bloc-marque',
+    hint: "Bloc « République Française » de l'en-tête et du pied de page. Une ligne de saisie = une ligne affichée.",
+    multiline: true,
+  },
   { key: 'header_logo_text', label: 'Titre (en-tête)' },
   { key: 'header_subtitle_text', label: 'Sous-titre (en-tête)' },
   { key: 'favicon_url', label: 'Favicon personnalisé' },
-  { key: 'footer_text', label: 'Texte du pied de page' },
+  { key: 'footer_text', label: 'Description (pied de page)' },
+  {
+    key: 'footer_bottom_text',
+    label: 'Mention de bas de page',
+    hint: 'Ligne tout en bas du pied de page. Vide = ligne masquée.',
+    multiline: true,
+  },
   {
     key: 'sources_mount_display',
     label: 'Chemin affiché (bouton « Copier le chemin »)',
@@ -147,7 +164,15 @@ onMounted(async () => {
           {{ field.label }}
           <span v-if="field.hint" class="fr-hint-text">{{ field.hint }}</span>
         </label>
+        <textarea
+          v-if="field.multiline"
+          :id="`ui-${field.key}`"
+          v-model="texts[field.key]"
+          class="fr-input fr-input--sm"
+          rows="3"
+        />
         <input
+          v-else
           :id="`ui-${field.key}`"
           v-model="texts[field.key]"
           class="fr-input fr-input--sm"

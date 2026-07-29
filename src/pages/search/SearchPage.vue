@@ -136,7 +136,7 @@ onMounted(() => {
     v-model="store.query"
     :service-title="uiConfig.headerTitle"
     :service-description="uiConfig.headerSubtitle"
-    :logo-text="['République', 'Française']"
+    :logo-text="uiConfig.logoText"
     home-to="/"
     :quick-links="quickLinks"
     show-search
@@ -209,10 +209,19 @@ onMounted(() => {
     </div>
   </div>
 
+  <!-- Pied de page réduit à l'essentiel : ni liens d'écosystème
+       (info.gouv.fr…), ni liens obligatoires, ni licence codée en dur.
+       `licence-name` vidé neutralise le lien que DsfrFooter accole
+       toujours à la mention de bas de page ; il est masqué en CSS, une
+       ancre vide subsistant sinon. -->
   <DsfrFooter
     v-if="uiConfig.config.footer_enabled"
-    :description="uiConfig.footerText"
-    :logo-text="['République', 'Française']"
+    :logo-text="uiConfig.logoText"
+    :desc-text="uiConfig.footerText"
+    :licence-text="uiConfig.config.footer_bottom_text"
+    licence-name=""
+    :mandatory-links="[]"
+    :ecosystem-links="[]"
   />
 
   <BackToTop />
