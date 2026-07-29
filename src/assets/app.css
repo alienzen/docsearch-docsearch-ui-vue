@@ -45,6 +45,17 @@
   max-width: none;
 }
 
+/* …sauf les pages de texte suivi (aides), où la pleine largeur donnait
+   des lignes de près de 200 caractères sur un grand écran : l'œil peine
+   alors à retrouver le début de la ligne suivante. 58rem ramène à une
+   centaine de caractères — mesuré, pas estimé. Valeur choisie comme
+   compromis : plus étroit serrerait les tableaux à trois colonnes que
+   ces pages contiennent. Le conteneur reste centré (marges auto du
+   DSFR). */
+.fr-container.ds-prose {
+  max-width: 58rem;
+}
+
 /* Colonne de facettes collante, décalée sous l'en-tête lui aussi
    collant — sans ce décalage elle se figerait derrière lui. La hauteur
    est publiée par useHeaderHeight() ; le repli à 0px vaut pour les pages

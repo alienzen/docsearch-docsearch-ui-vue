@@ -40,7 +40,7 @@ onMounted(async () => {
     ]"
   />
 
-  <main id="main-content" class="fr-container fr-my-4w">
+  <main id="main-content" class="fr-container ds-prose fr-my-4w">
     <p v-if="uiConfig.currentUserLabelAdmin" class="fr-hint-text">
       {{ uiConfig.currentUserLabelAdmin }}
     </p>

@@ -40,7 +40,7 @@ const operators: [string, string, string][] = [
     ]"
   />
 
-  <main id="main-content" class="fr-container fr-my-4w">
+  <main id="main-content" class="fr-container ds-prose fr-my-4w">
     <h1 class="fr-h3">Aide</h1>
 
     <h2 class="fr-h5">Raccourcis clavier (page de recherche)</h2>
