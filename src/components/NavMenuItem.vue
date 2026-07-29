@@ -14,7 +14,7 @@
  * vue-dsfr réimplémente ces interactions côté Vue — donc cette bascule
  * de classe est bien ce qui pilote l'ouverture.
  */
-import { onBeforeUnmount, onMounted, ref, useId } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue'
 
 const props = defineProps<{
   label: string
@@ -27,10 +27,31 @@ const emit = defineEmits<{ open: [] }>()
 const menuId = `menu-${useId()}`
 const open = ref(false)
 const item = ref<HTMLElement | null>(null)
+const menu = ref<HTMLElement | null>(null)
+/** Vrai quand le menu est aligné sur le bord DROIT de son entrée. */
+const alignRight = ref(false)
 
 function toggle() {
   open.value = !open.value
   if (open.value) emit('open')
+}
+
+/**
+ * Le menu est plus large qu'une entrée de navigation (il porte des puces
+ * de critères, des cases à cocher…). Aligné à gauche, celui des
+ * dernières entrées sortirait de l'écran.
+ *
+ * Calculé au montage et au redimensionnement, PAS seulement à
+ * l'ouverture : un `.fr-collapse` replié garde sa largeur (seule sa
+ * hauteur est ramenée à zéro) et, positionné en absolu, il élargit la
+ * page même fermé.
+ */
+async function updateAlignment() {
+  alignRight.value = false
+  await nextTick()
+  const left = item.value?.getBoundingClientRect().left ?? 0
+  const width = menu.value?.offsetWidth ?? 0
+  alignRight.value = left + width > document.documentElement.clientWidth
 }
 
 /**
@@ -49,10 +70,13 @@ function onKeydown(e: KeyboardEvent) {
 onMounted(() => {
   document.addEventListener('click', onDocumentClick)
   document.addEventListener('keydown', onKeydown)
+  window.addEventListener('resize', updateAlignment)
+  updateAlignment()
 })
 onBeforeUnmount(() => {
   document.removeEventListener('click', onDocumentClick)
   document.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('resize', updateAlignment)
 })
 
 defineExpose({ close: () => (open.value = false), open: () => (open.value = true) })
@@ -71,7 +95,12 @@ defineExpose({ close: () => (open.value = false), open: () => (open.value = true
       <span v-if="badge" class="fr-badge fr-badge--sm fr-badge--error fr-ml-1v">{{ badge }}</span>
     </button>
 
-    <div :id="menuId" class="fr-collapse fr-menu" :class="{ 'fr-collapse--expanded': open }">
+    <div
+      :id="menuId"
+      ref="menu"
+      class="fr-collapse fr-menu"
+      :class="{ 'fr-collapse--expanded': open, 'ds-menu--right': alignRight }"
+    >
       <ul class="fr-menu__list">
         <slot />
       </ul>

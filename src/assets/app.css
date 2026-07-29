@@ -35,40 +35,6 @@
   margin-left: 0.25rem;
 }
 
-/* Commandes accompagnant la recherche (présélection de sources, remise
-   à zéro). La barre de recherche elle-même est dans l'en-tête, rendue
-   par DsfrHeader : plus rien ici ne doit s'étirer pour occuper sa
-   place. */
-.ds-searchbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* Panneau de présélection des sources — <details> natif : la fermeture
-   au clic extérieur et au clavier est gérée par le navigateur, là où
-   docsearch-ui devait l'écrire à la main (voir init.js). */
-.ds-sources {
-  position: relative;
-}
-.ds-sources > summary {
-  list-style: none;
-}
-.ds-sources > summary::-webkit-details-marker {
-  display: none;
-}
-.ds-sources__panel {
-  position: absolute;
-  z-index: 10;
-  min-width: 16rem;
-  max-height: 20rem;
-  overflow-y: auto;
-  padding: 0.75rem;
-  background: var(--background-overlap-grey);
-  border: 1px solid var(--border-default-grey);
-}
-
 .ds-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -172,11 +138,93 @@
   align-items: center;
   gap: 0.5rem;
 }
+/* Case à cocher d'une entrée de menu (présélection de sources) : même
+   retrait horizontal qu'un fr-nav__link, pour rester aligné avec les
+   autres entrées. */
+.ds-menu__option {
+  padding: 0.25rem 1rem;
+}
+
+/* Présélection de sources et remise à zéro, téléportées dans
+   .fr-header__search pour se placer à droite de la barre de recherche
+   (voir SearchPage).
+   Ce conteneur est DÉJÀ en flex côté DSFR, mais avec une largeur fixe
+   de 384 px : sans lever cette contrainte, les commandes ajoutées
+   passaient à la ligne et faisaient tripler la hauteur de l'en-tête. On
+   ne touche donc qu'à la largeur, et on empêche le retour à la ligne. */
+/* Même spécificité que la règle du DSFR
+   (`.fr-header__tools .fr-header__search { max-width: 24rem }`), sans
+   quoi la surcharge est ignorée. La direction en colonne vient de
+   `.fr-modal`, que cet élément porte aussi pour son comportement mobile
+   — d'où le passage explicite en ligne. */
+.fr-header__tools .fr-header__search {
+  max-width: none;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+}
+.fr-header__tools .fr-header__search > form {
+  flex: 1 1 20rem;
+  min-width: 12rem;
+}
+.ds-header__controls {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Panneau déroulant de présélection des sources — <details> natif : la
+   fermeture au clavier est gérée par le navigateur, là où docsearch-ui
+   devait l'écrire à la main (voir init.js). */
+.ds-sources {
+  position: relative;
+}
+.ds-sources > summary {
+  list-style: none;
+  white-space: nowrap;
+}
+.ds-sources > summary::-webkit-details-marker {
+  display: none;
+}
+.ds-sources__panel {
+  position: absolute;
+  z-index: 10;
+  right: 0;
+  min-width: 18rem;
+  max-height: 20rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.75rem;
+  background: var(--background-overlap-grey);
+  border: 1px solid var(--border-default-grey);
+  /* Les outils de l'en-tête alignent leur contenu à droite ; ce panneau
+     est une liste, elle se lit à gauche. */
+  text-align: left;
+}
+.ds-sources__panel .fr-label {
+  overflow-wrap: anywhere;
+}
+
+/* Badge « Connecté : … » dans les outils de l'en-tête. Rendu comme un
+   lien sans href (voir quickLinks dans SearchPage) : il ne doit donc pas
+   en avoir l'apparence interactive. */
+.ds-header__user {
+  color: var(--text-mention-grey);
+  cursor: default;
+}
 /* Un menu de navigation DSFR est étroit par défaut ; ces entrées
    portent des puces de critères et un sélecteur de fréquence. */
 .fr-nav .fr-menu {
   min-width: 24rem;
   max-width: min(30rem, 90vw);
+}
+/* Aligné sur le bord droit de son entrée — posé par NavMenuItem quand
+   l'alignement à gauche ferait sortir le menu de l'écran. */
+.fr-nav .fr-menu.ds-menu--right {
+  left: auto;
+  right: 0;
 }
 .fr-nav .fr-collapse--expanded {
   max-height: 26rem;

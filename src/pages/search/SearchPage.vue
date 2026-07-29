@@ -19,7 +19,16 @@ const store = useSearchStore()
 const uiConfig = useUiConfigStore()
 
 const quickLinks = computed(() => {
-  const links: { label: string; to: string; class?: string }[] = []
+  // Sans `to`, vue-dsfr rend un <a> sans href : non cliquable, ce qui
+  // convient à une information. C'est le seul moyen de placer le badge
+  // dans .fr-header__tools, DsfrHeader n'y exposant aucun slot.
+  const links: { label: string; to?: string; class?: string }[] = []
+  if (uiConfig.currentUserLabel) {
+    links.push({
+      label: uiConfig.currentUserLabel,
+      class: 'fr-link--icon-left fr-icon-account-line ds-header__user',
+    })
+  }
   if (uiConfig.config.help_enabled) {
     links.push({ label: 'Aide', to: '/help', class: 'fr-link--icon-left fr-icon-question-line' })
   }
@@ -35,6 +44,14 @@ const quickLinks = computed(() => {
   }
   return links
 })
+
+/**
+ * Conteneur de la barre de recherche dans l'en-tête, rendu par
+ * DsfrHeader. Celui-ci n'expose aucun slot dans .fr-header__tools : pour
+ * placer la présélection de sources et la remise à zéro À CÔTÉ de la
+ * barre, on y téléporte ces commandes une fois l'en-tête monté.
+ */
+const headerSearch = ref<Element | null>(null)
 
 // ── Fiche détail ────────────────────────────────────────────
 const detailId = ref<string | null>(null)
@@ -76,7 +93,10 @@ async function saveCurrentSearch() {
 
 useSearchShortcuts({ saveCurrentSearch })
 
-onMounted(() => uiConfig.loadAll())
+onMounted(() => {
+  headerSearch.value = document.querySelector('.fr-header__search')
+  uiConfig.loadAll()
+})
 </script>
 
 <template>
@@ -131,19 +151,19 @@ onMounted(() => uiConfig.loadAll())
     </template>
   </DsfrHeader>
 
-  <div class="fr-container fr-my-4w">
-    <p v-if="uiConfig.currentUserLabel" class="fr-hint-text fr-mb-1w">
-      {{ uiConfig.currentUserLabel }}
-    </p>
-
-    <!-- La barre de recherche vit désormais dans l'en-tête ; ne restent
-         ici que les commandes qui l'accompagnent, absentes du gabarit
-         DSFR : présélection de sources et remise à zéro. -->
-    <div class="ds-searchbar">
+  <Teleport v-if="headerSearch" :to="headerSearch">
+    <div class="ds-header__controls">
       <SourcesSelect />
-      <DsfrButton secondary label="Réinitialiser la recherche" @click="store.resetSearch()" />
+      <DsfrButton
+        size="sm"
+        secondary
+        label="Réinitialiser la recherche"
+        @click="store.resetSearch()"
+      />
     </div>
+  </Teleport>
 
+  <div class="fr-container fr-my-4w">
     <DsfrAlert v-if="saveError" type="error" small :description="saveError" class="fr-mt-1w" />
 
     <div class="fr-grid-row fr-grid-row--gutters fr-mt-4w">

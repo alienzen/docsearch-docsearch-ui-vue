@@ -30,6 +30,7 @@ import '@gouvminint/vue-dsfr/styles'
 import '@gouvfr/dsfr/dist/utility/icons/icons-system/icons-system.main.css'
 import '@gouvfr/dsfr/dist/utility/icons/icons-arrows/icons-arrows.main.css'
 import '@gouvfr/dsfr/dist/utility/icons/icons-communication/icons-communication.main.css'
+import '@gouvfr/dsfr/dist/utility/icons/icons-user/icons-user.main.css'
 
 import './assets/app.css'
 
