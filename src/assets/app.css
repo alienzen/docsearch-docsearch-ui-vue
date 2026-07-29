@@ -161,26 +161,47 @@
   color: var(--text-mention-grey);
 }
 .ds-menu__entry {
-  padding-bottom: 0.5rem;
+  padding: 0.25rem 0 0.5rem;
   border-bottom: 1px solid var(--border-default-grey);
 }
 .ds-menu__entry:last-child {
   border-bottom: none;
 }
-.ds-menu__button {
+/* `fr-nav__link` est dimensionné pour une barre de navigation : dans une
+   liste de huit recherches, sa hauteur rendait le menu interminable.
+   Sélecteur à deux classes pour battre `.fr-menu .fr-nav__link`, qui
+   impose 0.75rem de rembourrage vertical. */
+.fr-menu .ds-menu__button {
   display: block;
   width: 100%;
+  padding: 0.25rem 1rem;
   text-align: left;
+  line-height: 1.35;
 }
 .ds-menu__name {
   display: block;
   font-weight: 500;
+}
+/* Puces de critères resserrées et sur une seule ligne de hauteur. */
+.ds-menu__entry .fr-tags-group {
+  gap: 0.25rem;
+  margin: 0.25rem 0 0;
+}
+.ds-menu__entry .fr-tags-group li {
+  margin: 0;
 }
 .ds-menu__alert {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+/* Sans ça, le sélecteur de fréquence occupe toute la largeur et pousse
+   le bouton de suppression sur une ligne de plus. */
+.ds-menu__alert .fr-select {
+  width: auto;
+  max-width: 12rem;
 }
 /* Case à cocher d'une entrée de menu (présélection de sources) : même
    retrait horizontal qu'un fr-nav__link, pour rester aligné avec les
@@ -258,20 +279,24 @@
   color: var(--text-mention-grey);
   cursor: default;
 }
-/* Un menu de navigation DSFR est étroit par défaut ; ces entrées
-   portent des puces de critères et un sélecteur de fréquence. */
-.fr-nav .fr-menu {
-  min-width: 24rem;
-  max-width: min(30rem, 90vw);
+/* Largeur du menu : le DSFR fixe `.fr-menu__list { width: 20rem }`.
+   C'est CETTE largeur qui compte, pas celle du menu qui l'enveloppe —
+   élargir le menu seul ne changeait rien, la liste gardait ses 20rem et
+   les puces de critères s'empilaient sur quatre lignes.
+   Le défilement appartient aussi à la liste : c'est elle qui porte le
+   fond blanc, le menu étant transparent. Posé sur le menu, l'ascenseur
+   apparaissait décalé de plusieurs dizaines de pixels à droite du
+   panneau visible. */
+.fr-nav .fr-menu__list {
+  width: min(34rem, 92vw);
+  max-height: 24rem;
+  overflow-y: auto;
 }
 /* Aligné sur le bord droit de son entrée — posé par NavMenuItem quand
    l'alignement à gauche ferait sortir le menu de l'écran. */
 .fr-nav .fr-menu.ds-menu--right {
   left: auto;
   right: 0;
-}
-.fr-nav .fr-collapse--expanded {
-  max-height: 26rem;
 }
 
 .ds-selection,
