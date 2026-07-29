@@ -108,8 +108,8 @@ onMounted(() => {
     home-to="/"
     :quick-links="[
       ...uiConfig.userQuickLinks('admin'),
-      { label: 'Statistiques', to: '/stats.html' },
-      { label: 'Aide', to: '/admin-help' },
+      { label: 'Statistiques', to: '/stats.html', class: 'fr-link--icon-left fr-icon-bar-chart-line' },
+      { label: 'Aide', to: '/admin-help', class: 'fr-link--icon-left fr-icon-question-line' },
       {
         label: 'Retour à la recherche',
         to: '/',

@@ -44,8 +44,8 @@ const quickLinks = computed(() => {
     // Les deux liens sont gouvernés par la même bascule et le même
     // groupe LDAP, comme dans docsearch-ui (admin-link et
     // footer-stats-link).
-    links.push({ label: 'Statistiques', to: '/stats.html' })
-    links.push({ label: 'Administration', to: '/admin.html' })
+    links.push({ label: 'Statistiques', to: '/stats.html', class: 'fr-link--icon-left fr-icon-bar-chart-line' })
+    links.push({ label: 'Administration', to: '/admin.html', class: 'fr-link--icon-left fr-icon-settings-5-line' })
   }
   return links
 })

@@ -36,7 +36,7 @@ onMounted(async () => {
       {
         label: 'Administration',
         to: '/admin.html',
-        class: 'fr-link--icon-left fr-icon-arrow-left-line',
+        class: 'fr-link--icon-left fr-icon-settings-5-line',
       },
     ]"
   />
