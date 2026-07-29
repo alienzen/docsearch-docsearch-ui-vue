@@ -77,7 +77,7 @@
 }
 
 /* ── Accueil animé de la page de recherche vide ───────────────
-   Trois variantes tirées au sort par EmptySearchState.vue. Toutes les
+   Six variantes tirées au sort par EmptySearchState.vue. Toutes les
    couleurs viennent des jetons DSFR : le bloc suit donc le thème clair
    ou sombre sans règle dédiée. */
 .ds-empty {
@@ -311,13 +311,10 @@
 /* Réglage système « réduire les animations » : le bloc reste, le
    mouvement s'arrête. Doublure CSS du test JS d'EmptySearchState — celui-ci
    ne peut couper que la rotation des suggestions, pilotée par minuterie. */
-/* `:not(.ds-empty--force-motion)` sur chaque sélecteur : la bascule
-   d'administration « ignorer le réglage système » désarme tout ce bloc,
-   repli statique compris. */
 @media (prefers-reduced-motion: reduce) {
-  .ds-empty:not(.ds-empty--force-motion) *,
-  .ds-empty:not(.ds-empty--force-motion) *::before,
-  .ds-empty:not(.ds-empty--force-motion) *::after {
+  .ds-empty *,
+  .ds-empty *::before,
+  .ds-empty *::after {
     animation: none !important;
   }
 }

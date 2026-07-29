@@ -24,8 +24,6 @@ export type UiConfig = {
   sort_enabled: boolean
   /** Animation d'accueil tant qu'aucune recherche n'a été lancée. */
   empty_state_animation_enabled: boolean
-  /** Passe outre le réglage système « réduire les animations ». */
-  empty_state_force_motion_enabled: boolean
   show_current_user_enabled: boolean
   show_current_user_groups_enabled: boolean
   // Famille « administration » (admin.html, stats.html, admin-help.html)
@@ -92,7 +90,6 @@ const DEFAULT_UI_CONFIG: UiConfig = {
   alerts_enabled: true,
   sort_enabled: true,
   empty_state_animation_enabled: true,
-  empty_state_force_motion_enabled: false,
   show_current_user_enabled: true,
   show_current_user_groups_enabled: true,
   footer_enabled_admin: true,

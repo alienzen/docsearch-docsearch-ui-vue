@@ -4,10 +4,10 @@
  * été lancée. Purement décoratif, pilotable par l'administrateur
  * (`empty_state_animation_enabled`).
  *
- * Trois variantes tirées au sort à chaque chargement. Le tirage se fait
- * au montage et n'est pas mémorisé : c'est le principe même du procédé,
- * et il n'y a rien à retrouver d'une visite à l'autre puisque aucune des
- * trois ne porte d'état.
+ * Six variantes tirées au sort à chaque chargement. Le tirage se fait au
+ * montage et n'est pas mémorisé : c'est le principe même du procédé, et
+ * il n'y a rien à retrouver d'une visite à l'autre puisque aucune ne
+ * porte d'état.
  *
  * Les illustrations sont dessinées ici plutôt que reprises des
  * pictogrammes livrés par @gouvfr/dsfr : ces derniers embarquent leurs
@@ -15,12 +15,10 @@
  * sombre en thème nuit. Un SVG en ligne peut, lui, consommer les jetons
  * DSFR et suivre le thème.
  */
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useSearchStore } from '@/stores/search'
-import { useUiConfigStore } from '@/stores/uiConfig'
 
 const store = useSearchStore()
-const uiConfig = useUiConfigStore()
 
 /**
  * Les trois dernières illustrent la devise « Explorez, trouvez,
@@ -32,25 +30,14 @@ const VARIANTS = ['picto', 'suggestions', 'scan', 'compass', 'constellation', 'b
 const variant = VARIANTS[Math.floor(Math.random() * VARIANTS.length)]
 
 /**
- * Réglage système « réduire les animations ». Il prime normalement sur
- * la bascule d'administration : celle-ci autorise l'animation pour
- * l'installation, elle ne peut pas l'imposer à quelqu'un que le
- * mouvement gêne. Le bloc reste affiché — c'est le mouvement qui
- * disparaît, la CSS neutralisant par ailleurs les animations.
- *
- * `empty_state_force_motion_enabled` passe outre. Désactivé par défaut,
- * et à réserver aux démonstrations : forcer le mouvement contrevient au
- * critère RGAA correspondant.
+ * Réglage système « réduire les animations ». Il prime sur la bascule
+ * d'administration : celle-ci autorise l'animation pour l'installation,
+ * elle ne peut pas l'imposer à quelqu'un que le mouvement gêne. Le bloc
+ * reste affiché — c'est le mouvement qui disparaît, la CSS neutralisant
+ * par ailleurs les animations.
  */
-const prefersReduced =
+const reducedMotion =
   typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
-
-// `computed` et non une constante : /ui-config arrive après le montage
-// du composant, la bascule ne serait jamais prise en compte si sa valeur
-// était figée ici.
-const reducedMotion = computed(
-  () => prefersReduced && !uiConfig.config.empty_state_force_motion_enabled,
-)
 
 // Exemples repris de la syntaxe avancée, présentés par les TROIS
 // variantes : ils occupent la page vide et enseignent des opérateurs
@@ -68,7 +55,7 @@ const current = ref(0)
 let timer: ReturnType<typeof setInterval> | undefined
 
 /** Un exemple à la fois, qui tourne — sinon les quatre d'un bloc. */
-const rotating = computed(() => variant === 'suggestions' && !reducedMotion.value)
+const rotating = variant === 'suggestions' && !reducedMotion
 
 function runExample(example: string) {
   store.query = example
@@ -76,29 +63,15 @@ function runExample(example: string) {
 }
 
 onMounted(() => {
-  if (variant !== 'suggestions') return
-  // La minuterie tourne toujours ; c'est le tic qui s'abstient. `rotating`
-  // dépend d'une configuration chargée après le montage : décider ici une
-  // fois pour toutes raterait son arrivée.
-  timer = setInterval(() => {
-    if (rotating.value) current.value = (current.value + 1) % EXAMPLES.length
-  }, 3200)
+  if (!rotating) return
+  timer = setInterval(() => (current.value = (current.value + 1) % EXAMPLES.length), 3200)
 })
 
 onBeforeUnmount(() => clearInterval(timer))
 </script>
 
 <template>
-  <!-- La classe de forçage porte la bascule jusqu'à la CSS : c'est elle
-       qui désarme le bloc @media (prefers-reduced-motion). -->
-  <section
-    class="ds-empty"
-    :class="[
-      `ds-empty--${variant}`,
-      { 'ds-empty--force-motion': uiConfig.config.empty_state_force_motion_enabled },
-    ]"
-    aria-label="Bienvenue"
-  >
+  <section class="ds-empty" :class="`ds-empty--${variant}`" aria-label="Bienvenue">
     <!-- Variante « balayage » : une loupe dérive lentement au-dessus
          d'un semis de documents, qui s'éclairent à tour de rôle sur son
          passage. Tout est visible à l'arrêt — seuls la dérive et les
