@@ -100,6 +100,17 @@ onMounted(() => {
     <DsfrAlert v-if="accessDenied" type="error" title="Accès refusé" :description="accessDenied" />
 
     <template v-else>
+      <!-- Migration en cours : tant que les panneaux de création et de
+           suppression de sources ne sont pas portés, le dire ici plutôt
+           que de laisser un administrateur chercher un écran absent. À
+           retirer une fois ces panneaux disponibles. -->
+      <DsfrAlert
+        type="warning"
+        title="Panneau en cours de migration"
+        description="La création, la modification et la suppression de sources (fichiers, SQL, web), ainsi que l'arborescence des sources, ne sont pas encore disponibles ici : passer par l'interface d'administration historique pour ces opérations. Tout le reste est opérationnel."
+        class="fr-mb-3w"
+      />
+
       <div class="ds-stats__toolbar">
         <DsfrButton size="sm" tertiary no-outline :label="toggleAllLabel" @click="toggleAll" />
       </div>
