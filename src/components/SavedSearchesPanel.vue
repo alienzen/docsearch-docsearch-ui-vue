@@ -4,7 +4,7 @@
  * docsearch-ui/public/js/saved-searches.js (hors alertes, voir
  * AlertsPanel).
  */
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import {
   deleteSavedSearch,
   extList,
@@ -27,7 +27,12 @@ const error = ref<string | null>(null)
 
 const menu = ref<{ close: () => void } | null>(null)
 
-/** Chargé à l'ouverture du menu, pas au montage de la page. */
+/**
+ * Chargé au montage, et non plus seulement à l'ouverture du menu :
+ * l'entrée de navigation est masquée quand il n'y a aucune recherche
+ * enregistrée, ce qui suppose d'en connaître le nombre avant tout clic.
+ * Rechargé aussi à chaque ouverture, pour rester à jour.
+ */
 async function load() {
   loading.value = true
   error.value = null
@@ -39,6 +44,8 @@ async function load() {
     loading.value = false
   }
 }
+
+onMounted(load)
 
 /** Résumé des critères, en puces — portage de criteriaSummary(). */
 function criteriaSummary(saved: SavedSearch): string[] {
@@ -93,6 +100,8 @@ async function remove(saved: SavedSearch) {
  * renvoie celle affichée. En cas d'échec, l'état local est remis
  * comme avant pour ne pas afficher une alerte qui n'existe pas.
  */
+defineExpose({ reload: load })
+
 async function updateAlert(saved: SavedSearch, enabled: boolean, frequency: string) {
   const before = { enabled: saved.alert_enabled, frequency: saved.alert_frequency }
   saved.alert_enabled = enabled
@@ -109,13 +118,11 @@ async function updateAlert(saved: SavedSearch, enabled: boolean, frequency: stri
 </script>
 
 <template>
-  <NavMenuItem ref="menu" label="Mes recherches" @open="load">
+  <NavMenuItem v-if="list.length" ref="menu" label="Mes recherches" @open="load">
     <li v-if="loading" class="ds-menu__message">Chargement…</li>
     <li v-else-if="error" class="ds-menu__message">
       <DsfrAlert type="error" small :description="error" />
     </li>
-    <li v-else-if="!list.length" class="ds-menu__message">Aucune recherche enregistrée.</li>
-
     <li v-for="saved in list" v-else :key="saved.id" class="ds-menu__entry">
       <button class="fr-nav__link ds-menu__button" @click="apply(saved)">
         <span class="ds-menu__name">{{ saved.name }}</span>

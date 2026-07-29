@@ -60,6 +60,11 @@ onMounted(() => {
         to: '/admin.html',
         class: 'fr-link--icon-left fr-icon-settings-5-line',
       },
+      {
+        label: 'Retour à la recherche',
+        to: '/',
+        class: 'fr-link--icon-left fr-icon-arrow-left-line',
+      },
     ]"
   />
 

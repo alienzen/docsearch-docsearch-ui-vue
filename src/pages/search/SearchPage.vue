@@ -75,6 +75,13 @@ const detailId = ref<string | null>(null)
 // ── Collections ─────────────────────────────────────────────
 const collectionsPanel = ref<{ openAdd: () => void } | null>(null)
 
+/**
+ * L'entrée « Mes recherches » est masquée tant qu'il n'y en a aucune :
+ * après un enregistrement, il faut donc recharger sa liste pour qu'elle
+ * apparaisse, sans attendre un rechargement de page.
+ */
+const savedSearchesPanel = ref<{ reload: () => void } | null>(null)
+
 // ── Satisfaction ────────────────────────────────────────────
 const { visible: npsVisible, maybeShow } = useNps(() => uiConfig.engagement.nps_enabled)
 const suggestionOpen = ref(false)
@@ -102,6 +109,7 @@ async function saveCurrentSearch() {
   saveError.value = null
   try {
     await createSavedSearch(store.savedSearchPayload(name.trim()))
+    savedSearchesPanel.value?.reload()
   } catch (e) {
     saveError.value = e instanceof Error ? e.message : String(e)
   }
@@ -151,7 +159,7 @@ onMounted(() => {
               Enregistrer cette recherche
             </button>
           </li>
-          <SavedSearchesPanel />
+          <SavedSearchesPanel ref="savedSearchesPanel" />
           <CollectionsPanel
             v-if="uiConfig.config.collections_enabled"
             ref="collectionsPanel"
