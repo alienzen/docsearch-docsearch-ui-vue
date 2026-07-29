@@ -151,7 +151,11 @@ onMounted(() => {
     <template #mainnav>
       <nav id="navigation" class="fr-nav" role="navigation" aria-label="Navigation secondaire">
         <ul class="fr-nav__list">
-          <li class="fr-nav__item">
+          <!-- Rien à enregistrer tant qu'aucune recherche n'a été
+               lancée : même condition que la colonne de facettes. Le
+               garde-fou de saveCurrentSearch() reste en place, l'entrée
+               pouvant redevenir visible entre-temps. -->
+          <li v-if="store.hasSearched" class="fr-nav__item">
             <button class="fr-nav__link" type="button" @click="saveCurrentSearch">
               Enregistrer cette recherche
             </button>
