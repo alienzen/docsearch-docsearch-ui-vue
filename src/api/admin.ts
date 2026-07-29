@@ -138,10 +138,13 @@ export function setSourceGroups(
 }
 
 export type FileSource = {
-  path?: string
+  es_index: string
+  /** Sous-dossier sous SOURCES_MOUNT. */
+  folder?: string
   label?: string
   description?: string
-  ocr?: boolean
+  /** OCR (Tesseract, français) pour les PDF scannés et les images. */
+  ocr_enabled?: boolean
   [key: string]: unknown
 }
 
@@ -157,25 +160,78 @@ export function deleteFileSource(name: string): Promise<unknown> {
   return api(`/admin/file-sources/${encodeURIComponent(name)}`, { method: 'DELETE' })
 }
 
-export function setFileSourceOcr(name: string, ocr: boolean): Promise<unknown> {
+/**
+ * Active l'OCR pour une source. Coûteux en CPU, et sans effet
+ * rétroactif : seuls les documents indexés APRÈS activation en
+ * bénéficient.
+ */
+export function setFileSourceOcr(name: string, ocrEnabled: boolean): Promise<unknown> {
   return api(`/admin/file-sources/${encodeURIComponent(name)}/ocr`, {
     method: 'POST',
-    body: JSON.stringify({ ocr }),
+    body: JSON.stringify({ ocr_enabled: ocrEnabled }),
   })
 }
 
-/** Arborescence d'une source, chargée dossier par dossier. */
-export function getSourceTree(source: string, path: string): Promise<unknown> {
-  return api(
+export type TreeEntry = {
+  name: string
+  path: string
+  type: 'dir' | 'file'
+  /** Exclu par un filtre de sous-dossier. Prime sur `included`. */
+  excluded?: boolean
+  /** Correspond explicitement à un motif de liste blanche. */
+  included?: boolean
+}
+
+/**
+ * Un NIVEAU de l'arborescence d'une source — jamais un dump récursif :
+ * la page reste utilisable sur une source à des dizaines de milliers de
+ * fichiers, au prix d'un aller-retour par dépliage.
+ */
+export function getSourceTree(source: string, path: string): Promise<{ entries: TreeEntry[] }> {
+  return api<{ entries: TreeEntry[] }>(
     `/admin/file-sources/${encodeURIComponent(source)}/tree?path=${encodeURIComponent(path)}`,
   )
 }
 
-export function getSqlSources(): Promise<Record<string, Record<string, unknown>>> {
+/** Types Elasticsearch proposés pour une colonne SQL. */
+export const SQL_ES_TYPES = ['keyword', 'text', 'long', 'double', 'date', 'boolean'] as const
+export type SqlEsType = (typeof SQL_ES_TYPES)[number]
+
+/**
+ * Seuls keyword et boolean peuvent servir de facette : une agrégation
+ * « terms » n'est pas possible sur les autres types (voir
+ * _validate_fields côté API).
+ */
+export function isFacetable(type: string): boolean {
+  return type === 'keyword' || type === 'boolean'
+}
+
+export type SqlField = {
+  column: string
+  es_field: string
+  es_type: SqlEsType
+  analyzer?: string | null
+  facet?: boolean
+  facet_label?: string | null
+}
+
+export type SqlSource = {
+  db_type: 'postgresql' | 'mysql'
+  connection_ref: string
+  query: string
+  id_column: string
+  es_index: string
+  fields: SqlField[]
+  poll_interval_seconds: number
+  label?: string
+  description?: string
+}
+
+export function getSqlSources(): Promise<Record<string, SqlSource>> {
   return api('/admin/sql-sources')
 }
 
-export function createSqlSource(body: Record<string, unknown>): Promise<unknown> {
+export function createSqlSource(body: SqlSource & { name: string }): Promise<unknown> {
   return api('/admin/sql-sources', { method: 'POST', body: JSON.stringify(body) })
 }
 
@@ -183,14 +239,19 @@ export function deleteSqlSource(name: string): Promise<unknown> {
   return api(`/admin/sql-sources/${encodeURIComponent(name)}`, { method: 'DELETE' })
 }
 
-export type SqlDsn = { name: string; [key: string]: unknown }
+/**
+ * DSN chiffré (Fernet) stocké dans Redis. `hint` est tout ce qui reste
+ * consultable après enregistrement : schéma et hôte, jamais les
+ * identifiants — le DSN lui-même n'est plus jamais réaffiché.
+ */
+export type SqlDsn = { name: string; hint: string }
 
 export function getSqlDsns(): Promise<SqlDsn[]> {
   return api<SqlDsn[]>('/admin/sql-dsns')
 }
 
-export function createSqlDsn(body: Record<string, unknown>): Promise<unknown> {
-  return api('/admin/sql-dsns', { method: 'POST', body: JSON.stringify(body) })
+export function createSqlDsn(name: string, dsn: string): Promise<unknown> {
+  return api('/admin/sql-dsns', { method: 'POST', body: JSON.stringify({ name, dsn }) })
 }
 
 export function deleteSqlDsn(name: string): Promise<unknown> {

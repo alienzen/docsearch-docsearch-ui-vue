@@ -434,3 +434,39 @@
 .ds-admin__source-select {
   max-width: 22rem;
 }
+
+/* Formulaire d'édition d'une source SQL — encadré pour se distinguer du
+   tableau au-dessus, dont il édite une ligne. */
+.ds-admin__form {
+  padding: 1rem;
+  border: 1px dashed var(--border-active-blue-france);
+}
+.ds-admin__query {
+  font-family: ui-monospace, monospace;
+  font-size: 0.875rem;
+}
+
+/* Arborescence des sources */
+.ds-tree {
+  list-style: none;
+  padding-left: 1rem;
+}
+.ds-tree__entry {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0;
+  text-align: left;
+}
+.ds-tree__entry:is(button) {
+  cursor: pointer;
+}
+/* Un chemin exclu par les filtres ne sera jamais indexé : le barré le
+   dit sans dépendre de la seule couleur. */
+.ds-tree__entry--excluded {
+  color: var(--text-mention-grey);
+  text-decoration: line-through;
+}
+.ds-tree__entry--included {
+  color: var(--text-default-success);
+}

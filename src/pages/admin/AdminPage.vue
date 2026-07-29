@@ -46,14 +46,24 @@ async function loadFileSources() {
 const PANEL_IDS = [
   'status-panel',
   'allsources-panel',
+  'filesources-panel',
   'filetypes-panel',
   'pathfilters-panel',
   'scan-panel',
+  'source-tree-panel',
+  'sqlsources-panel',
+  'websources-panel',
   'engagement-panel',
   'ui-config-panel',
   'config-panel',
 ]
-const GROUP_IDS = ['group-overview', 'group-file-sources', 'group-interface']
+const GROUP_IDS = [
+  'group-overview',
+  'group-file-sources',
+  'group-sql-sources',
+  'group-web-sources',
+  'group-interface',
+]
 
 const toggleAllLabel = computed(() =>
   panels.anyExpanded || groups.anyExpanded ? 'Tout replier' : 'Tout déplier',
@@ -100,17 +110,6 @@ onMounted(() => {
     <DsfrAlert v-if="accessDenied" type="error" title="Accès refusé" :description="accessDenied" />
 
     <template v-else>
-      <!-- Migration en cours : tant que les panneaux de création et de
-           suppression de sources ne sont pas portés, le dire ici plutôt
-           que de laisser un administrateur chercher un écran absent. À
-           retirer une fois ces panneaux disponibles. -->
-      <DsfrAlert
-        type="warning"
-        title="Panneau en cours de migration"
-        description="La création, la modification et la suppression de sources (fichiers, SQL, web), ainsi que l'arborescence des sources, ne sont pas encore disponibles ici : passer par l'interface d'administration historique pour ces opérations. Tout le reste est opérationnel."
-        class="fr-mb-3w"
-      />
-
       <div class="ds-stats__toolbar">
         <DsfrButton size="sm" tertiary no-outline :label="toggleAllLabel" @click="toggleAll" />
       </div>
@@ -121,9 +120,19 @@ onMounted(() => {
       </AdminGroup>
 
       <AdminGroup id="group-file-sources" title="Sources fichiers">
+        <AdminFileSourcesPanel @changed="loadFileSources" />
         <AdminFiletypesPanel :sources="fileSources" />
         <AdminPathFiltersPanel :sources="fileSources" />
         <AdminScanPanel :sources="fileSources" />
+        <AdminSourceTreePanel :sources="fileSources" />
+      </AdminGroup>
+
+      <AdminGroup id="group-sql-sources" title="Sources SQL">
+        <AdminSqlSourcesPanel />
+      </AdminGroup>
+
+      <AdminGroup id="group-web-sources" title="Sources web">
+        <AdminWebSourcesPanel />
       </AdminGroup>
 
       <AdminGroup id="group-interface" title="Interface et engagement">
