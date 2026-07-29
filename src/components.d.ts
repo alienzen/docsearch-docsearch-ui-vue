@@ -12,6 +12,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     ActiveFilters: typeof import('./components/ActiveFilters.vue')['default']
+    AdminAllSourcesPanel: typeof import('./components/admin/AdminAllSourcesPanel.vue')['default']
     AdminConfigPanel: typeof import('./components/admin/AdminConfigPanel.vue')['default']
     AdminEngagementPanel: typeof import('./components/admin/AdminEngagementPanel.vue')['default']
     AdminFiletypesPanel: typeof import('./components/admin/AdminFiletypesPanel.vue')['default']
@@ -20,6 +21,7 @@ declare module 'vue' {
     AdminPathFiltersPanel: typeof import('./components/admin/AdminPathFiltersPanel.vue')['default']
     AdminScanPanel: typeof import('./components/admin/AdminScanPanel.vue')['default']
     AdminStatusPanel: typeof import('./components/admin/AdminStatusPanel.vue')['default']
+    AdminUiConfigPanel: typeof import('./components/admin/AdminUiConfigPanel.vue')['default']
     AlertsPanel: typeof import('./components/AlertsPanel.vue')['default']
     CollapsiblePanel: typeof import('./components/CollapsiblePanel.vue')['default']
     CollectionsPanel: typeof import('./components/CollectionsPanel.vue')['default']

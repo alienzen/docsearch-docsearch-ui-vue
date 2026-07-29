@@ -80,12 +80,17 @@ export function saveUiConfig(patch: Record<string, unknown>): Promise<unknown> {
 export type SourceType = 'file' | 'sql' | 'web'
 
 export type AllSourceEntry = {
-  type?: SourceType
-  label?: string
+  type: SourceType
+  label: string
   description?: string
+  es_index?: string
+  indexed?: number
+  size_bytes?: number
+  /** Visibilité de la source dans la recherche. */
   searchable?: boolean
+  /** Autorise l'ajout de ses documents à une collection. */
   collectable?: boolean
-  groups?: string[]
+  allowed_groups?: string[]
   [key: string]: unknown
 }
 
@@ -116,14 +121,19 @@ export function setSourceCollectable(
   })
 }
 
+/**
+ * Groupes AD/LDAP autorisés à VOIR la source dans la recherche. Vide =
+ * tout le monde. N'affecte ni l'ingestion, ni l'accès aux documents
+ * individuels déjà partagés par ACL.
+ */
 export function setSourceGroups(
   name: string,
   type: SourceType,
-  groups: string[],
+  allowedGroups: string[],
 ): Promise<unknown> {
   return api(`/admin/all-sources/${encodeURIComponent(name)}/groups?type=${type}`, {
     method: 'POST',
-    body: JSON.stringify({ groups }),
+    body: JSON.stringify({ allowed_groups: allowedGroups }),
   })
 }
 
@@ -221,7 +231,9 @@ export function setSourceField(
   ]
   return api(`${base}/${encodeURIComponent(name)}/${field}`, {
     method: 'POST',
-    body: JSON.stringify({ value }),
+    // La clé du corps est le nom du champ lui-même ({label: …} ou
+    // {description: …}), pas un « value » générique.
+    body: JSON.stringify({ [field]: value }),
   })
 }
 

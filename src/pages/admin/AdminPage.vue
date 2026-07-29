@@ -50,6 +50,7 @@ const PANEL_IDS = [
   'pathfilters-panel',
   'scan-panel',
   'engagement-panel',
+  'ui-config-panel',
   'config-panel',
 ]
 const GROUP_IDS = ['group-overview', 'group-file-sources', 'group-interface']
@@ -105,6 +106,7 @@ onMounted(() => {
 
       <AdminGroup id="group-overview" title="Vue d'ensemble">
         <AdminStatusPanel />
+        <AdminAllSourcesPanel />
       </AdminGroup>
 
       <AdminGroup id="group-file-sources" title="Sources fichiers">
@@ -115,6 +117,7 @@ onMounted(() => {
 
       <AdminGroup id="group-interface" title="Interface et engagement">
         <AdminEngagementPanel />
+        <AdminUiConfigPanel />
         <AdminConfigPanel />
       </AdminGroup>
     </template>

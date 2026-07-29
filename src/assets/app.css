@@ -4,6 +4,16 @@
    theme-search.css, custom-sources.css) : s'il regrossit, c'est le
    signe qu'on réimplémente du DSFR à la main. */
 
+/* Modèle de boîte uniforme, comme le posait docsearch-ui. Sans ça, le
+   remplissage des champs DSFR s'AJOUTE à leur largeur : un `width: 100%`
+   dans un conteneur flex débordait alors de quelques dizaines de
+   pixels, et les champs passaient sous le bouton voisin. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 /* Sidebar de facettes collante — remplace syncSidebarOffset(), le
    recalcul JS de hauteur de header de docsearch-ui/public/js/config.js. */
 .ds-facets {
@@ -386,8 +396,31 @@
   align-items: flex-end;
   gap: 0.5rem;
 }
-.ds-admin__row > .fr-input-group {
+/* .fr-select-group ET .fr-input-group : DsfrSelect rend le premier,
+   ne cibler que le second laissait les sélecteurs hors du flux, donc
+   superposés à leurs voisins. */
+.ds-admin__row > .fr-input-group,
+.ds-admin__row > .fr-select-group {
   flex: 1 1 14rem;
+  min-width: 0;
+  margin-bottom: 0;
+}
+/* Les boutons gardent leur largeur propre : sans ça ils débordaient de
+   la ligne, libellé tronqué. */
+.ds-admin__row > .fr-btn {
+  flex: 0 0 auto;
+}
+/* Un <select> DSFR ne se contraint pas tout seul à son conteneur flex :
+   sans cette limite, il débordait à droite et faisait défiler toute la
+   page horizontalement. */
+.ds-admin__row .fr-select,
+.ds-admin__row .fr-input {
+  max-width: 100%;
+}
+/* Les champs de réglage n'ont pas besoin de toute la largeur d'écran —
+   au-delà, ils deviennent illisibles. */
+.ds-admin__row {
+  max-width: 60rem;
 }
 .ds-admin__narrow {
   flex: 0 0 7rem !important;

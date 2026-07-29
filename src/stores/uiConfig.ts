@@ -39,13 +39,31 @@ export type UiConfig = {
   sources_mount: string
   sources_mount_display: string
   /**
-   * Ancien sélecteur de thème (7 thèmes maison). Conservé dans le type
-   * parce que l'API le renvoie toujours tant qu'admin.html n'est pas
-   * migré, mais volontairement IGNORÉ ici : l'apparence est désormais
-   * celle du DSFR, en clair ou sombre (voir useScheme).
+   * Apparence, réglée depuis l'administration. Le champ existait déjà,
+   * mais portait l'un des 7 thèmes maison ('slate', 'red', 'dsfr'…) :
+   * il ne peut désormais valoir que 'light', 'dark' ou 'system', le
+   * reste de la palette n'ayant plus de sens en DSFR. Les valeurs
+   * héritées sont ramenées à 'system' par normalizeScheme().
    */
   theme?: string
+  /** Idem pour les pages d'administration. */
+  theme_admin?: string
 }
+
+export type Scheme = 'light' | 'dark' | 'system'
+
+/**
+ * Ramène une valeur de thème à un scheme DSFR. Toute valeur inconnue —
+ * dont les 7 thèmes maison encore stockés dans Redis — devient
+ * 'system' : on suit alors la préférence du système d'exploitation,
+ * qui est le comportement par défaut du DSFR.
+ */
+export function normalizeScheme(value: string | undefined): Scheme {
+  return value === 'light' || value === 'dark' ? value : 'system'
+}
+
+/** Clé de cache, la même que celle lue par le script anti-flash des pages. */
+const SCHEME_CACHE_KEY = 'vue-dsfr-scheme'
 
 /** Repli si /ui-config échoue : tout activé, comme en vanilla. */
 const DEFAULT_UI_CONFIG: UiConfig = {
@@ -240,10 +258,39 @@ export const useUiConfigStore = defineStore('uiConfig', () => {
     document.title = `${headerTitle.value} — ${headerSubtitle.value}`
   }
 
+  /**
+   * Applique l'apparence réglée en administration et la met en cache.
+   *
+   * Le cache reproduit le mécanisme de docsearch-ui : le script inline
+   * en tête de chaque page le lit AVANT le premier rendu, ce qui évite
+   * d'afficher brièvement le thème clair le temps que /ui-config
+   * réponde. C'est pourquoi il utilise la même clé que useScheme.
+   *
+   * @param family les pages d'administration ont leur propre réglage
+   */
+  function applyScheme(family: 'search' | 'admin') {
+    const scheme = normalizeScheme(
+      family === 'admin' ? config.value.theme_admin : config.value.theme,
+    )
+    const dark =
+      scheme === 'system'
+        ? window.matchMedia('(prefers-color-scheme: dark)').matches
+        : scheme === 'dark'
+    document.documentElement.setAttribute('data-fr-theme', dark ? 'dark' : 'light')
+    try {
+      localStorage.setItem(SCHEME_CACHE_KEY, scheme)
+    } catch {
+      /* stockage indisponible : simple flash possible au prochain chargement */
+    }
+  }
+
   /** Tout ce qui est chargé au démarrage de la page de recherche. */
   function loadAll() {
     return Promise.all([
-      loadUiConfig().then(applySearchTitle),
+      loadUiConfig().then(() => {
+        applySearchTitle()
+        applyScheme('search')
+      }),
       loadEngagementConfig(),
       loadIsAdmin(),
       loadSearchableSources(),
@@ -273,6 +320,7 @@ export const useUiConfigStore = defineStore('uiConfig', () => {
     loadSearchableSources,
     loadCustomFacets,
     applySearchTitle,
+    applyScheme,
     loadAll,
   }
 })
