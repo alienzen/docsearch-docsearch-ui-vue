@@ -11,11 +11,23 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    ActiveFilters: typeof import('./components/ActiveFilters.vue')['default']
     DsfrAlert: typeof import('@gouvminint/vue-dsfr')['DsfrAlert']
+    DsfrButton: typeof import('@gouvminint/vue-dsfr')['DsfrButton']
+    DsfrFooter: typeof import('@gouvminint/vue-dsfr')['DsfrFooter']
     DsfrHeader: typeof import('@gouvminint/vue-dsfr')['DsfrHeader']
+    DsfrPagination: typeof import('@gouvminint/vue-dsfr')['DsfrPagination']
     DsfrSearchBar: typeof import('@gouvminint/vue-dsfr')['DsfrSearchBar']
+    DsfrSelect: typeof import('@gouvminint/vue-dsfr')['DsfrSelect']
+    DsfrSkipLinks: typeof import('@gouvminint/vue-dsfr')['DsfrSkipLinks']
+    FacetGroup: typeof import('./components/FacetGroup.vue')['default']
+    FacetsSidebar: typeof import('./components/FacetsSidebar.vue')['default']
+    ResultCard: typeof import('./components/ResultCard.vue')['default']
+    ResultsList: typeof import('./components/ResultsList.vue')['default']
+    ResultsToolbar: typeof import('./components/ResultsToolbar.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterLinkShim: typeof import('./components/RouterLinkShim.vue')['default']
     RouterView: typeof import('vue-router')['RouterView']
+    SourcesSelect: typeof import('./components/SourcesSelect.vue')['default']
   }
 }
