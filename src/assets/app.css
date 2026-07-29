@@ -297,7 +297,7 @@
   display: flex;
   justify-content: flex-end;
 }
-.ds-stats__panel {
+.ds-panel-block {
   margin-bottom: 1rem;
 }
 .ds-stats__cards {
@@ -367,4 +367,37 @@
 }
 .ds-stats__pager > :first-child {
   flex: 1;
+}
+
+/* ── Administration ────────────────────────────────────────── */
+/* Groupe de panneaux : titre plus marqué que celui des panneaux qu'il
+   contient, pour que les deux niveaux de pli restent distinguables. */
+.ds-panel-block--group > summary {
+  font-weight: 700;
+}
+.ds-panel-block--group > .fr-accordion__inner {
+  padding-left: 0.5rem;
+  border-left: 2px solid var(--border-default-grey);
+}
+
+.ds-admin__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+.ds-admin__row > .fr-input-group {
+  flex: 1 1 14rem;
+}
+.ds-admin__narrow {
+  flex: 0 0 7rem !important;
+}
+.ds-admin__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.ds-admin__source-select {
+  max-width: 22rem;
 }

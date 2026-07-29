@@ -1,0 +1,283 @@
+import { api } from './client'
+
+// Endpoints du panneau d'administration.
+//
+// À noter : /admin/ui-config et /admin/engagement-config sont en
+// ÉCRITURE seule (405 en GET). Leur lecture passe par les endpoints
+// publics /ui-config et /engagement-config, déjà couverts par
+// useUiConfigStore — c'est ce que faisait admin.html.
+
+// ── État des composants ───────────────────────────────────────
+export type ClusterStatus = {
+  up?: boolean
+  status?: string
+}
+
+export type AdminStatus = {
+  elasticsearch?: ClusterStatus
+  redis?: { up?: boolean }
+  kafka?: { up?: boolean }
+  tika?: { up_count?: number; total?: number }
+  workers?: { active_workers?: number; pending_documents?: number }
+  watcher?: { alive?: boolean; last_seen_seconds_ago?: number | null }
+  sources?: unknown
+}
+
+export function getStatus(): Promise<AdminStatus> {
+  return api<AdminStatus>('/admin/status')
+}
+
+// ── Types de fichiers ─────────────────────────────────────────
+export type FiletypeRule = {
+  enabled: boolean
+  max_size_mb?: number | null
+}
+
+/** {extension: règle} — « default » est la règle de repli, non supprimable. */
+export function getFiletypes(source: string): Promise<Record<string, FiletypeRule>> {
+  return api(`/admin/filetypes?source=${encodeURIComponent(source)}`)
+}
+
+export function saveFiletype(
+  ext: string,
+  rule: FiletypeRule & { source: string },
+): Promise<unknown> {
+  return api(`/admin/filetypes/${ext}`, { method: 'POST', body: JSON.stringify(rule) })
+}
+
+export function deleteFiletype(ext: string, source: string): Promise<unknown> {
+  return api(`/admin/filetypes/${ext}?source=${encodeURIComponent(source)}`, { method: 'DELETE' })
+}
+
+export function resetFiletypes(source: string): Promise<unknown> {
+  return api(`/admin/filetypes/reset?source=${encodeURIComponent(source)}`, { method: 'POST' })
+}
+
+// ── Paramètres opérationnels ──────────────────────────────────
+export function getConfig(): Promise<Record<string, number | string>> {
+  return api('/admin/config')
+}
+
+export function saveConfigKey(key: string, value: string): Promise<unknown> {
+  return api(`/admin/config/${key}`, { method: 'POST', body: JSON.stringify({ value }) })
+}
+
+export function resetConfig(): Promise<unknown> {
+  return api('/admin/config/reset', { method: 'POST' })
+}
+
+// ── Bascules d'interface et de satisfaction (écriture) ────────
+export function saveEngagementConfig(patch: Record<string, boolean>): Promise<unknown> {
+  return api('/admin/engagement-config', { method: 'POST', body: JSON.stringify(patch) })
+}
+
+export function saveUiConfig(patch: Record<string, unknown>): Promise<unknown> {
+  return api('/admin/ui-config', { method: 'POST', body: JSON.stringify(patch) })
+}
+
+// ── Sources ───────────────────────────────────────────────────
+/** Type d'une source, qui détermine l'endpoint à viser. */
+export type SourceType = 'file' | 'sql' | 'web'
+
+export type AllSourceEntry = {
+  type?: SourceType
+  label?: string
+  description?: string
+  searchable?: boolean
+  collectable?: boolean
+  groups?: string[]
+  [key: string]: unknown
+}
+
+/** Vue unifiée : {nom: source}, fichiers, SQL et web confondus. */
+export function getAllSources(): Promise<Record<string, AllSourceEntry>> {
+  return api('/admin/all-sources')
+}
+
+export function setSourceSearchable(
+  name: string,
+  type: SourceType,
+  searchable: boolean,
+): Promise<unknown> {
+  return api(`/admin/all-sources/${encodeURIComponent(name)}/searchable?type=${type}`, {
+    method: 'POST',
+    body: JSON.stringify({ searchable }),
+  })
+}
+
+export function setSourceCollectable(
+  name: string,
+  type: SourceType,
+  collectable: boolean,
+): Promise<unknown> {
+  return api(`/admin/all-sources/${encodeURIComponent(name)}/collectable?type=${type}`, {
+    method: 'POST',
+    body: JSON.stringify({ collectable }),
+  })
+}
+
+export function setSourceGroups(
+  name: string,
+  type: SourceType,
+  groups: string[],
+): Promise<unknown> {
+  return api(`/admin/all-sources/${encodeURIComponent(name)}/groups?type=${type}`, {
+    method: 'POST',
+    body: JSON.stringify({ groups }),
+  })
+}
+
+export type FileSource = {
+  path?: string
+  label?: string
+  description?: string
+  ocr?: boolean
+  [key: string]: unknown
+}
+
+export function getFileSources(): Promise<Record<string, FileSource>> {
+  return api('/admin/file-sources')
+}
+
+export function createFileSource(body: Record<string, unknown>): Promise<unknown> {
+  return api('/admin/file-sources', { method: 'POST', body: JSON.stringify(body) })
+}
+
+export function deleteFileSource(name: string): Promise<unknown> {
+  return api(`/admin/file-sources/${encodeURIComponent(name)}`, { method: 'DELETE' })
+}
+
+export function setFileSourceOcr(name: string, ocr: boolean): Promise<unknown> {
+  return api(`/admin/file-sources/${encodeURIComponent(name)}/ocr`, {
+    method: 'POST',
+    body: JSON.stringify({ ocr }),
+  })
+}
+
+/** Arborescence d'une source, chargée dossier par dossier. */
+export function getSourceTree(source: string, path: string): Promise<unknown> {
+  return api(
+    `/admin/file-sources/${encodeURIComponent(source)}/tree?path=${encodeURIComponent(path)}`,
+  )
+}
+
+export function getSqlSources(): Promise<Record<string, Record<string, unknown>>> {
+  return api('/admin/sql-sources')
+}
+
+export function createSqlSource(body: Record<string, unknown>): Promise<unknown> {
+  return api('/admin/sql-sources', { method: 'POST', body: JSON.stringify(body) })
+}
+
+export function deleteSqlSource(name: string): Promise<unknown> {
+  return api(`/admin/sql-sources/${encodeURIComponent(name)}`, { method: 'DELETE' })
+}
+
+export type SqlDsn = { name: string; [key: string]: unknown }
+
+export function getSqlDsns(): Promise<SqlDsn[]> {
+  return api<SqlDsn[]>('/admin/sql-dsns')
+}
+
+export function createSqlDsn(body: Record<string, unknown>): Promise<unknown> {
+  return api('/admin/sql-dsns', { method: 'POST', body: JSON.stringify(body) })
+}
+
+export function deleteSqlDsn(name: string): Promise<unknown> {
+  return api(`/admin/sql-dsns/${encodeURIComponent(name)}`, { method: 'DELETE' })
+}
+
+export function getWebSources(): Promise<Record<string, Record<string, unknown>>> {
+  return api('/admin/web-sources')
+}
+
+export function createWebSource(body: Record<string, unknown>): Promise<unknown> {
+  return api('/admin/web-sources', { method: 'POST', body: JSON.stringify(body) })
+}
+
+export function deleteWebSource(name: string): Promise<unknown> {
+  return api(`/admin/web-sources/${encodeURIComponent(name)}`, { method: 'DELETE' })
+}
+
+export function setWebSourcePaused(name: string, paused: boolean): Promise<unknown> {
+  return api(`/admin/web-sources/${encodeURIComponent(name)}/pause`, {
+    method: 'POST',
+    body: JSON.stringify({ paused }),
+  })
+}
+
+/**
+ * Libellé et description d'une source. L'endpoint dépend du type, d'où
+ * ce paramètre plutôt qu'une route unique.
+ */
+export function setSourceField(
+  type: SourceType,
+  name: string,
+  field: 'label' | 'description',
+  value: string,
+): Promise<unknown> {
+  const base = { file: '/admin/file-sources', sql: '/admin/sql-sources', web: '/admin/web-sources' }[
+    type
+  ]
+  return api(`${base}/${encodeURIComponent(name)}/${field}`, {
+    method: 'POST',
+    body: JSON.stringify({ value }),
+  })
+}
+
+// ── Filtres de sous-dossiers ──────────────────────────────────
+export type PathFilters = { excluded: string[]; included: string[] }
+
+export function getPathFilters(source: string): Promise<PathFilters> {
+  return api(`/admin/path-filters?source=${encodeURIComponent(source)}`)
+}
+
+export function addPathFilter(
+  kind: 'include' | 'exclude',
+  source: string,
+  pattern: string,
+): Promise<unknown> {
+  return api(`/admin/path-filters/${kind}`, {
+    method: 'POST',
+    body: JSON.stringify({ source, pattern }),
+  })
+}
+
+export function removePathFilter(source: string, pattern: string): Promise<unknown> {
+  return api('/admin/path-filters/remove', {
+    method: 'POST',
+    body: JSON.stringify({ source, pattern }),
+  })
+}
+
+/**
+ * Purge de l'index selon un motif. `dryRun` compte sans supprimer —
+ * l'interface s'en sert pour montrer combien de documents seraient
+ * touchés AVANT de demander confirmation. Les fichiers sur le disque ne
+ * sont jamais touchés, seulement l'index.
+ */
+export function purgePath(
+  source: string,
+  pattern: string,
+  dryRun: boolean,
+): Promise<{ matched: number }> {
+  return api<{ matched: number }>('/admin/purge-path', {
+    method: 'POST',
+    body: JSON.stringify({ source, pattern, dry_run: dryRun }),
+  })
+}
+
+// ── Indexation ────────────────────────────────────────────────
+/**
+ * Publie les fichiers d'UNE source sur Kafka pour indexation. Ne bloque
+ * pas : la progression se suit dans « État des composants ».
+ */
+export function startScan(
+  source: string,
+  subfolder: string | null,
+): Promise<{ source: string; subfolder: string }> {
+  return api<{ source: string; subfolder: string }>('/admin/scan', {
+    method: 'POST',
+    body: JSON.stringify({ source, subfolder }),
+  })
+}
