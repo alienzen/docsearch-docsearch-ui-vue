@@ -501,6 +501,13 @@ body.ds-resizing {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Liseré de couleur d'une source personnalisée (`accent` dans
+   public/custom-sources.js). La règle n'a d'effet que si la variable est
+   posée sur la carte : aucune source personnalisée, aucun liseré. */
+.ds-result[style*='--ds-result-accent'] {
+  border-left: 4px solid var(--ds-result-accent);
+}
+
 /* Les boutons de copie ne se laissent pas comprimer : c'est le chemin,
    tronqué par l'ellipse ci-dessus, qui absorbe la contrainte. */
 .ds-copy {
@@ -939,10 +946,14 @@ body.ds-resizing {
 .ds-tree__entry:is(button) {
   cursor: pointer;
 }
-/* Un chemin exclu par les filtres ne sera jamais indexé : le barré le
-   dit sans dépendre de la seule couleur. */
+/* Un chemin exclu par les filtres ne sera jamais indexé. Le barré est
+   conservé en plus du rouge : l'information ne doit pas reposer sur la
+   seule couleur, que ne perçoit pas un daltonien — et c'est ici la même
+   opposition rouge/vert qu'avec `--included` juste dessous, le cas le
+   plus fréquent. Jeton DSFR plutôt qu'un rouge en dur, pour garder le
+   contraste en thème sombre. */
 .ds-tree__entry--excluded {
-  color: var(--text-mention-grey);
+  color: var(--text-default-error);
   text-decoration: line-through;
 }
 .ds-tree__entry--included {

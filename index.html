@@ -25,9 +25,18 @@
         document.documentElement.setAttribute('data-fr-theme', theme)
       } catch (e) {}
     </script>
+    <!-- Registre de personnalisation par source. Script classique et non
+         module : il doit être exécuté avant le premier rendu, alors qu'un
+         module est différé. Servi tel quel depuis public/, donc éditable
+         dans le conteneur sans reconstruire l'application. -->
+    <script src="/custom-sources.js"></script>
   </head>
   <body>
     <div id="app"></div>
     <script type="module" src="/src/pages/search/main.ts"></script>
+    <!-- Feuille de personnalisation, volontairement EN FIN DE CORPS :
+         Vite injecte la sienne dans <head> à la construction, et il faut
+         passer après elle pour l'emporter à spécificité égale. -->
+    <link rel="stylesheet" href="/custom-sources.css" />
   </body>
 </html>

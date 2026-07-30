@@ -24,14 +24,38 @@ export class ApiError extends Error {
  * header d'authentification X-User injecté par le SSO en amont suit
  * automatiquement.
  */
+/**
+ * Met le `detail` de l'API en phrase affichable.
+ *
+ * Nos routes renvoient une chaîne, mais une erreur de VALIDATION FastAPI
+ * (422) renvoie une LISTE d'objets `{loc, msg, type}`. Concaténée telle
+ * quelle dans un message, elle s'affichait « [object Object] » — une
+ * erreur illisible, donc un bug indiagnosticable depuis l'écran.
+ */
+function detailToMessage(detail: unknown, status: number): string {
+  if (typeof detail === 'string' && detail) return detail
+  if (Array.isArray(detail)) {
+    const parts = detail
+      .map((d) => {
+        if (typeof d === 'string') return d
+        const item = d as { loc?: unknown[]; msg?: string }
+        const where = Array.isArray(item.loc) ? item.loc.filter((p) => p !== 'body').join('.') : ''
+        return where ? `${where} : ${item.msg}` : item.msg
+      })
+      .filter(Boolean)
+    if (parts.length) return parts.join(' ; ')
+  }
+  return `Erreur ${status}`
+}
+
 export async function api<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(path, {
     headers: { 'Content-Type': 'application/json' },
     ...options,
   })
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}) as { detail?: string })
-    throw new ApiError(body.detail || `Erreur ${res.status}`, res.status)
+    const body = await res.json().catch(() => ({}) as { detail?: unknown })
+    throw new ApiError(detailToMessage(body.detail, res.status), res.status)
   }
   return res.json() as Promise<T>
 }

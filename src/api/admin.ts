@@ -58,8 +58,18 @@ export function getConfig(): Promise<Record<string, number | string>> {
   return api('/admin/config')
 }
 
-export function saveConfigKey(key: string, value: string): Promise<unknown> {
-  return api(`/admin/config/${key}`, { method: 'POST', body: JSON.stringify({ value }) })
+/**
+ * `String(value)` n'est pas décoratif : le modèle ConfigUpdate de l'API
+ * déclare `value: str`, et Vue convertit tout seul la valeur d'un
+ * `<input type="number">` lié par `v-model` — sans qu'on ait demandé le
+ * modificateur `.number`. Envoyer le nombre brut vaut donc 422, avec un
+ * `detail` en liste que l'écran affichait « [object Object] ».
+ */
+export function saveConfigKey(key: string, value: string | number): Promise<unknown> {
+  return api(`/admin/config/${key}`, {
+    method: 'POST',
+    body: JSON.stringify({ value: String(value) }),
+  })
 }
 
 export function resetConfig(): Promise<unknown> {

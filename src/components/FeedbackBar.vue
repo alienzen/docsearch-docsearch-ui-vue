@@ -51,8 +51,34 @@ async function send(rating: 'up' | 'down') {
     </template>
     <template v-else>
       <p class="fr-mb-0">Cette recherche vous a-t-elle été utile&nbsp;?</p>
-      <DsfrButton size="sm" secondary label="👍" title="Oui" :disabled="busy" @click="send('up')" />
-      <DsfrButton size="sm" secondary label="👎" title="Non" :disabled="busy" @click="send('down')" />
+      <!-- Icônes DSFR plutôt que les émojis 👍/👎 d'origine : ceux-ci
+           changent de dessin selon le système, ignorent les jetons de
+           couleur — donc le thème sombre et l'état désactivé — et
+           servaient de NOM ACCESSIBLE au bouton, qu'un lecteur d'écran
+           annonçait « pouce vers le haut » plutôt que l'action.
+           thumb-up-line et thumb-down-line appartiennent à icons-system,
+           déjà importée : aucun poids supplémentaire.
+           Le libellé visible dit l'intention sans survol ; le nom
+           accessible est une phrase entière, « Oui » ne voulant rien dire
+           hors du contexte de la question. -->
+      <button
+        class="fr-btn fr-btn--sm fr-btn--secondary fr-btn--icon-left fr-icon-thumb-up-line"
+        type="button"
+        :disabled="busy"
+        @click="send('up')"
+      >
+        Utile
+        <span class="fr-sr-only">— cette recherche m'a été utile</span>
+      </button>
+      <button
+        class="fr-btn fr-btn--sm fr-btn--secondary fr-btn--icon-left fr-icon-thumb-down-line"
+        type="button"
+        :disabled="busy"
+        @click="send('down')"
+      >
+        Peu utile
+        <span class="fr-sr-only">— cette recherche ne m'a pas été utile</span>
+      </button>
     </template>
     <DsfrAlert v-if="error" type="error" small :description="`Impossible d'enregistrer votre avis : ${error}`" />
   </div>

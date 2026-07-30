@@ -1,0 +1,35 @@
+/* Personnalisation visuelle des cartes de résultat, source par source.
+ *
+ * Ce fichier est servi TEL QUEL (il n'entre pas dans le bundle) : il peut
+ * être édité directement dans le conteneur, à
+ * /usr/share/nginx/html/custom-sources.css, sans reconstruire
+ * l'application. Un simple rechargement de page suffit — vider le cache
+ * du navigateur si le changement ne se voit pas.
+ *
+ * Il est chargé APRÈS la feuille de styles de l'application : à
+ * spécificité égale, ce qui est écrit ici l'emporte.
+ *
+ * La clé technique de la source se lit dans l'attribut `data-source` de
+ * la carte (inspecteur du navigateur), ou dans la colonne « nom » du
+ * panneau d'administration « Toutes les sources ».
+ *
+ * ── Correspondance avec l'interface historique (docsearch-ui) ─────────
+ * Les sélecteurs ont changé avec le passage au Système de Design de
+ * l'État. Pour transposer une personnalisation existante :
+ *
+ *   .result-card       →  .ds-result
+ *   .result-title      →  .ds-result__title
+ *   .result-meta       →  .ds-result__meta
+ *   .snippet           →  .ds-result__snippet
+ *   .ext-icon          →  .ds-result .fr-badge
+ *
+ * ── Exemple ──────────────────────────────────────────────────────────
+ *
+ * .ds-result[data-source='sharepoint_rh'] .ds-result__title {
+ *   color: #0c447c;
+ * }
+ *
+ * Préférer les jetons de couleur DSFR (var(--text-title-blue-france),
+ * var(--background-alt-grey)…) aux couleurs en dur : eux seuls tiennent
+ * le contraste en thème clair COMME en thème sombre.
+ */

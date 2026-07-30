@@ -15,6 +15,7 @@ import { computed, ref } from 'vue'
 import type { SearchResult } from '@/api/types'
 import { extLabel, fmtSize } from '@/utils/format'
 import { parseHighlights } from '@/utils/highlight'
+import { sourceCardCustom } from '@/utils/sourceCards'
 import { usePreferencesStore } from '@/stores/preferences'
 import { useUiConfigStore } from '@/stores/uiConfig'
 
@@ -31,7 +32,14 @@ const uiConfig = useUiConfigStore()
  */
 const expanded = ref(!preferences.resultsCompact)
 
-const title = computed(() => props.result.title || props.result.filename || '(sans nom)')
+/** Réglages propres à la source, s'il en existe (public/custom-sources.js). */
+const custom = computed(() => sourceCardCustom(props.result.source))
+
+const title = computed(
+  () =>
+    (custom.value?.titlePrefix || '') +
+    (props.result.title || props.result.filename || '(sans nom)'),
+)
 const snippets = computed(() => parseHighlights(props.result.highlight || []))
 /** Score ES ramené en pourcentage, comme en vanilla. */
 const scorePct = computed(() => Math.min(100, Math.round((props.result.score || 0) * 20)))
@@ -46,7 +54,14 @@ const selectable = computed(
 </script>
 
 <template>
-  <div class="fr-card fr-card--no-arrow ds-result">
+  <!-- `data-source` est le point d'accroche des personnalisations par
+       source (public/custom-sources.css) — l'équivalent de l'attribut de
+       même nom sur `.result-card` dans docsearch-ui. -->
+  <div
+    class="fr-card fr-card--no-arrow ds-result"
+    :data-source="result.source || undefined"
+    :style="custom?.accent ? { '--ds-result-accent': custom.accent } : undefined"
+  >
     <div class="ds-result__header">
       <div v-if="selectable" class="fr-checkbox-group fr-checkbox-group--sm ds-result__select">
         <input
@@ -67,6 +82,9 @@ const selectable = computed(
         @click="expanded = !expanded"
       >
         <span class="fr-badge fr-badge--sm">{{ extLabel(result.extension) }}</span>
+        <span v-if="custom?.badge" class="fr-badge fr-badge--sm ds-result__custom-badge">
+          {{ custom.badge }}
+        </span>
         <span class="ds-result__title">{{ title }}</span>
         <span class="fr-badge fr-badge--sm fr-badge--info">{{ scorePct }} %</span>
       </button>

@@ -65,10 +65,19 @@ const { confirm } = useDialogs()</script>
           <tr v-for="(_, key) in data || {}" :key="key">
             <td><code>{{ key }}</code></td>
             <td>
+              <!-- Le type du champ suit celui de la valeur : tous les
+                   paramètres n'étaient pas numériques (ocr_languages vaut
+                   « fra », ocr_strategy « auto »), et un champ `number`
+                   les rendait impossibles à saisir.
+                   `step="any"` : sans lui, le pas par défaut vaut 1 et le
+                   navigateur invalide toute décimale — or les poids de
+                   pertinence (search_boost_*) se règlent finement, un 2.5
+                   doit passer. -->
               <input
                 v-model="values[key]"
                 class="fr-input fr-input--sm"
-                type="number"
+                :type="typeof (data || {})[key] === 'number' ? 'number' : 'text'"
+                step="any"
                 :aria-label="`Valeur de ${key}`"
               />
             </td>
