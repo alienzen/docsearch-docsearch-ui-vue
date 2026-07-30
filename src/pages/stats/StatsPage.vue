@@ -12,9 +12,29 @@ import { computed, onMounted, provide, ref } from 'vue'
 import { useUiConfigStore } from '@/stores/uiConfig'
 import { useStatsPanelsStore } from '@/stores/statsPanels'
 import { ApiError } from '@/api/client'
+import { useAdminShortcuts } from '@/composables/useAdminShortcuts'
+import { STATS_SHORTCUTS } from '@/constants'
 
 const uiConfig = useUiConfigStore()
 const panels = useStatsPanelsStore()
+
+/**
+ * Mêmes raccourcis que l'administration, dont cette page partage la
+ * structure en panneaux repliables. `reload` n'est pas fourni : ici
+ * chaque panneau se recharge seul, il n'y a pas d'action globale à
+ * offrir — le composable ignore alors la touche « r » plutôt que de
+ * l'intercepter pour rien.
+ */
+const shortcutsOpen = ref(false)
+
+useAdminShortcuts({
+  toggleAll: () => panels.toggleAll(),
+  toggleShortcuts: () => (shortcutsOpen.value = !shortcutsOpen.value),
+  toggleAt: (i) => {
+    const id = PANEL_IDS[i]
+    if (id) panels.toggle(id)
+  },
+})
 
 const accessDenied = ref<string | null>(null)
 
@@ -55,6 +75,14 @@ onMounted(() => {
     home-to="/"
     :quick-links="[
       {
+        label: 'Raccourcis',
+        button: true,
+        class: 'fr-link--icon-left fr-icon-keyboard-line',
+        title: 'Raccourcis clavier (?)',
+        'aria-keyshortcuts': '?',
+        onClick: () => (shortcutsOpen = !shortcutsOpen),
+      },
+      {
         label: 'Administration',
         to: '/admin.html',
         class: 'fr-link--icon-left fr-icon-settings-5-line',
@@ -80,7 +108,15 @@ onMounted(() => {
 
     <template v-else>
       <div class="ds-stats__toolbar">
-        <DsfrButton size="sm" tertiary no-outline :label="toggleAllLabel" @click="panels.toggleAll()" />
+        <DsfrButton
+          size="sm"
+          tertiary
+          no-outline
+          :label="toggleAllLabel"
+          :title="`${toggleAllLabel} (t)`"
+          aria-keyshortcuts="t"
+          @click="panels.toggleAll()"
+        />
       </div>
 
       <StatsSummaryPanel />
@@ -91,6 +127,13 @@ onMounted(() => {
       <StatsAuditLogPanel />
     </template>
   </main>
+
+  <ShortcutsModal
+    :opened="shortcutsOpen"
+    :shortcuts="STATS_SHORTCUTS"
+    :help-href="null"
+    @close="shortcutsOpen = false"
+  />
 
   <BackToTop />
 

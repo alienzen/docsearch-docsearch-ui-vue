@@ -25,6 +25,12 @@ const preferences = usePreferencesStore()
 
 const open = computed(() => !preferences.isFacetCollapsed(props.id))
 
+/** Chiffre du raccourci qui replie cette facette — voir CollapsiblePanel. */
+const shortcutDigit = computed(() => {
+  const i = preferences.presentFacets.indexOf(props.id)
+  return i >= 0 && i < 9 ? String(i + 1) : null
+})
+
 /**
  * `toggle` est émis APRÈS que le navigateur a changé l'état du
  * <details>. Il faut donc recopier l'état réel de l'élément, et non
@@ -47,7 +53,13 @@ onBeforeUnmount(() => preferences.unregisterFacet(props.id))
 
 <template>
   <details class="fr-accordion ds-facet" :open="open" @toggle="onToggle">
-    <summary class="fr-accordion__btn">{{ title }}</summary>
+    <summary
+      class="fr-accordion__btn"
+      :title="shortcutDigit ? `${title} — replier ou déplier (${shortcutDigit})` : title"
+      :aria-keyshortcuts="shortcutDigit || undefined"
+    >
+      {{ title }}
+    </summary>
     <div class="fr-accordion__inner">
       <slot />
     </div>

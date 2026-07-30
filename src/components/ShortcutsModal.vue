@@ -8,9 +8,18 @@
  * syntaxe avancée, qui se lit et ne se mémorise pas). Les deux affichages
  * partagent SHORTCUTS, donc ne peuvent pas diverger.
  */
-import { SHORTCUTS } from '@/constants'
+import { SHORTCUTS, type Shortcut } from '@/constants'
 
-defineProps<{ opened: boolean }>()
+const props = withDefaults(
+  defineProps<{
+    opened: boolean
+    /** Liste à publier. Par défaut celle de la recherche. */
+    shortcuts?: Shortcut[]
+    /** Lien vers l'aide, masqué là où elle n'existe pas. */
+    helpHref?: string | null
+  }>(),
+  { shortcuts: () => SHORTCUTS, helpHref: '/help' },
+)
 defineEmits<{ close: [] }>()
 </script>
 
@@ -31,7 +40,7 @@ defineEmits<{ close: [] }>()
           </tr>
         </thead>
         <tbody>
-          <tr v-for="shortcut in SHORTCUTS" :key="shortcut.keys">
+          <tr v-for="shortcut in props.shortcuts" :key="shortcut.keys">
             <td><kbd>{{ shortcut.keys }}</kbd></td>
             <td>{{ shortcut.label }}</td>
           </tr>
@@ -46,8 +55,9 @@ defineEmits<{ close: [] }>()
     <!-- Nouvel onglet, comme le lien « Aide » de l'en-tête : on consulte
          la syntaxe sans perdre la recherche en cours. -->
     <a
+      v-if="props.helpHref"
       class="fr-link fr-link--icon-left fr-icon-question-line"
-      href="/help"
+      :href="props.helpHref"
       target="_blank"
       rel="noopener"
       title="Aide complète — nouvelle fenêtre"

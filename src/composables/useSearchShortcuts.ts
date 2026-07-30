@@ -71,6 +71,27 @@ export function useSearchShortcuts(actions: Actions = {}) {
         // l'écran.
         if (resultsVisible) preferences.facetsHidden = !preferences.facetsHidden
         break
+      // Chiffres : la Nième section de facettes, dans l'ordre où elle
+      // est affichée. `presentFacets` est alimenté au montage de chaque
+      // section, donc dans cet ordre exactement.
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '8':
+      case '9': {
+        if (!resultsVisible) break
+        const id = preferences.presentFacets[Number(e.key) - 1]
+        // Silencieux au-delà du nombre de sections : mieux vaut ne rien
+        // faire qu'agir sur une autre que celle visée.
+        if (!id) break
+        e.preventDefault()
+        preferences.toggleFacetSection(id)
+        break
+      }
       case 't':
       case 'T':
         // Même raison, et sans effet aussi quand la colonne est repliée :

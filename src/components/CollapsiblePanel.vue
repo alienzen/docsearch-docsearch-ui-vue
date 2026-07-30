@@ -18,6 +18,8 @@ import { computed } from 'vue'
 type CollapseStore = {
   isCollapsed: (id: string) => boolean
   toggle: (id: string) => void
+  /** Identifiants affichés, dans l'ordre — voir shortcutDigit. */
+  known: string[]
 }
 
 const props = defineProps<{
@@ -32,6 +34,20 @@ const props = defineProps<{
 }>()
 
 const open = computed(() => !props.store.isCollapsed(props.id))
+
+/**
+ * Chiffre du raccourci qui replie cette section, ou null au-delà de la
+ * neuvième. Sans cet indice, les touches 1 à 9 ne se découvriraient que
+ * dans la palette — la même raison qui a fait poser des infobulles sur
+ * les autres commandes.
+ *
+ * `known` est renseigné par la page dans l'ordre d'affichage : c'est le
+ * même ordre que celui parcouru par le raccourci.
+ */
+const shortcutDigit = computed(() => {
+  const i = props.store.known.indexOf(props.id)
+  return i >= 0 && i < 9 ? String(i + 1) : null
+})
 
 /**
  * `toggle` est émis APRÈS que le navigateur a changé l'état : il faut
@@ -54,7 +70,11 @@ function onToggle(event: Event) {
     <!-- `fr-ml-1w` et non une espace littérale : Vue supprime les nœuds
          de texte purement blancs entre une interpolation et un élément,
          et le titre se retrouvait collé à son sous-titre. -->
-    <summary class="fr-accordion__btn">
+    <summary
+      class="fr-accordion__btn"
+      :title="shortcutDigit ? `${title} — replier ou déplier (${shortcutDigit})` : title"
+      :aria-keyshortcuts="shortcutDigit || undefined"
+    >
       {{ title }}
       <small v-if="subtitle" class="fr-hint-text fr-ml-1w">{{ subtitle }}</small>
     </summary>

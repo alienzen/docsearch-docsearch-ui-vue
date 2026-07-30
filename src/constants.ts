@@ -50,12 +50,44 @@ export const SHORTCUTS: Shortcut[] = [
   { keys: 'c', label: 'Basculer la vue compacte des résultats', aria: 'c' },
   { keys: 'f', label: 'Afficher ou masquer la colonne de filtres', aria: 'f' },
   { keys: 't', label: 'Replier ou déplier toutes les facettes', aria: 't' },
+  { keys: '1 … 9', label: 'Replier ou déplier la facette correspondante' },
   { keys: 's', label: 'Enregistrer la recherche en cours', aria: 's' },
   { keys: 'r', label: 'Effacer tous les filtres', aria: 'r' },
   { keys: 'n', label: 'Réinitialiser la recherche (requête, filtres et tri)', aria: 'n' },
   { keys: 'h', label: 'Retourner en haut de la page', aria: 'h' },
   { keys: '?', label: 'Afficher les raccourcis clavier', aria: '?' },
 ]
+
+/**
+ * Raccourcis des pages d'administration et de statistiques, sur le même
+ * modèle que SHORTCUTS — source unique de la palette, de l'aide
+ * administrateur et des infobulles.
+ *
+ * Les touches communes gardent le SENS qu'elles ont sur la recherche :
+ * « t » replie/déplie tout, « h » remonte, « ? » ouvre la palette. Seule
+ * « r » diffère — « effacer les filtres » côté recherche, « recharger »
+ * ici — parce qu'il n'y a pas de filtre à effacer sur ces pages et que
+ * « r » y était déjà publié comme rechargement.
+ *
+ * « a », que l'administration utilisait pour le repli global, est
+ * abandonnée : deux touches pour le même geste selon la page était
+ * précisément l'incohérence à corriger.
+ */
+export const ADMIN_SHORTCUTS: Shortcut[] = [
+  { keys: 'r', label: 'Recharger tous les panneaux', aria: 'r' },
+  { keys: 't', label: 'Replier ou déplier tous les panneaux', aria: 't' },
+  { keys: '1 … 9', label: 'Replier ou déplier le panneau correspondant' },
+  { keys: 'h', label: 'Retourner en haut de la page', aria: 'h' },
+  { keys: '?', label: 'Afficher les raccourcis clavier', aria: '?' },
+  { keys: 'Échap', label: 'Fermer le menu ou la fenêtre ouverte' },
+]
+
+/**
+ * Liste publiée par la page de statistiques : la même, moins « r ». Cette
+ * page n'a pas de rechargement global — chaque panneau se recharge seul —
+ * et publier une touche inopérante est pire que ne rien publier.
+ */
+export const STATS_SHORTCUTS: Shortcut[] = ADMIN_SHORTCUTS.filter((s) => s.keys !== 'r')
 
 export const SEARCH_IN_LABELS: Record<string, string> = {
   title: 'Titre',

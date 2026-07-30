@@ -10,13 +10,9 @@
  */
 import { onMounted } from 'vue'
 import { useUiConfigStore } from '@/stores/uiConfig'
+import { ADMIN_SHORTCUTS } from '@/constants'
 
 const uiConfig = useUiConfigStore()
-
-const shortcuts: [string, string][] = [
-  ['r', 'Recharger tous les panneaux'],
-  ['a', 'Tout déplier / tout replier'],
-]
 
 onMounted(async () => {
   await uiConfig.loadUiConfig()
@@ -53,9 +49,9 @@ onMounted(async () => {
           <tr><th scope="col">Raccourci</th><th scope="col">Action</th></tr>
         </thead>
         <tbody>
-          <tr v-for="[key, action] in shortcuts" :key="key">
-            <td><kbd>{{ key }}</kbd></td>
-            <td>{{ action }}</td>
+          <tr v-for="shortcut in ADMIN_SHORTCUTS" :key="shortcut.keys">
+            <td><kbd>{{ shortcut.keys }}</kbd></td>
+            <td>{{ shortcut.label }}</td>
           </tr>
         </tbody>
       </table>

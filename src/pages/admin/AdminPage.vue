@@ -18,6 +18,7 @@ import { ApiError } from '@/api/client'
 import { useUiConfigStore } from '@/stores/uiConfig'
 import { useAdminGroupsStore, useAdminPanelsStore } from '@/stores/adminPanels'
 import { useAdminShortcuts } from '@/composables/useAdminShortcuts'
+import { ADMIN_SHORTCUTS } from '@/constants'
 
 const uiConfig = useUiConfigStore()
 const panels = useAdminPanelsStore()
@@ -89,7 +90,20 @@ function reloadAll() {
   loadFileSources()
 }
 
-useAdminShortcuts({ reload: reloadAll, toggleAll })
+/** Palette des raccourcis, ouverte par « ? » ou par le lien d'en-tête. */
+const shortcutsOpen = ref(false)
+
+useAdminShortcuts({
+  reload: reloadAll,
+  toggleAll,
+  toggleShortcuts: () => (shortcutsOpen.value = !shortcutsOpen.value),
+  // Les chiffres visent les GROUPES, accordéons de premier niveau : ce
+  // sont eux qu'on plie pour naviguer, les panneaux étant à l'intérieur.
+  toggleAt: (i) => {
+    const id = GROUP_IDS[i]
+    if (id) groups.toggle(id)
+  },
+})
 
 onMounted(() => {
   panels.known = PANEL_IDS
@@ -108,6 +122,14 @@ onMounted(() => {
     home-to="/"
     :quick-links="[
       { label: 'Statistiques', to: '/stats.html', class: 'fr-link--icon-left fr-icon-bar-chart-line' },
+      {
+        label: 'Raccourcis',
+        button: true,
+        class: 'fr-link--icon-left fr-icon-keyboard-line',
+        title: 'Raccourcis clavier (?)',
+        'aria-keyshortcuts': '?',
+        onClick: () => (shortcutsOpen = !shortcutsOpen),
+      },
       { label: 'Aide', to: '/admin-help', class: 'fr-link--icon-left fr-icon-question-line' },
       {
         label: 'Retour à la recherche',
@@ -125,8 +147,24 @@ onMounted(() => {
 
     <template v-else>
       <div class="ds-stats__toolbar">
-        <DsfrButton size="sm" tertiary no-outline label="Recharger" @click="reloadAll" />
-        <DsfrButton size="sm" tertiary no-outline :label="toggleAllLabel" @click="toggleAll" />
+        <DsfrButton
+          size="sm"
+          tertiary
+          no-outline
+          label="Recharger"
+          title="Recharger tous les panneaux (r)"
+          aria-keyshortcuts="r"
+          @click="reloadAll"
+        />
+        <DsfrButton
+          size="sm"
+          tertiary
+          no-outline
+          :label="toggleAllLabel"
+          :title="`${toggleAllLabel} (t)`"
+          aria-keyshortcuts="t"
+          @click="toggleAll"
+        />
       </div>
 
       <div :key="reloadKey">
@@ -178,5 +216,11 @@ onMounted(() => {
     :ecosystem-links="[]"
   />
 
+  <ShortcutsModal
+    :opened="shortcutsOpen"
+    :shortcuts="ADMIN_SHORTCUTS"
+    :help-href="'/admin-help'"
+    @close="shortcutsOpen = false"
+  />
   <AppDialogs />
 </template>
