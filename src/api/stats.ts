@@ -5,6 +5,9 @@ import { api } from './client'
 // à un utilisateur non habilité — c'est ce que la page transforme en
 // bandeau « Accès refusé ».
 
+/** Un décompte par groupe, partagé par plusieurs panneaux. */
+export type CountByGroup = { group: string; count: number }
+
 /**
  * Avis d'un groupe. `group` vaut `__sans_groupe__` pour les recherches
  * antérieures à la capture des groupes, ou les utilisateurs sans
@@ -25,6 +28,12 @@ export type SearchLogsSummary = {
   feedback_up: number
   feedback_down: number
   by_group: FeedbackByGroup[]
+  /**
+   * Volume de recherches par groupe. Distinct de `by_group`, qui ne
+   * retient que les groupes ayant donné un avis : un groupe qui cherche
+   * sans jamais se prononcer a sa place ici.
+   */
+  searches_by_group: CountByGroup[]
 }
 
 export type NpsByGroup = {
@@ -45,9 +54,6 @@ export type NpsSummary = {
   promoters: number
   by_group: NpsByGroup[]
 }
-
-/** Un décompte par groupe, partagé par plusieurs panneaux. */
-export type CountByGroup = { group: string; count: number }
 
 /** Libellé du lot sans groupe — voir FeedbackByGroup. */
 export const SANS_GROUPE = '__sans_groupe__'

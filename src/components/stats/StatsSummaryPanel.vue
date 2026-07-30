@@ -80,6 +80,18 @@ const maxCount = computed(() => Math.max(1, ...(data.value?.by_day || []).map((b
       <p v-else class="fr-hint-text">Aucune recherche enregistrée pour l'instant.</p>
     </div>
 
+    <StatsGroupCounts
+      v-if="data"
+      :rows="data.searches_by_group"
+      title="Recherches par groupe"
+      count-label="Recherches"
+    >
+      <template #note>
+        « Non renseigné » regroupe les recherches antérieures à la capture des
+        groupes.
+      </template>
+    </StatsGroupCounts>
+
     <template v-if="avisParGroupe.length">
       <h3 class="fr-h6 fr-mt-3w">Avis par groupe</h3>
       <div class="fr-table fr-table--bordered ds-stats__table">
