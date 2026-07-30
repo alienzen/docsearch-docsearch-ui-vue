@@ -1,9 +1,15 @@
 <script setup lang="ts">
 /** Score NPS et répartition promoteurs / passifs / détracteurs. */
-import { getNpsSummary } from '@/api/stats'
+import { computed } from 'vue'
+import { getNpsSummary, groupLabel } from '@/api/stats'
 import { useStatsPanel } from '@/composables/useStatsPanel'
 
 const { data, error } = useStatsPanel(getNpsSummary)
+
+/** Les groupes les plus représentatifs d'abord. */
+const parGroupe = computed(() =>
+  [...(data.value?.by_group || [])].sort((a, b) => b.responses - a.responses),
+)
 </script>
 
 <template>
@@ -32,5 +38,44 @@ const { data, error } = useStatsPanel(getNpsSummary)
         <p class="ds-stats__value">{{ data.detractors }}</p>
       </div>
     </div>
+
+    <template v-if="parGroupe.length">
+      <h3 class="fr-h6 fr-mt-3w">Score par groupe</h3>
+      <div class="fr-table fr-table--bordered ds-stats__table">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Groupe</th>
+              <th scope="col">Réponses</th>
+              <th scope="col">Score</th>
+              <th scope="col">Promoteurs</th>
+              <th scope="col">Passifs</th>
+              <th scope="col">Détracteurs</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="g in parGroupe" :key="g.group">
+              <td>{{ groupLabel(g.group) }}</td>
+              <td>{{ g.responses }}</td>
+              <td>{{ g.nps_score ?? '—' }}</td>
+              <td>{{ g.promoters }}</td>
+              <td>{{ g.passives }}</td>
+              <td>{{ g.detractors }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="fr-hint-text fr-mt-1w">
+        Un utilisateur appartenant à plusieurs groupes compte dans chacun : la
+        somme des lignes dépasse donc le total. « Non renseigné » regroupe les
+        enregistrements antérieurs à la capture des groupes et les utilisateurs
+        sans appartenance.
+      </p>
+      <p class="fr-hint-text">
+        Aucun effectif minimum n'est appliqué : dans un groupe très restreint,
+        ces chiffres peuvent désigner une personne.
+      </p>
+    </template>
   </StatsPanel>
 </template>

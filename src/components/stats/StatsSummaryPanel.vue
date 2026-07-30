@@ -1,10 +1,24 @@
 <script setup lang="ts">
 /** Vue d'ensemble : compteurs et recherches par jour. */
 import { computed } from 'vue'
-import { getSummary } from '@/api/stats'
+import { getSummary, groupLabel } from '@/api/stats'
 import { useStatsPanel } from '@/composables/useStatsPanel'
 
 const { data, error } = useStatsPanel(getSummary)
+
+/**
+ * Groupes ayant émis au moins un avis, les plus actifs d'abord. Le
+ * pourcentage est recalculé par groupe : il ne se déduit pas du taux
+ * global, les volumes différant d'un groupe à l'autre.
+ */
+const avisParGroupe = computed(() =>
+  [...(data.value?.by_group || [])]
+    .map((g) => {
+      const total = g.feedback_up + g.feedback_down
+      return { ...g, total, pct: total ? Math.round((g.feedback_up / total) * 100) : null }
+    })
+    .sort((a, b) => b.total - a.total),
+)
 
 const feedbackTotal = computed(() =>
   data.value ? data.value.feedback_up + data.value.feedback_down : 0,
@@ -65,5 +79,48 @@ const maxCount = computed(() => Math.max(1, ...(data.value?.by_day || []).map((b
       </template>
       <p v-else class="fr-hint-text">Aucune recherche enregistrée pour l'instant.</p>
     </div>
+
+    <template v-if="avisParGroupe.length">
+      <h3 class="fr-h6 fr-mt-3w">Avis par groupe</h3>
+      <div class="fr-table fr-table--bordered ds-stats__table">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Groupe</th>
+              <th scope="col">Avis</th>
+              <th scope="col">Positifs</th>
+              <th scope="col">Négatifs</th>
+              <th scope="col">Part positive</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="g in avisParGroupe" :key="g.group">
+              <td>{{ groupLabel(g.group) }}</td>
+              <td>{{ g.total }}</td>
+              <td>
+                <span class="fr-icon-thumb-up-line fr-icon--sm" aria-hidden="true" />
+                {{ g.feedback_up }}
+              </td>
+              <td>
+                <span class="fr-icon-thumb-down-line fr-icon--sm" aria-hidden="true" />
+                {{ g.feedback_down }}
+              </td>
+              <td>{{ g.pct !== null ? `${g.pct} %` : '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="fr-hint-text fr-mt-1w">
+        Un utilisateur appartenant à plusieurs groupes compte dans chacun : la
+        somme des lignes dépasse donc le total. « Non renseigné » regroupe les
+        enregistrements antérieurs à la capture des groupes et les utilisateurs
+        sans appartenance.
+      </p>
+      <p class="fr-hint-text">
+        Aucun effectif minimum n'est appliqué : dans un groupe très restreint,
+        ces chiffres peuvent désigner une personne.
+      </p>
+    </template>
   </StatsPanel>
 </template>

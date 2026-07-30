@@ -5,6 +5,18 @@ import { api } from './client'
 // à un utilisateur non habilité — c'est ce que la page transforme en
 // bandeau « Accès refusé ».
 
+/**
+ * Avis d'un groupe. `group` vaut `__sans_groupe__` pour les recherches
+ * antérieures à la capture des groupes, ou les utilisateurs sans
+ * appartenance — un lot explicite plutôt qu'un silence.
+ */
+export type FeedbackByGroup = {
+  group: string
+  searches: number
+  feedback_up: number
+  feedback_down: number
+}
+
 export type SearchLogsSummary = {
   total_searches: number
   unique_users: number
@@ -12,6 +24,17 @@ export type SearchLogsSummary = {
   by_day: { date: string; count: number }[]
   feedback_up: number
   feedback_down: number
+  by_group: FeedbackByGroup[]
+}
+
+export type NpsByGroup = {
+  group: string
+  responses: number
+  detractors: number
+  passives: number
+  promoters: number
+  /** Recalculé sur le périmètre du groupe, jamais déduit du score global. */
+  nps_score: number | null
 }
 
 export type NpsSummary = {
@@ -20,6 +43,14 @@ export type NpsSummary = {
   detractors: number
   passives: number
   promoters: number
+  by_group: NpsByGroup[]
+}
+
+/** Libellé du lot sans groupe — voir FeedbackByGroup. */
+export const SANS_GROUPE = '__sans_groupe__'
+
+export function groupLabel(group: string): string {
+  return group === SANS_GROUPE ? 'Non renseigné' : group
 }
 
 export type Suggestion = {
