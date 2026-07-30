@@ -46,6 +46,9 @@ export type NpsSummary = {
   by_group: NpsByGroup[]
 }
 
+/** Un décompte par groupe, partagé par plusieurs panneaux. */
+export type CountByGroup = { group: string; count: number }
+
 /** Libellé du lot sans groupe — voir FeedbackByGroup. */
 export const SANS_GROUPE = '__sans_groupe__'
 
@@ -110,8 +113,15 @@ export function getNpsSummary(): Promise<NpsSummary> {
   return api<NpsSummary>('/admin/nps-summary')
 }
 
-export function getSuggestions(size: number, from: number): Promise<Paginated<Suggestion>> {
-  return api<Paginated<Suggestion>>(`/admin/suggestions?size=${size}&from=${from}`)
+/**
+ * `by_group` porte sur TOUT l'index, pas sur la page demandée : le
+ * décompte ne doit pas changer en tournant les pages.
+ */
+export function getSuggestions(
+  size: number,
+  from: number,
+): Promise<Paginated<Suggestion> & { by_group: CountByGroup[] }> {
+  return api(`/admin/suggestions?size=${size}&from=${from}`)
 }
 
 export function setSuggestionStatus(id: string, status: string): Promise<unknown> {
@@ -124,6 +134,7 @@ export function setSuggestionStatus(id: string, status: string): Promise<unknown
 export function getZeroResults(): Promise<{
   total_zero_result_searches: number
   results: ZeroResultQuery[]
+  by_group: CountByGroup[]
 }> {
   return api('/admin/search-logs/zero-results')
 }

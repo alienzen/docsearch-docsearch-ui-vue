@@ -65,6 +65,7 @@ declare module 'vue' {
     ShortcutsModal: typeof import('./components/ShortcutsModal.vue')['default']
     SourcesSelect: typeof import('./components/SourcesSelect.vue')['default']
     StatsAuditLogPanel: typeof import('./components/stats/StatsAuditLogPanel.vue')['default']
+    StatsGroupCounts: typeof import('./components/stats/StatsGroupCounts.vue')['default']
     StatsNpsPanel: typeof import('./components/stats/StatsNpsPanel.vue')['default']
     StatsPager: typeof import('./components/stats/StatsPager.vue')['default']
     StatsPanel: typeof import('./components/stats/StatsPanel.vue')['default']

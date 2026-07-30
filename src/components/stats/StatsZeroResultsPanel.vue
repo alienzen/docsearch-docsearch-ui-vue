@@ -42,5 +42,17 @@ const { data, error } = useStatsPanel(getZeroResults)
         </tbody>
       </table>
     </div>
+
+    <StatsGroupCounts
+      v-if="data"
+      :rows="data.by_group"
+      title="Recherches sans résultat par groupe"
+      count-label="Recherches"
+    >
+      <template #note>
+        « Non renseigné » regroupe les recherches antérieures à la capture des
+        groupes.
+      </template>
+    </StatsGroupCounts>
   </StatsPanel>
 </template>

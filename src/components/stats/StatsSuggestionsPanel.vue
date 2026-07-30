@@ -88,5 +88,19 @@ async function updateStatus(suggestion: Suggestion, status: string) {
       :total="data?.total || 0"
       @update:from="from = $event"
     />
+
+    <StatsGroupCounts
+      v-if="data"
+      :rows="data.by_group"
+      title="Suggestions par groupe"
+      count-label="Suggestions"
+    >
+      <template #note>
+        « Non renseigné » réunit les suggestions déposées ANONYMEMENT — dont
+        c'est le principe même — et celles antérieures à la capture des
+        groupes ; les deux ne peuvent pas être distinguées sans percer
+        l'anonymat.
+      </template>
+    </StatsGroupCounts>
   </StatsPanel>
 </template>
