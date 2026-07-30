@@ -16,6 +16,7 @@ import type { SearchResult } from '@/api/types'
 import { extLabel, fmtSize } from '@/utils/format'
 import { parseHighlights } from '@/utils/highlight'
 import { sourceCardCustom } from '@/utils/sourceCards'
+import { extraFields } from '@/utils/extraFields'
 import { usePreferencesStore } from '@/stores/preferences'
 import { useUiConfigStore } from '@/stores/uiConfig'
 
@@ -32,6 +33,15 @@ const uiConfig = useUiConfigStore()
  */
 const expanded = ref(!preferences.resultsCompact)
 
+/**
+ * Champs apportés par la source, au-delà du schéma commun. Les libellés
+ * viennent de `card_fields` de la source (mapping SQL) ; à défaut ils
+ * sont dérivés du nom de champ, et un libellé vide masque le champ.
+ */
+const extras = computed(() =>
+  extraFields(props.result, uiConfig.sourceCardFields(props.result.source || '')),
+)
+
 /** Réglages propres à la source, s'il en existe (public/custom-sources.js). */
 const custom = computed(() => sourceCardCustom(props.result.source))
 
@@ -45,6 +55,14 @@ const snippets = computed(() => parseHighlights(props.result.highlight || []))
 const scorePct = computed(() => Math.min(100, Math.round((props.result.score || 0) * 20)))
 /** Un membre d'archive a un chemin de la forme "archive.zip::interne". */
 const isArchiveMember = computed(() => (props.result.filepath || '').includes('::'))
+
+/**
+ * L'aperçu convertit un FICHIER : sans chemin, il n'y a rien à
+ * convertir. Une ligne de source SQL n'en a pas — le lien menait à une
+ * erreur. Un membre d'archive en a un, mais le fichier n'existe que le
+ * temps de l'indexation, d'où la seconde condition.
+ */
+const previewable = computed(() => !!props.result.filepath && !isArchiveMember.value)
 
 /** Case à cocher pour les collections, si la source l'autorise. */
 const selectable = computed(
@@ -94,10 +112,21 @@ const selectable = computed(
       <ul class="ds-result__meta fr-text--sm">
         <li v-if="result.source">Source : {{ uiConfig.sourceLabel(result.source) }}</li>
         <li v-if="result.author">Auteur : {{ result.author }}</li>
-        <li>Modifié : {{ result.date_modified ? result.date_modified.slice(0, 10) : '—' }}</li>
+        <!-- Date et taille sous condition : une ligne de source SQL n'a
+             ni l'une ni l'autre, et affichait « Modifié : — / Taille : — »
+             au milieu de ses vraies données. -->
+        <li v-if="result.date_modified">Modifié : {{ result.date_modified.slice(0, 10) }}</li>
         <li v-if="result.folder">Dossier : {{ result.folder }}</li>
-        <li>Taille : {{ fmtSize(result.size) }}</li>
+        <li v-if="result.size">Taille : {{ fmtSize(result.size) }}</li>
         <li v-if="isArchiveMember">Extrait d'une archive</li>
+
+        <!-- Champs apportés par la source (colonnes d'une source SQL) :
+             bureau, fonction, téléphone… Pour ce type de source, c'est
+             l'essentiel de l'information — un agent sans son téléphone
+             ni son bureau n'apprend rien. -->
+        <li v-for="champ in extras" :key="champ.key">
+          {{ champ.label }} : {{ champ.value }}
+        </li>
       </ul>
 
       <p v-if="result.filepath" class="ds-result__path fr-text--sm">
@@ -116,16 +145,13 @@ const selectable = computed(
         <DsfrButton
           size="sm"
           tertiary
-          label="Voir le détail complet (droits d'accès, mots-clés…)"
+          label="Voir le détail du document"
           @click="emit('detail', result.id)"
         />
         <!-- Aperçu accessible sans ouvrir la fiche détail, qui ne servait
-             qu'à atteindre ce lien dans bien des cas. Masqué pour un
-             membre d'archive : celui-ci n'existe que le temps de
-             l'indexation, il n'y a aucun fichier à prévisualiser — même
-             réserve que dans la fiche détail. -->
+             qu'à atteindre ce lien dans bien des cas. -->
         <a
-          v-if="!isArchiveMember"
+          v-if="previewable"
           class="fr-link fr-link--sm fr-icon-eye-line fr-link--icon-left"
           :href="`/api/preview/${result.id}`"
           target="_blank"

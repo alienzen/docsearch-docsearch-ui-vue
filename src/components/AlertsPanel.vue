@@ -13,14 +13,17 @@ import {
   listAlerts,
   listSavedSearches,
   markAllAlertsSeen,
+  purgeAlerts,
   type AlertNotification,
   type SavedSearch,
 } from '@/api/savedSearches'
 import { useSearchStore } from '@/stores/search'
 import { useUiConfigStore } from '@/stores/uiConfig'
+import { useDialogs } from '@/composables/useDialogs'
 
 const store = useSearchStore()
 const uiConfig = useUiConfigStore()
+const { confirm } = useDialogs()
 
 const notifications = ref<AlertNotification[]>([])
 const savedList = ref<SavedSearch[]>([])
@@ -77,6 +80,28 @@ async function load() {
   }
 }
 
+/**
+ * Vide la liste. La confirmation est de rigueur : les notifications ne
+ * se reconstituent pas, seule une nouvelle vérification positive du
+ * worker en redéposera.
+ */
+async function purge() {
+  const ok = await confirm(
+    'Effacer toutes vos notifications ? Vos recherches enregistrées et leurs alertes ne sont pas touchées.',
+    { title: 'Effacer les notifications', confirmLabel: 'Effacer' },
+  )
+  if (!ok) return
+  try {
+    await purgeAlerts()
+    notifications.value = []
+    total.value = 0
+    unseen.value = 0
+    menu.value?.close()
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e)
+  }
+}
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString('fr-FR', {
     day: '2-digit',
@@ -124,6 +149,20 @@ onMounted(refreshBadge)
           · {{ formatDate(notification.checked_at) }}
         </span>
       </button>
+    </li>
+
+    <!-- Après la liste : une action destructrice ne doit pas être le
+         premier élément atteint au clavier dans un menu qu'on ouvre pour
+         consulter. -->
+    <li v-if="notifications.length" class="ds-menu__entry ds-menu__footer">
+      <div class="fr-px-2w">
+        <DsfrButton
+          size="sm"
+          tertiary
+          label="Effacer toutes les notifications"
+          @click="purge()"
+        />
+      </div>
     </li>
   </NavMenuItem>
 </template>

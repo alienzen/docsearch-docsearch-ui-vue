@@ -22,6 +22,12 @@ export type UiConfig = {
   custom_keywords_enabled: boolean
   alerts_enabled: boolean
   sort_enabled: boolean
+  /**
+   * Section « Droits d'accès » de la fiche détail, visible des
+   * utilisateurs non administrateurs. Désactivée, elle reste visible des
+   * seuls administrateurs.
+   */
+  acl_visible_enabled: boolean
   /** Lien « Raccourcis » de l'en-tête. La touche « ? » reste active. */
   shortcuts_link_enabled: boolean
   /** Animation d'accueil tant qu'aucune recherche n'a été lancée. */
@@ -91,6 +97,7 @@ const DEFAULT_UI_CONFIG: UiConfig = {
   custom_keywords_enabled: true,
   alerts_enabled: true,
   sort_enabled: true,
+  acl_visible_enabled: true,
   shortcuts_link_enabled: true,
   empty_state_animation_enabled: true,
   show_current_user_enabled: true,
@@ -126,6 +133,13 @@ export type SearchableSource = {
   label: string
   type?: string
   collectable?: boolean
+  /**
+   * Libellés des colonnes d'une source SQL dans la carte de résultat.
+   * Trois états, voir `card_label` dans sql_sources_config.py :
+   * `null` = libellé à dériver du nom, `''` = champ masqué, texte = ce
+   * libellé.
+   */
+  card_fields?: Record<string, string | null>
 }
 
 export const useUiConfigStore = defineStore('uiConfig', () => {
@@ -223,6 +237,11 @@ export const useUiConfigStore = defineStore('uiConfig', () => {
    * case à cocher que si on SAIT qu'elle l'interdit, jamais par défaut
    * sur une donnée manquante. Même repli tolérant que sourceLabel().
    */
+  /** Libellés de carte d'une source, ou {} si elle n'en déclare pas. */
+  function sourceCardFields(name: string): Record<string, string | null> {
+    return allSources.value.find((s) => s.name === name)?.card_fields || {}
+  }
+
   function sourceCollectable(name: string) {
     const found = allSources.value.find((s) => s.name === name)
     return found ? found.collectable !== false : true
@@ -361,6 +380,7 @@ export const useUiConfigStore = defineStore('uiConfig', () => {
     headerSubtitle,
     footerText,
     sourceLabel,
+    sourceCardFields,
     sourceCollectable,
     loadUiConfig,
     loadEngagementConfig,

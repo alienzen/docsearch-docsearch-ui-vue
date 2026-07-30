@@ -31,7 +31,18 @@ const error = ref<string | null>(null)
 const busy = ref(false)
 
 function blankField(): SqlField {
-  return { column: '', es_field: '', es_type: 'keyword', analyzer: '', facet: false, facet_label: '' }
+  // card_label à null et non '' : une chaîne vide signifie « masquer ce
+  // champ », ce qui ne doit pas être le défaut d'une colonne qu'on vient
+  // d'ajouter.
+  return {
+    column: '',
+    es_field: '',
+    es_type: 'keyword',
+    analyzer: '',
+    facet: false,
+    facet_label: '',
+    card_label: null,
+  }
 }
 
 type FormState = {
@@ -105,6 +116,12 @@ async function save() {
         analyzer: x.analyzer?.trim() || null,
         facet: !!x.facet,
         facet_label: x.facet_label?.trim() || null,
+        // Trois états à préserver : champ jamais renseigné (null,
+        // « libellé dérivé »), texte, ou chaîne vide explicite
+        // (« masquer »). Un `|| null` écraserait le troisième cas.
+        card_label: x.card_label === undefined || x.card_label === null
+          ? null
+          : x.card_label.trim(),
       })),
       poll_interval_seconds: Number(f.poll_interval_seconds) || 300,
       label: f.label.trim() || undefined,
@@ -231,6 +248,7 @@ async function save() {
             <th scope="col">Analyseur</th>
             <th scope="col">Facette</th>
             <th scope="col">Libellé facette</th>
+            <th scope="col">Libellé carte</th>
             <th scope="col"><span class="fr-sr-only">Retirer</span></th>
           </tr>
         </thead>
@@ -293,6 +311,15 @@ async function save() {
                 type="text"
                 placeholder="ex : Bureau"
                 :aria-label="`Libellé de facette ligne ${i + 1}`"
+              />
+            </td>
+            <td>
+              <input
+                v-model="field.card_label"
+                class="fr-input fr-input--sm"
+                type="text"
+                placeholder="vide = auto"
+                :aria-label="`Libellé de carte ligne ${i + 1}`"
               />
             </td>
             <td>

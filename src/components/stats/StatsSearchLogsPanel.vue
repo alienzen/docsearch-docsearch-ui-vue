@@ -58,7 +58,16 @@ function resultFiles(files: string[] | undefined): string {
   return shown.join(', ') + (rest > 0 ? ` +${rest}` : '')
 }
 
-const FEEDBACK_LABELS: Record<string, string> = { up: '👍', down: '👎' }
+/**
+ * Icône DSFR et libellé lisible, plutôt que les émojis d'origine : ceux-ci
+ * changent de dessin d'un système à l'autre et servaient de seul contenu
+ * de la cellule — donc de seule information pour un lecteur d'écran, qui
+ * annonçait « pouce vers le haut » au lieu de l'avis.
+ */
+const FEEDBACK_LABELS: Record<string, { icone: string; texte: string }> = {
+  up: { icone: 'fr-icon-thumb-up-line', texte: 'Positif' },
+  down: { icone: 'fr-icon-thumb-down-line', texte: 'Négatif' },
+}
 </script>
 
 <template>
@@ -115,7 +124,16 @@ const FEEDBACK_LABELS: Record<string, string> = { up: '👍', down: '👎' }
             <td>{{ criteria(entry) }}</td>
             <td>{{ entry.total_results ?? 0 }}</td>
             <td>{{ resultFiles(entry.result_files) }}</td>
-            <td>{{ FEEDBACK_LABELS[entry.feedback || ''] || '—' }}</td>
+            <td>
+              <template v-if="FEEDBACK_LABELS[entry.feedback || '']">
+                <span
+                  :class="[FEEDBACK_LABELS[entry.feedback || ''].icone, 'fr-icon--sm']"
+                  aria-hidden="true"
+                />
+                {{ FEEDBACK_LABELS[entry.feedback || ''].texte }}
+              </template>
+              <template v-else>—</template>
+            </td>
             <td>{{ (entry.clicks || []).length || '—' }}</td>
           </tr>
         </tbody>

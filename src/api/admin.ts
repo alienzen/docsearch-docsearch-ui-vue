@@ -223,6 +223,11 @@ export type SqlField = {
   analyzer?: string | null
   facet?: boolean
   facet_label?: string | null
+  /**
+   * Libellé du champ dans la carte de résultat. `null`/absent = libellé
+   * dérivé du nom, texte = ce libellé, chaîne vide = champ masqué.
+   */
+  card_label?: string | null
 }
 
 export type SqlSource = {

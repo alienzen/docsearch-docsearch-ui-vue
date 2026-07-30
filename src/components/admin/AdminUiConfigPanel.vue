@@ -39,6 +39,10 @@ const TOGGLES: { key: keyof UiConfig; label: string }[] = [
   { key: 'alerts_enabled', label: 'Alertes sur les recherches enregistrées' },
   { key: 'sort_enabled', label: 'Sélecteur de tri des résultats' },
   {
+    key: 'acl_visible_enabled',
+    label: 'Section « Droits d’accès » de la fiche détail, visible de tous (sinon : administrateurs seuls)',
+  },
+  {
     key: 'shortcuts_link_enabled',
     label: 'Lien « Raccourcis » (la touche « ? » reste active)',
   },

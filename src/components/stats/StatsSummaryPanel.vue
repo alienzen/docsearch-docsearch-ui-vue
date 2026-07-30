@@ -34,7 +34,18 @@ const maxCount = computed(() => Math.max(1, ...(data.value?.by_day || []).map((b
           <p class="fr-hint-text fr-mb-0">Avis positifs</p>
           <p class="ds-stats__value">{{ feedbackPct !== null ? `${feedbackPct} %` : '—' }}</p>
           <p class="fr-hint-text fr-mb-0">
-            {{ feedbackTotal }} avis ({{ data.feedback_up }} 👍 / {{ data.feedback_down }} 👎)
+            <!-- Icônes DSFR plutôt que les émojis, comme sur la barre
+                 d'avis de la recherche : elles suivent le thème et ne
+                 changent pas de dessin d'un système à l'autre. Le sens
+                 est porté par le texte lu à côté, l'icône n'est que
+                 décorative — d'où `aria-hidden`. -->
+            {{ feedbackTotal }} avis (<span
+              class="fr-icon-thumb-up-line fr-icon--sm"
+              aria-hidden="true"
+            />
+            {{ data.feedback_up }} positifs /
+            <span class="fr-icon-thumb-down-line fr-icon--sm" aria-hidden="true" />
+            {{ data.feedback_down }} négatifs)
           </p>
         </div>
       </div>

@@ -65,6 +65,18 @@ export function markAllAlertsSeen(): Promise<unknown> {
 }
 
 /**
+ * Efface toutes les notifications de l'utilisateur courant.
+ *
+ * À distinguer de markAllAlertsSeen(), qui ne retire que le badge : ici
+ * la liste est vidée. Les recherches enregistrées et leurs alertes ne
+ * sont pas touchées — le worker redéposera une notification à la
+ * prochaine vérification positive.
+ */
+export function purgeAlerts(): Promise<unknown> {
+  return api('/alerts', { method: 'DELETE' })
+}
+
+/**
  * Normalise vers un tableau, en acceptant le format actuel (liste) comme
  * l'ancien (chaîne unique).
  */

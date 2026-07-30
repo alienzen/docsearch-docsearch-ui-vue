@@ -115,6 +115,8 @@ async function addToCollection(collectionId: string) {
     await addDocuments(collectionId, selection.ids)
     selection.clear()
     closeModal()
+    // Le compteur de documents affiché dans le menu doit suivre.
+    await refresh()
   } catch (e) {
     error.value = e instanceof Error ? e.message : String(e)
   } finally {
@@ -131,6 +133,13 @@ async function createAndAdd() {
     await addDocuments(created.id, selection.ids)
     selection.clear()
     closeModal()
+    // Indispensable pour la PREMIÈRE collection : l'entrée « Mes
+    // collections » de la navigation est conditionnée à une liste non
+    // vide, laquelle n'était chargée qu'au montage de la page. Sans ce
+    // rafraîchissement, elle n'apparaissait qu'au rechargement suivant —
+    // même mécanisme que `reload()` de SavedSearchesPanel après
+    // l'enregistrement d'une recherche.
+    await refresh()
   } catch (e) {
     error.value = e instanceof Error ? e.message : String(e)
   } finally {
