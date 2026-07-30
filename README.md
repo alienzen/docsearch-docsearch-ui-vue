@@ -4,10 +4,10 @@ Interface de DocSearch en **Vue 3 + [@gouvminint/vue-dsfr]**, conforme au
 Système de Design de l'État (DSFR). Reprend les fonctionnalités de
 `docsearch-ui` (HTML/JS sans build) sans en reprendre le code.
 
-**État : recette.** `docsearch-ui` reste servi en production sur le port
-**8080** ; cette interface tourne en parallèle sur le **8081**, contre la
-même API et le même index. Rien n'est basculé tant que la recette n'est
-pas validée.
+**Interface en service**, sur le port **8080**. Elle remplace
+`docsearch-ui` (HTML/JS sans build), dont le dépôt est conservé pour
+référence mais n'est plus déployé — il reste mobilisable en repli le temps
+que la bascule soit éprouvée (voir « Repli » plus bas).
 
 [@gouvminint/vue-dsfr]: https://vue-dsfr.netlify.app/
 
@@ -49,14 +49,19 @@ npm run test     # vitest run
 Trois contrôles rejouables :
 
 ```bash
-./tools/verifier-acces.sh      # 8 chemins × 3 identités, 8080 vs 8081
-./tools/comparer-recherche.sh  # 9 jeux de critères, totaux comparés
+./tools/verifier-acces.sh      # 8 chemins × 3 identités, contre une matrice attendue
+./tools/comparer-recherche.sh  # 9 jeux de critères : le proxy achemine-t-il ?
 npm run test:parseur           # syntaxe avancée : Vue vs implémentation vanilla
 ```
 
-`verifier-acces.sh` est le plus important : il compare les codes HTTP des
-deux interfaces pour `alice.admin`, `bob.user` et sans en-tête. Le cas qui
-justifie toute l'architecture est `bob.user` sur `/admin.html` → **401**.
+`verifier-acces.sh` est le plus important : il confronte les codes HTTP de
+huit chemins, pour `alice.admin`, `bob.user` et sans en-tête, à une matrice
+attendue. Le cas qui justifie toute l'architecture est `bob.user` sur
+`/admin.html` → **401**.
+
+Il comparait auparavant les deux interfaces tournant en parallèle. Une
+matrice absolue vaut mieux : une comparaison ne décèle rien quand les deux
+côtés se trompent de la même façon.
 
 ## Organisation
 
@@ -118,13 +123,30 @@ coûté une séance de débogage.
 
 Image multi-étages (`Dockerfile`) : build Node, puis Nginx servant `dist/`
 avec le `nginx.conf` du dépôt. Service `ui-vue` du `docker-compose.yml` de
-`docsearch-infra`, profil `dev`, port 8081.
+`docsearch-infra`, profils `dev` et `production`, port 8080. En production,
+c'est ce service que vise `upstream ui_backend` dans
+`docsearch-infra/nginx/nginx.conf`.
 
 ```bash
 cd ../docsearch-infra && docker compose --profile dev up -d --build ui-vue
 ```
 
 Pour naviguer au navigateur, l'API exige l'en-tête `X-User` : passer par
-le proxy de test sur le port **8091** (voir
-`docsearch-infra/HOWTO-simuler-utilisateur.md`). Le port 8081 en direct
+le proxy de test sur le port **8090** (voir
+`docsearch-infra/HOWTO-simuler-utilisateur.md`). Le port 8080 en direct
 renvoie 401.
+
+## Repli
+
+L'interface historique reste déclarée sous le profil `legacy`, le temps que
+la bascule soit éprouvée :
+
+```bash
+cd ../docsearch-infra
+docker compose --profile legacy up -d ui          # → port 8082
+docker compose -f docker-compose.dev-user-proxy.yml --profile legacy up -d
+```
+
+Pour un retour arrière en production, repointer `upstream ui_backend` sur
+`ui:80` puis **redémarrer** `docsearch-nginx` — Nginx résout ses amonts au
+démarrage et garde l'adresse.

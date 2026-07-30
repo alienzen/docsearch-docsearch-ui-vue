@@ -1,25 +1,30 @@
 #!/bin/bash
-# Envoie les mêmes critères de recherche aux deux interfaces et compare
-# le nombre de résultats.
+# Interroge /search à travers l'interface, sur un cas par dimension de
+# recherche, et vérifie que chacun aboutit.
 #
 #     bash tools/comparer-recherche.sh
 #
-# Les deux passent par le même docsearch-api : ce que ce script vérifie,
-# c'est que le chemin de proxy de la nouvelle interface (nginx.conf)
-# transmet bien les requêtes à l'identique — un préfixe oublié ou mal
-# écrit s'y verrait immédiatement.
+# Ce que ce script contrôle, c'est le CHEMIN DE PROXY de l'interface
+# (nginx.conf) : un préfixe oublié ou mal écrit s'y voit immédiatement,
+# la requête n'atteignant plus l'API. Le moteur lui-même est testé
+# ailleurs.
 #
-# Prérequis : la stack dev tourne (ports 8080 et 8081) et l'utilisateur
-# de test alice.admin existe côté LDAP.
+# Jusqu'à la bascule, il envoyait les mêmes critères aux deux interfaces
+# et comparait les totaux. Elles ne tournent plus en parallèle : il
+# vérifie désormais que chaque cas renvoie un total exploitable. Les
+# valeurs restent affichées — un écart d'un jour à l'autre se remarque à
+# l'œil, et signale une variation du corpus plutôt qu'une régression.
+#
+# Prérequis : la stack dev tourne et l'utilisateur de test alice.admin
+# existe côté LDAP.
 set -u
 
 HOTE=${HOTE:-192.168.56.101}
-ANCIEN=${ANCIEN:-8080}
-NOUVEAU=${NOUVEAU:-8081}
+PORT=${PORT:-8080}
 
 total() {
-  curl -s -X POST "http://$HOTE:$1/search" \
-    -H 'X-User: alice.admin' -H 'Content-Type: application/json' -d "$2" |
+  curl -s -X POST "http://$HOTE:$PORT/search" \
+    -H 'X-User: alice.admin' -H 'Content-Type: application/json' -d "$1" |
     python3 -c "import json,sys; print(json.load(sys.stdin)['total'])" 2>/dev/null ||
     echo ERR
 }
@@ -37,26 +42,27 @@ CAS=(
   'critères combinés|{"query":"rapport","extension":[".docx"],"source":["documents"],"date_from":"2015-01-01","size":1,"from":0}'
 )
 
-divergences=0
-printf "%-22s %8s %8s   %s\n" CAS "$ANCIEN" "$NOUVEAU" VERDICT
+echecs=0
+printf "%-22s %10s   %s\n" CAS TOTAL VERDICT
 for cas in "${CAS[@]}"; do
   nom=${cas%%|*}
   corps=${cas#*|}
-  a=$(total "$ANCIEN" "$corps")
-  b=$(total "$NOUVEAU" "$corps")
-  if [ "$a" = "$b" ]; then
-    verdict="identique"
+  t=$(total "$corps")
+  # Un total non numérique signifie que la requête n'a pas abouti :
+  # proxy cassé, API injoignable ou corps de réponse inattendu.
+  if [[ "$t" =~ ^[0-9]+$ ]]; then
+    verdict="abouti"
   else
-    verdict="** DIVERGENCE **"
-    divergences=$((divergences + 1))
+    verdict="** ÉCHEC **"
+    echecs=$((echecs + 1))
   fi
-  printf "%-22s %8s %8s   %s\n" "$nom" "$a" "$b" "$verdict"
+  printf "%-22s %10s   %s\n" "$nom" "$t" "$verdict"
 done
 
 echo
-if [ "$divergences" -eq 0 ]; then
-  echo "OK — ${#CAS[@]} cas, totaux identiques des deux côtés."
+if [ "$echecs" -eq 0 ]; then
+  echo "OK — ${#CAS[@]} cas, tous aboutis."
 else
-  echo "$divergences divergence(s)."
+  echo "$echecs échec(s) — le proxy de l'interface ne transmet pas correctement."
   exit 1
 fi
