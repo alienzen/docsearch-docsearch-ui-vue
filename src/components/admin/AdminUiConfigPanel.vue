@@ -39,6 +39,10 @@ const TOGGLES: { key: keyof UiConfig; label: string }[] = [
   { key: 'alerts_enabled', label: 'Alertes sur les recherches enregistrées' },
   { key: 'sort_enabled', label: 'Sélecteur de tri des résultats' },
   {
+    key: 'shortcuts_link_enabled',
+    label: 'Lien « Raccourcis » (la touche « ? » reste active)',
+  },
+  {
     key: 'empty_state_animation_enabled',
     label: "Animation d'accueil sur la page de recherche vide",
   },

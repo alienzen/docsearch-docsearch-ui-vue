@@ -23,9 +23,11 @@ import {
 } from '@/api/admin'
 import { useStatsPanel } from '@/composables/useStatsPanel'
 import { fmtSize } from '@/utils/format'
+import { useDialogs } from '@/composables/useDialogs'
 
 const { data, error, refresh } = useStatsPanel(getAllSources)
 const actionError = ref<string | null>(null)
+const { prompt } = useDialogs()
 
 const TYPE_LABELS: Record<SourceType, string> = {
   file: 'Bureautique',
@@ -61,9 +63,10 @@ async function toggle(
 
 async function editGroups(name: string, entry: AllSourceEntry) {
   const current = (entry.allowed_groups || []).join(', ')
-  const value = prompt(
+  const value = await prompt(
     `Groupes AD/LDAP autorisés à voir la source « ${name} » dans la recherche, séparés par des virgules (vide = tout le monde) :`,
     current,
+    { title: 'Groupes autorisés' },
   )
   if (value === null) return
   const groups = value

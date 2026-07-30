@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 // Préférences d'AFFICHAGE, persistées par navigateur/poste — ce ne sont
 // pas des critères de recherche : elles survivent donc à
@@ -107,6 +107,51 @@ export const usePreferencesStore = defineStore('preferences', () => {
     return collapsedFacets.value.includes(id)
   }
 
+  /**
+   * Sections de facettes actuellement À L'ÉCRAN, alimenté par
+   * FacetSection à son montage et vidé à son démontage.
+   *
+   * Délibérément NON persisté, contrairement à tout le reste de ce
+   * store : ce n'est pas une préférence mais l'inventaire du moment. Il
+   * est indispensable pour « tout replier », `collapsedFacets` ne
+   * mémorisant que les sections repliées — sans lui, impossible de savoir
+   * ce qu'il reste à replier, d'autant que les facettes SQL
+   * personnalisées varient selon les sources interrogées.
+   */
+  const presentFacets = ref<string[]>([])
+
+  function registerFacet(id: string) {
+    if (!presentFacets.value.includes(id)) presentFacets.value = [...presentFacets.value, id]
+  }
+
+  function unregisterFacet(id: string) {
+    presentFacets.value = presentFacets.value.filter((x) => x !== id)
+  }
+
+  /** Vrai seulement s'il y a des sections ET qu'elles sont toutes repliées. */
+  const allFacetsCollapsed = computed(
+    () =>
+      presentFacets.value.length > 0 &&
+      presentFacets.value.every((id) => collapsedFacets.value.includes(id)),
+  )
+
+  function collapseAllFacets() {
+    // Les identifiants déjà mémorisés mais absents de l'écran sont
+    // conservés : une facette SQL qui réapparaîtra à la prochaine
+    // recherche doit retrouver son pli.
+    const merged = new Set([...collapsedFacets.value, ...presentFacets.value])
+    collapsedFacets.value = [...merged]
+  }
+
+  function expandAllFacets() {
+    collapsedFacets.value = collapsedFacets.value.filter((id) => !presentFacets.value.includes(id))
+  }
+
+  function toggleAllFacets() {
+    if (allFacetsCollapsed.value) expandAllFacets()
+    else collapseAllFacets()
+  }
+
   watch(resultsCompact, (value) => {
     try {
       localStorage.setItem(COMPACT_RESULTS_KEY, value ? '1' : '0')
@@ -148,5 +193,12 @@ export const usePreferencesStore = defineStore('preferences', () => {
     collapsedFacets,
     toggleFacetSection,
     isFacetCollapsed,
+    presentFacets,
+    registerFacet,
+    unregisterFacet,
+    allFacetsCollapsed,
+    collapseAllFacets,
+    expandAllFacets,
+    toggleAllFacets,
   }
 })

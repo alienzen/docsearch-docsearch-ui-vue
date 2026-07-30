@@ -20,6 +20,43 @@ export const PER_PAGE = 10
  */
 export const TOTAL_HITS_CAP = 10000
 
+/**
+ * Raccourcis clavier de la page de recherche, source unique pour ses
+ * trois consommateurs : l'aide (`SearchHelp`), la palette
+ * (`ShortcutsModal`) et les infobulles posées sur les commandes.
+ *
+ * Cette liste doit rester exactement celle que branche
+ * `useSearchShortcuts` — une aide qui décrit une touche inopérante est
+ * pire que pas d'aide. La centraliser ici rend cette règle vérifiable
+ * d'un coup d'œil plutôt qu'en comparant deux fichiers.
+ */
+export type Shortcut = {
+  /** Libellé de la touche, tel qu'affiché dans un <kbd>. */
+  keys: string
+  label: string
+  /**
+   * Valeur de l'attribut `aria-keyshortcuts` de la commande
+   * correspondante. Absente quand aucune commande n'existe à l'écran :
+   * la barre de recherche et la pagination sont rendues par vue-dsfr,
+   * qui n'offre pas de prise pour les annoter.
+   */
+  aria?: string
+}
+
+export const SHORTCUTS: Shortcut[] = [
+  { keys: '/', label: 'Mettre le focus sur la barre de recherche' },
+  { keys: 'Échap', label: 'Fermer le menu ou la fenêtre ouverte' },
+  { keys: '← / →', label: 'Page de résultats précédente / suivante' },
+  { keys: 'c', label: 'Basculer la vue compacte des résultats', aria: 'c' },
+  { keys: 'f', label: 'Afficher ou masquer la colonne de filtres', aria: 'f' },
+  { keys: 't', label: 'Replier ou déplier toutes les facettes', aria: 't' },
+  { keys: 's', label: 'Enregistrer la recherche en cours', aria: 's' },
+  { keys: 'r', label: 'Effacer tous les filtres', aria: 'r' },
+  { keys: 'n', label: 'Réinitialiser la recherche (requête, filtres et tri)', aria: 'n' },
+  { keys: 'h', label: 'Retourner en haut de la page', aria: 'h' },
+  { keys: '?', label: 'Afficher les raccourcis clavier', aria: '?' },
+]
+
 export const SEARCH_IN_LABELS: Record<string, string> = {
   title: 'Titre',
   author: 'Auteur',

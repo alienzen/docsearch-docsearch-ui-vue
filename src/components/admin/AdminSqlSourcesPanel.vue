@@ -18,6 +18,7 @@ import {
   type SqlSource,
 } from '@/api/admin'
 import { useStatsPanel } from '@/composables/useStatsPanel'
+import { useDialogs } from '@/composables/useDialogs'
 
 const { data, error, refresh } = useStatsPanel(async () => ({
   sources: await getSqlSources(),
@@ -48,23 +49,21 @@ function facetLabels(source: SqlSource): string {
   return labels.join(', ') || '—'
 }
 
-function removeSource(name: string) {
-  if (
-    !confirm(
-      `Retirer la source SQL « ${name} » ? Son index Elasticsearch et ses documents ne seront PAS supprimés.`,
-    )
+async function removeSource(name: string) {
+  const ok = await confirm(
+    `Retirer la source SQL « ${name} » ? Son index Elasticsearch et ses documents ne seront PAS supprimés.`,
+    { title: 'Retirer la source SQL', confirmLabel: 'Retirer' },
   )
-    return
+  if (!ok) return
   return run(() => deleteSqlSource(name))
 }
 
-function removeDsn(name: string) {
-  if (
-    !confirm(
-      `Retirer le DSN chiffré « ${name} » ? Toute source SQL dont le connection_ref pointe vers ce nom échouera à son prochain passage, sauf si une variable d'environnement du même nom existe.`,
-    )
+async function removeDsn(name: string) {
+  const ok = await confirm(
+    `Retirer le DSN chiffré « ${name} » ? Toute source SQL dont le connection_ref pointe vers ce nom échouera à son prochain passage, sauf si une variable d'environnement du même nom existe.`,
+    { title: 'Retirer le DSN', confirmLabel: 'Retirer' },
   )
-    return
+  if (!ok) return
   return run(() => deleteSqlDsn(name))
 }
 
@@ -85,7 +84,8 @@ async function onSaved() {
   editing.value = null
   await refresh()
 }
-</script>
+
+const { confirm } = useDialogs()</script>
 
 <template>
   <AdminPanel

@@ -22,6 +22,8 @@ export type UiConfig = {
   custom_keywords_enabled: boolean
   alerts_enabled: boolean
   sort_enabled: boolean
+  /** Lien « Raccourcis » de l'en-tête. La touche « ? » reste active. */
+  shortcuts_link_enabled: boolean
   /** Animation d'accueil tant qu'aucune recherche n'a été lancée. */
   empty_state_animation_enabled: boolean
   show_current_user_enabled: boolean
@@ -89,6 +91,7 @@ const DEFAULT_UI_CONFIG: UiConfig = {
   custom_keywords_enabled: true,
   alerts_enabled: true,
   sort_enabled: true,
+  shortcuts_link_enabled: true,
   empty_state_animation_enabled: true,
   show_current_user_enabled: true,
   show_current_user_groups_enabled: true,

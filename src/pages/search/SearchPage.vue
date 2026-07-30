@@ -16,10 +16,12 @@ import { usePreferencesStore } from '@/stores/preferences'
 import { useSearchShortcuts } from '@/composables/useSearchShortcuts'
 import { useNps } from '@/composables/useNps'
 import { useHeaderHeight } from '@/composables/useHeaderHeight'
+import { useDialogs } from '@/composables/useDialogs'
 
 const store = useSearchStore()
 const uiConfig = useUiConfigStore()
 const preferences = usePreferencesStore()
+const { prompt } = useDialogs()
 
 const quickLinks = computed(() => {
   const links: {
@@ -30,8 +32,29 @@ const quickLinks = computed(() => {
     target?: string
     rel?: string
     title?: string
+    'aria-keyshortcuts'?: string
     onClick?: () => void
   }[] = []
+
+  // Dans l'en-tête et non dans la barre d'outils des résultats : celle-ci
+  // n'apparaît qu'une fois une recherche lancée, alors que c'est
+  // justement l'arrivant — qui n'a encore rien cherché — qu'il s'agit
+  // d'informer de l'existence des raccourcis.
+  //
+  // La bascule ne masque QUE ce point d'entrée : la touche « ? » et tous
+  // les raccourcis restent actifs, comme l'indique le libellé de la case
+  // côté administration.
+  if (uiConfig.config.shortcuts_link_enabled) {
+    links.push({
+      label: 'Raccourcis',
+      button: true,
+      class: 'fr-link--icon-left fr-icon-keyboard-line',
+      title: 'Raccourcis clavier (?)',
+      'aria-keyshortcuts': '?',
+      onClick: toggleShortcuts,
+    })
+  }
+
   if (uiConfig.config.help_enabled) {
     // Nouvel onglet : l'aide se consulte EN REGARD des résultats, sans
     // quitter la recherche en cours ni avoir à la relancer au retour.
@@ -70,10 +93,12 @@ const quickLinks = computed(() => {
   return links
 })
 
-// ── Aide ────────────────────────────────────────────────────
-/** Raccourci « ? » : même destination que le lien de l'en-tête. */
-function openHelp() {
-  window.open('/help', '_blank', 'noopener')
+// ── Raccourcis clavier ──────────────────────────────────────
+/** Palette ouverte par la touche « ? » ou par la barre d'outils. */
+const shortcutsOpen = ref(false)
+
+function toggleShortcuts() {
+  shortcutsOpen.value = !shortcutsOpen.value
 }
 
 /**
@@ -136,18 +161,25 @@ async function saveCurrentSearch() {
     saveError.value = "Lancez une recherche avant de l'enregistrer."
     return
   }
-  const name = prompt('Nom de cette recherche :', store.query || 'Recherche sans titre')
-  if (!name || !name.trim()) return
+  const name = await prompt(
+    'Nom de cette recherche :',
+    store.query || 'Recherche sans titre',
+    {
+      title: 'Enregistrer la recherche',
+      validate: (v) => (v ? null : 'Donnez un nom à cette recherche.'),
+    },
+  )
+  if (name === null) return
   saveError.value = null
   try {
-    await createSavedSearch(store.savedSearchPayload(name.trim()))
+    await createSavedSearch(store.savedSearchPayload(name))
     savedSearchesPanel.value?.reload()
   } catch (e) {
     saveError.value = e instanceof Error ? e.message : String(e)
   }
 }
 
-useSearchShortcuts({ saveCurrentSearch, openHelp })
+useSearchShortcuts({ saveCurrentSearch, toggleShortcuts })
 // L'en-tête est collant : sa hauteur décale la colonne de facettes.
 useHeaderHeight()
 
@@ -187,7 +219,13 @@ onMounted(() => {
                garde-fou de saveCurrentSearch() reste en place, l'entrée
                pouvant redevenir visible entre-temps. -->
           <li v-if="store.hasSearched" class="fr-nav__item">
-            <button class="fr-nav__link" type="button" @click="saveCurrentSearch">
+            <button
+              class="fr-nav__link"
+              type="button"
+              title="Enregistrer cette recherche (s)"
+              aria-keyshortcuts="s"
+              @click="saveCurrentSearch"
+            >
               Enregistrer cette recherche
             </button>
           </li>
@@ -213,6 +251,8 @@ onMounted(() => {
         size="sm"
         secondary
         label="Réinitialiser la recherche"
+        title="Réinitialiser la recherche — requête, filtres et tri (n)"
+        aria-keyshortcuts="n"
         @click="store.resetSearch()"
       />
     </div>
@@ -285,4 +325,6 @@ onMounted(() => {
   <DocumentDetailModal :document-id="detailId" @close="detailId = null" />
   <NpsModal :opened="npsVisible" @close="npsVisible = false" />
   <SuggestionModal :opened="suggestionOpen" @close="suggestionOpen = false" />
+  <ShortcutsModal :opened="shortcutsOpen" @close="shortcutsOpen = false" />
+  <AppDialogs />
 </template>

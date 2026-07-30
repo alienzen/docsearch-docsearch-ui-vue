@@ -66,6 +66,8 @@ async function exportAs(format: ExportFormat) {
         class="fr-btn fr-btn--sm fr-btn--secondary fr-btn--icon-left fr-icon-filter-line"
         type="button"
         aria-controls="facets"
+        title="Afficher ou masquer les filtres (f)"
+        aria-keyshortcuts="f"
         :aria-expanded="!preferences.facetsHidden"
         @click="preferences.facetsHidden = !preferences.facetsHidden"
       >
@@ -87,6 +89,8 @@ async function exportAs(format: ExportFormat) {
         size="sm"
         secondary
         :label="preferences.resultsCompact ? 'Vue détaillée' : 'Vue compacte'"
+        title="Basculer la vue compacte (c)"
+        aria-keyshortcuts="c"
         @click="preferences.resultsCompact = !preferences.resultsCompact"
       />
 

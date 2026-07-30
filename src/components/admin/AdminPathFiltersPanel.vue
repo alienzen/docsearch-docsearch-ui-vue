@@ -9,6 +9,7 @@
 import { ref, watch } from 'vue'
 import { addPathFilter, getPathFilters, purgePath, removePathFilter } from '@/api/admin'
 import { useStatsPanel } from '@/composables/useStatsPanel'
+import { useDialogs } from '@/composables/useDialogs'
 
 const props = defineProps<{ sources: string[] }>()
 
@@ -76,12 +77,11 @@ async function confirmPurge() {
   // supprimerait alors autre chose que ce qui a été annoncé.
   const target = preview.value
   if (!target) return
-  if (
-    !confirm(
-      `Supprimer définitivement ${target.matched} document(s) de l'index ? Les fichiers sur le disque ne sont pas touchés.`,
-    )
+  const ok = await confirm(
+    `Supprimer définitivement ${target.matched} document(s) de l'index ? Les fichiers sur le disque ne sont pas touchés.`,
+    { title: "Purger l'index", confirmLabel: 'Supprimer' },
   )
-    return
+  if (!ok) return
   purgeError.value = null
   try {
     const res = await purgePath(selected.value, target.pattern, false)
@@ -91,7 +91,8 @@ async function confirmPurge() {
     purgeError.value = e instanceof Error ? e.message : String(e)
   }
 }
-</script>
+
+const { confirm } = useDialogs()</script>
 
 <template>
   <AdminPanel

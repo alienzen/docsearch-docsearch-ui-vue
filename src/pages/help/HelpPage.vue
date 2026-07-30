@@ -24,13 +24,6 @@ onMounted(() => uiConfig.loadUiConfig())
     :service-description="uiConfig.headerSubtitle"
     :logo-text="uiConfig.logoText"
     home-to="/"
-    :quick-links="[
-      {
-        label: 'Retour à la recherche',
-        to: '/',
-        class: 'fr-link--icon-left fr-icon-arrow-left-line',
-      },
-    ]"
   />
 
   <main id="main-content" class="fr-container ds-prose fr-my-4w">

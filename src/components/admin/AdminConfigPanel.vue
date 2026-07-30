@@ -4,6 +4,7 @@ import { ref, watch } from 'vue'
 import { getConfig, resetConfig, saveConfigKey } from '@/api/admin'
 import { useStatsPanel } from '@/composables/useStatsPanel'
 import { useSaveHint } from '@/composables/useSaveHint'
+import { useDialogs } from '@/composables/useDialogs'
 
 const { data, error, refresh } = useStatsPanel(getConfig)
 const { saved, flash } = useSaveHint()
@@ -26,7 +27,11 @@ async function save(key: string) {
 }
 
 async function reset() {
-  if (!confirm('Charger les paramètres par défaut ? Tout réglage personnalisé sera écrasé.')) return
+  const ok = await confirm(
+    'Charger les paramètres par défaut ? Tout réglage personnalisé sera écrasé.',
+    { title: 'Réinitialiser les paramètres', confirmLabel: 'Réinitialiser' },
+  )
+  if (!ok) return
   actionError.value = null
   try {
     await resetConfig()
@@ -35,7 +40,8 @@ async function reset() {
     actionError.value = e instanceof Error ? e.message : String(e)
   }
 }
-</script>
+
+const { confirm } = useDialogs()</script>
 
 <template>
   <AdminPanel

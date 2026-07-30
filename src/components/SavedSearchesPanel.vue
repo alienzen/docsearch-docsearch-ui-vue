@@ -17,9 +17,11 @@ import { useSearchStore } from '@/stores/search'
 import { useUiConfigStore } from '@/stores/uiConfig'
 import { extLabel } from '@/utils/format'
 import { SEARCH_IN_LABELS, SORT_LABELS } from '@/constants'
+import { useDialogs } from '@/composables/useDialogs'
 
 const store = useSearchStore()
 const uiConfig = useUiConfigStore()
+const { confirm } = useDialogs()
 
 const list = ref<SavedSearch[]>([])
 const loading = ref(false)
@@ -87,7 +89,11 @@ function apply(saved: SavedSearch) {
 }
 
 async function remove(saved: SavedSearch) {
-  if (!confirm(`Supprimer la recherche « ${saved.name} » ?`)) return
+  const ok = await confirm(`Supprimer la recherche « ${saved.name} » ?`, {
+    title: 'Supprimer la recherche',
+    confirmLabel: 'Supprimer',
+  })
+  if (!ok) return
   try {
     list.value = await deleteSavedSearch(saved.id)
   } catch (e) {

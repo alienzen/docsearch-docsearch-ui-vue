@@ -15,6 +15,7 @@
  * de classe est bien ce qui pilote l'ouverture.
  */
 import { nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue'
+import { useOutsideClose } from '@/composables/useOutsideClose'
 
 const props = defineProps<{
   label: string
@@ -54,30 +55,19 @@ async function updateAlignment() {
   alignRight.value = left + width > document.documentElement.clientWidth
 }
 
-/**
- * Fermeture au clic extérieur et à Échap — c'est ce que faisait
- * docsearch-ui à la main dans init.js, et ce que le JS du DSFR ferait
- * si nous le chargions.
- */
-function onDocumentClick(e: MouseEvent) {
-  if (open.value && item.value && !item.value.contains(e.target as Node)) open.value = false
-}
-
-function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape' && open.value) open.value = false
-}
+// Fermeture au clic extérieur et à Échap, partagée avec le panneau de
+// présélection des sources (SourcesSelect).
+useOutsideClose(
+  item,
+  () => open.value,
+  () => (open.value = false),
+)
 
 onMounted(() => {
-  document.addEventListener('click', onDocumentClick)
-  document.addEventListener('keydown', onKeydown)
   window.addEventListener('resize', updateAlignment)
   updateAlignment()
 })
-onBeforeUnmount(() => {
-  document.removeEventListener('click', onDocumentClick)
-  document.removeEventListener('keydown', onKeydown)
-  window.removeEventListener('resize', updateAlignment)
-})
+onBeforeUnmount(() => window.removeEventListener('resize', updateAlignment))
 
 defineExpose({ close: () => (open.value = false), open: () => (open.value = true) })
 </script>

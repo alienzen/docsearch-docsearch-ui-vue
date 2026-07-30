@@ -7,7 +7,6 @@ import { computed, ref, watch } from 'vue'
 import { addKeywords, getDocument, removeKeyword, type DocumentDetail } from '@/api/documents'
 import { trackClick } from '@/api/engagement'
 import { extLabel, fmtSize } from '@/utils/format'
-import { copyText, dirOfPath, displayPath } from '@/utils/paths'
 import { useSearchStore } from '@/stores/search'
 import { useUiConfigStore } from '@/stores/uiConfig'
 
@@ -96,19 +95,6 @@ async function onRemoveKeyword(keyword: string) {
     keywordError.value = e instanceof Error ? e.message : String(e)
   }
 }
-
-const copied = ref<'dir' | 'full' | null>(null)
-
-async function copyPath(kind: 'dir' | 'full') {
-  const full = displayPath(
-    doc.value?.filepath || '',
-    uiConfig.config.sources_mount,
-    uiConfig.config.sources_mount_display,
-  )
-  await copyText(kind === 'dir' ? dirOfPath(full) : full)
-  copied.value = kind
-  setTimeout(() => (copied.value = null), 1200)
-}
 </script>
 
 <template>
@@ -174,10 +160,7 @@ async function copyPath(kind: 'dir' | 'full') {
           <span>Dossier</span>
           <span>
             {{ doc.folder || '—' }}
-            <template v-if="doc.filepath">
-              <DsfrButton size="sm" tertiary no-outline :label="copied === 'dir' ? 'Copié' : 'Copier le dossier'" @click="copyPath('dir')" />
-              <DsfrButton size="sm" tertiary no-outline :label="copied === 'full' ? 'Copié' : 'Copier le chemin'" @click="copyPath('full')" />
-            </template>
+            <CopyPathButtons v-if="doc.filepath" :filepath="doc.filepath" />
           </span>
         </li>
         <li><span>Taille</span><span>{{ fmtSize(doc.size) }}</span></li>

@@ -1,30 +1,17 @@
 <script setup lang="ts">
 /**
- * Contenu de l'aide de la recherche, partagé par deux affichages :
- *  - la page autonome /help, dont l'URL reste partageable ;
- *  - le panneau dépliable de la page de recherche, qui évite de quitter
- *    ses résultats pour consulter la syntaxe.
+ * Contenu de l'aide de la recherche, rendu par la page autonome /help —
+ * dont l'URL reste partageable et que le lien « Aide » de l'en-tête
+ * ouvre dans un nouvel onglet.
  *
  * Écrit une seule fois : docsearch-ui dupliquait ce contenu entre
  * help.html et la modale d'aide de init.js, et les deux avaient déjà
  * commencé à diverger.
  *
- * Les raccourcis listés ici doivent rester ceux réellement branchés par
- * useSearchShortcuts — une aide qui décrit une touche inopérante est
- * pire que pas d'aide.
+ * Les raccourcis viennent de SHORTCUTS, partagés avec la palette et les
+ * infobulles des commandes.
  */
-const shortcuts: [string, string][] = [
-  ['/', 'Mettre le focus sur la barre de recherche'],
-  ['Échap', 'Fermer le menu ou la fenêtre ouverte'],
-  ['← / →', 'Page de résultats précédente / suivante'],
-  ['c', 'Basculer la vue compacte des résultats'],
-  ['f', 'Afficher ou masquer la colonne de filtres'],
-  ['s', 'Enregistrer la recherche en cours'],
-  ['r', 'Effacer tous les filtres'],
-  ['n', 'Réinitialiser la recherche (requête, filtres et tri)'],
-  ['h', 'Retourner en haut de la page'],
-  ['?', 'Ouvrir cette aide dans un nouvel onglet'],
-]
+import { SHORTCUTS } from '@/constants'
 
 const operators: [string, string, string][] = [
   ['auteur:', 'auteur:"Jean Dupont"', 'Facette Auteur'],
@@ -44,9 +31,9 @@ const operators: [string, string, string][] = [
           <tr><th scope="col">Raccourci</th><th scope="col">Action</th></tr>
         </thead>
         <tbody>
-          <tr v-for="[key, action] in shortcuts" :key="key">
-            <td><kbd>{{ key }}</kbd></td>
-            <td>{{ action }}</td>
+          <tr v-for="shortcut in SHORTCUTS" :key="shortcut.keys">
+            <td><kbd>{{ shortcut.keys }}</kbd></td>
+            <td>{{ shortcut.label }}</td>
           </tr>
         </tbody>
       </table>

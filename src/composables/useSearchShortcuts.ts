@@ -5,17 +5,18 @@ import { usePreferencesStore } from '@/stores/preferences'
 type Actions = {
   /** Appelé par « s » — enregistrer la recherche en cours. */
   saveCurrentSearch?: () => void
-  /** Appelé par « ? » — ouvrir l'aide dans un nouvel onglet. */
-  openHelp?: () => void
+  /** Appelé par « ? » — afficher la palette des raccourcis. */
+  toggleShortcuts?: () => void
 }
 
 /**
  * Raccourcis clavier de la page de recherche. Portage du `keydown` de
  * docsearch-ui/public/js/init.js — mêmes touches, mêmes garde-fous.
  *
- * La liste publiée par SearchHelp.vue doit rester le reflet exact de ce
- * qui est branché ici : une aide qui décrit une touche inopérante est
- * pire que pas d'aide.
+ * `SHORTCUTS` (constants.ts) doit rester le reflet exact de ce qui est
+ * branché ici : une aide qui décrit une touche inopérante est pire que
+ * pas d'aide. C'est cette constante qu'affichent la palette, la page
+ * d'aide et les infobulles des commandes.
  */
 export function useSearchShortcuts(actions: Actions = {}) {
   const store = useSearchStore()
@@ -70,18 +71,22 @@ export function useSearchShortcuts(actions: Actions = {}) {
         // l'écran.
         if (resultsVisible) preferences.facetsHidden = !preferences.facetsHidden
         break
+      case 't':
+      case 'T':
+        // Même raison, et sans effet aussi quand la colonne est repliée :
+        // le registre des sections présentes est alors vide, `toggleAll`
+        // n'a rien à parcourir.
+        if (resultsVisible) preferences.toggleAllFacets()
+        break
       case 's':
       case 'S':
         if (resultsVisible) actions.saveCurrentSearch?.()
         break
       case '?':
-        // Pas de garde `resultsVisible` : consulter la syntaxe avant de
-        // formuler sa première recherche est justement le cas utile.
-        // L'ouverture d'onglet part d'un événement clavier, donc d'une
-        // interaction utilisateur : les bloqueurs de fenêtres surgissantes
-        // la laissent passer.
+        // Pas de garde `resultsVisible` : découvrir les raccourcis avant
+        // sa première recherche est justement le cas utile.
         e.preventDefault()
-        actions.openHelp?.()
+        actions.toggleShortcuts?.()
         break
       case 'r':
       case 'R':

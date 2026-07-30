@@ -13,6 +13,7 @@ import {
 } from '@/api/admin'
 import { useStatsPanel } from '@/composables/useStatsPanel'
 import { useSaveHint } from '@/composables/useSaveHint'
+import { useDialogs } from '@/composables/useDialogs'
 
 const props = defineProps<{ sources: string[] }>()
 
@@ -64,13 +65,12 @@ function save(ext: string) {
   )
 }
 
-function remove(ext: string) {
-  if (
-    !confirm(
-      `Supprimer l'extension .${ext} (source « ${selected.value} ») ? Elle ne sera plus indexée pour cette source.`,
-    )
+async function remove(ext: string) {
+  const ok = await confirm(
+    `Supprimer l'extension .${ext} (source « ${selected.value} ») ? Elle ne sera plus indexée pour cette source.`,
+    { title: `Supprimer .${ext}`, confirmLabel: 'Supprimer' },
   )
-    return
+  if (!ok) return
   return run(() => deleteFiletype(ext, selected.value), refresh)
 }
 
@@ -93,16 +93,16 @@ function add() {
   )
 }
 
-function resetAll() {
-  if (
-    !confirm(
-      `Charger les extensions par défaut pour la source « ${selected.value} » ? Toute extension ajoutée et tout réglage personnalisé seront écrasés pour cette source.`,
-    )
+async function resetAll() {
+  const ok = await confirm(
+    `Charger les extensions par défaut pour la source « ${selected.value} » ? Toute extension ajoutée et tout réglage personnalisé seront écrasés pour cette source.`,
+    { title: 'Réinitialiser les extensions', confirmLabel: 'Réinitialiser' },
   )
-    return
+  if (!ok) return
   return run(() => resetFiletypes(selected.value), refresh)
 }
-</script>
+
+const { confirm } = useDialogs()</script>
 
 <template>
   <AdminPanel

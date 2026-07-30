@@ -13,6 +13,7 @@ import {
 } from '@/api/admin'
 import { useStatsPanel } from '@/composables/useStatsPanel'
 import { useSourceField } from '@/composables/useSourceField'
+import { useDialogs } from '@/composables/useDialogs'
 
 const emit = defineEmits<{ changed: [] }>()
 
@@ -53,13 +54,12 @@ async function toggleOcr(name: string, source: FileSource, enabled: boolean) {
   }
 }
 
-function remove(name: string) {
-  if (
-    !confirm(
-      `Retirer la source « ${name} » ? Son index Elasticsearch et ses documents ne seront PAS supprimés.`,
-    )
+async function remove(name: string) {
+  const ok = await confirm(
+    `Retirer la source « ${name} » ? Son index Elasticsearch et ses documents ne seront PAS supprimés.`,
+    { title: 'Retirer la source', confirmLabel: 'Retirer' },
   )
-    return
+  if (!ok) return
   return run(() => deleteFileSource(name))
 }
 
@@ -80,7 +80,8 @@ function add() {
     form.value = { name: '', es_index: '', subfolder: '', label: '', description: '' }
   })
 }
-</script>
+
+const { confirm } = useDialogs()</script>
 
 <template>
   <AdminPanel

@@ -14,7 +14,6 @@
 import { computed, ref } from 'vue'
 import type { SearchResult } from '@/api/types'
 import { extLabel, fmtSize } from '@/utils/format'
-import { copyText, dirOfPath, displayPath } from '@/utils/paths'
 import { parseHighlights } from '@/utils/highlight'
 import { usePreferencesStore } from '@/stores/preferences'
 import { useUiConfigStore } from '@/stores/uiConfig'
@@ -44,19 +43,6 @@ const selectable = computed(
   () =>
     uiConfig.config.collections_enabled && uiConfig.sourceCollectable(props.result.source || ''),
 )
-
-const copied = ref<'dir' | 'full' | null>(null)
-
-async function copyPath(kind: 'dir' | 'full') {
-  const full = displayPath(
-    props.result.filepath || '',
-    uiConfig.config.sources_mount,
-    uiConfig.config.sources_mount_display,
-  )
-  await copyText(kind === 'dir' ? dirOfPath(full) : full)
-  copied.value = kind
-  setTimeout(() => (copied.value = null), 1200)
-}
 </script>
 
 <template>
@@ -98,20 +84,7 @@ async function copyPath(kind: 'dir' | 'full') {
 
       <p v-if="result.filepath" class="ds-result__path fr-text--sm">
         <span class="ds-result__path-text" :title="result.filepath">{{ result.filepath }}</span>
-        <DsfrButton
-          size="sm"
-          tertiary
-          no-outline
-          :label="copied === 'dir' ? 'Copié' : 'Copier le dossier'"
-          @click="copyPath('dir')"
-        />
-        <DsfrButton
-          size="sm"
-          tertiary
-          no-outline
-          :label="copied === 'full' ? 'Copié' : 'Copier le chemin'"
-          @click="copyPath('full')"
-        />
+        <CopyPathButtons :filepath="result.filepath" />
       </p>
 
       <p v-if="snippets.length" class="ds-result__snippet fr-text--sm">
@@ -121,12 +94,29 @@ async function copyPath(kind: 'dir' | 'full') {
         </template>
       </p>
 
-      <DsfrButton
-        size="sm"
-        tertiary
-        label="Voir le détail complet (droits d'accès, aperçu…)"
-        @click="emit('detail', result.id)"
-      />
+      <div class="ds-result__actions">
+        <DsfrButton
+          size="sm"
+          tertiary
+          label="Voir le détail complet (droits d'accès, mots-clés…)"
+          @click="emit('detail', result.id)"
+        />
+        <!-- Aperçu accessible sans ouvrir la fiche détail, qui ne servait
+             qu'à atteindre ce lien dans bien des cas. Masqué pour un
+             membre d'archive : celui-ci n'existe que le temps de
+             l'indexation, il n'y a aucun fichier à prévisualiser — même
+             réserve que dans la fiche détail. -->
+        <a
+          v-if="!isArchiveMember"
+          class="fr-link fr-link--sm fr-icon-eye-line fr-link--icon-left"
+          :href="`/api/preview/${result.id}`"
+          target="_blank"
+          rel="noopener"
+          title="Voir l'aperçu — nouvelle fenêtre"
+        >
+          Voir l'aperçu
+        </a>
+      </div>
     </div>
   </div>
 </template>

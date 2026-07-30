@@ -18,10 +18,12 @@ import {
 } from '@/api/collections'
 import { getDocument } from '@/api/documents'
 import { useSelectionStore } from '@/stores/selection'
+import { useDialogs } from '@/composables/useDialogs'
 
 const emit = defineEmits<{ detail: [string] }>()
 
 const selection = useSelectionStore()
+const { confirm } = useDialogs()
 
 const collections = ref<Collection[]>([])
 const loading = ref(false)
@@ -55,12 +57,11 @@ const menu = ref<{ close: () => void } | null>(null)
 onMounted(refresh)
 
 async function remove(collection: Collection) {
-  if (
-    !confirm(
-      `Supprimer la collection « ${collection.name} » ? Les documents eux-mêmes ne sont pas supprimés.`,
-    )
+  const ok = await confirm(
+    `Supprimer la collection « ${collection.name} » ? Les documents eux-mêmes ne sont pas supprimés.`,
+    { title: 'Supprimer la collection', confirmLabel: 'Supprimer' },
   )
-    return
+  if (!ok) return
   try {
     collections.value = await deleteCollection(collection.id)
   } catch (e) {

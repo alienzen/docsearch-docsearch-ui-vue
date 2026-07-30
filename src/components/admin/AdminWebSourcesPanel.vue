@@ -17,6 +17,7 @@ import {
 } from '@/api/admin'
 import { useStatsPanel } from '@/composables/useStatsPanel'
 import { useSourceField } from '@/composables/useSourceField'
+import { useDialogs } from '@/composables/useDialogs'
 
 type WebSource = {
   label: string
@@ -66,13 +67,12 @@ async function togglePaused(name: string, source: WebSource, active: boolean) {
   }
 }
 
-function remove(name: string) {
-  if (
-    !confirm(
-      `Retirer la source web « ${name} » ? Son index Elasticsearch et ses documents ne seront PAS supprimés.`,
-    )
+async function remove(name: string) {
+  const ok = await confirm(
+    `Retirer la source web « ${name} » ? Son index Elasticsearch et ses documents ne seront PAS supprimés.`,
+    { title: 'Retirer la source web', confirmLabel: 'Retirer' },
   )
-    return
+  if (!ok) return
   return run(() => deleteWebSource(name))
 }
 
@@ -103,7 +103,8 @@ function add() {
     }
   })
 }
-</script>
+
+const { confirm } = useDialogs()</script>
 
 <template>
   <AdminPanel

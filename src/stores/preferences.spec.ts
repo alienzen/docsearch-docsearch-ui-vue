@@ -41,6 +41,44 @@ describe('largeur de la colonne de facettes', () => {
     expect(usePreferencesStore().facetsWidth).toBe(FACETS_WIDTH_DEFAULT)
   })
 
+  it('replie et déplie toutes les sections présentes', () => {
+    const preferences = usePreferencesStore()
+    preferences.registerFacet('facet-sources')
+    preferences.registerFacet('facet-dates')
+
+    expect(preferences.allFacetsCollapsed).toBe(false)
+    preferences.toggleAllFacets()
+    expect(preferences.collapsedFacets.sort()).toEqual(['facet-dates', 'facet-sources'])
+    expect(preferences.allFacetsCollapsed).toBe(true)
+
+    preferences.toggleAllFacets()
+    expect(preferences.collapsedFacets).toEqual([])
+  })
+
+  // Une facette SQL personnalisée disparaît quand on change de source :
+  // son pli doit survivre pour être retrouvé à son retour, sans pour
+  // autant empêcher « tout déplier » de se terminer.
+  it('conserve le pli des sections absentes de l’écran', () => {
+    const preferences = usePreferencesStore()
+    preferences.toggleFacetSection('facet-custom-bureau')
+    preferences.registerFacet('facet-sources')
+
+    preferences.collapseAllFacets()
+    expect(preferences.collapsedFacets.sort()).toEqual(['facet-custom-bureau', 'facet-sources'])
+
+    preferences.expandAllFacets()
+    expect(preferences.collapsedFacets).toEqual(['facet-custom-bureau'])
+    // « Tout replier » redevient proposable, la seule section à l'écran
+    // étant dépliée.
+    expect(preferences.allFacetsCollapsed).toBe(false)
+  })
+
+  // Sans section montée, le bouton ne doit pas annoncer « Tout déplier »
+  // — il n'y aurait rien à déplier.
+  it('n’est pas « tout replié » quand aucune section n’est présente', () => {
+    expect(usePreferencesStore().allFacetsCollapsed).toBe(false)
+  })
+
   it('sépare le pli global du pli des sections', async () => {
     const preferences = usePreferencesStore()
     preferences.facetsHidden = true

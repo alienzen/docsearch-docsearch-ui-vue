@@ -29,6 +29,8 @@ const store = useSearchStore()
           tertiary
           no-outline
           label="Effacer tous les filtres"
+          title="Effacer tous les filtres (r)"
+          aria-keyshortcuts="r"
           @click="store.clearAllFilters()"
         />
       </li>

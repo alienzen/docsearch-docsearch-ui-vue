@@ -18,6 +18,12 @@ const { scrolled } = useScrolled()
        de le recréer à chaque franchissement du seuil pendant le
        défilement. -->
   <div v-show="scrolled" class="ds-back-to-top">
-    <DsfrBackToTop label="Haut de page" />
+    <!-- `title` et `aria-keyshortcuts` retombent sur le <a> rendu par
+         DsfrBackToTop, qui n'inhibe pas l'héritage d'attributs. -->
+    <DsfrBackToTop
+      label="Haut de page"
+      title="Retourner en haut de la page (h)"
+      aria-keyshortcuts="h"
+    />
   </div>
 </template>

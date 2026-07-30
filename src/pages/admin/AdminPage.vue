@@ -177,4 +177,6 @@ onMounted(() => {
     :mandatory-links="[]"
     :ecosystem-links="[]"
   />
+
+  <AppDialogs />
 </template>

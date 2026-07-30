@@ -9,15 +9,36 @@
  * dans le même `store.source`, donc une sélection faite ici reste
  * reflétée là-bas, sans code de synchronisation.
  *
- * S'appuie sur <details>/<summary> natif : ouverture au clavier,
- * fermeture par Échap et sémantique de divulgation sans code.
+ * S'appuie sur <details>/<summary> natif : ouverture au clavier et
+ * sémantique de divulgation sans code.
  */
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useSearchStore } from '@/stores/search'
 import { useUiConfigStore } from '@/stores/uiConfig'
+import { useOutsideClose } from '@/composables/useOutsideClose'
 
 const store = useSearchStore()
 const uiConfig = useUiConfigStore()
+
+/**
+ * Le panneau reste NON contrôlé — l'état vit dans l'attribut `open` du
+ * <details>, et on ne fait que le forcer à false. Le lier à un `ref`
+ * réactif tout en écoutant `toggle` provoque la boucle de rendu déjà
+ * rencontrée sur les facettes : le `:open` réagit à ce que le navigateur
+ * vient de faire et relance un `toggle`.
+ *
+ * Un <details> ne se ferme ni au clic extérieur ni à Échap de lui-même,
+ * contrairement à <dialog> : d'où le composable.
+ */
+const panel = ref<HTMLDetailsElement | null>(null)
+
+useOutsideClose(
+  panel,
+  () => panel.value?.open ?? false,
+  () => {
+    if (panel.value) panel.value.open = false
+  },
+)
 
 /** Le libellé du bouton résume la sélection courante. */
 const label = computed(() => {
@@ -35,7 +56,7 @@ function toggle(name: string) {
 </script>
 
 <template>
-  <details class="ds-sources">
+  <details ref="panel" class="ds-sources">
     <summary class="fr-btn fr-btn--secondary fr-btn--sm">{{ label }}</summary>
     <div class="ds-sources__panel">
       <p v-if="!uiConfig.allSources.length" class="fr-hint-text fr-mb-0">

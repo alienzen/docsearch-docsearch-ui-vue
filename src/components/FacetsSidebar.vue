@@ -12,11 +12,13 @@
 import { computed } from 'vue'
 import { useSearchStore } from '@/stores/search'
 import { useUiConfigStore } from '@/stores/uiConfig'
+import { usePreferencesStore } from '@/stores/preferences'
 import { extLabel } from '@/utils/format'
 import { folderBasename } from '@/utils/paths'
 
 const store = useSearchStore()
 const uiConfig = useUiConfigStore()
+const preferences = usePreferencesStore()
 
 const facets = computed(() => store.facets)
 
@@ -34,7 +36,22 @@ const dateTo = computed({
 
 <template>
   <div class="ds-facets">
-    <h2 class="fr-h6">Affiner</h2>
+    <div class="ds-facets__head">
+      <h2 class="fr-h6 fr-mb-0">Affiner</h2>
+      <!-- N'apparaît qu'avec des sections à replier : sans facettes, le
+           bouton n'aurait aucun effet observable. -->
+      <button
+        v-if="preferences.presentFacets.length"
+        class="fr-btn fr-btn--sm fr-btn--tertiary-no-outline"
+        type="button"
+        :title="`${preferences.allFacetsCollapsed ? 'Tout déplier' : 'Tout replier'} (t)`"
+        aria-keyshortcuts="t"
+        :aria-expanded="!preferences.allFacetsCollapsed"
+        @click="preferences.toggleAllFacets()"
+      >
+        {{ preferences.allFacetsCollapsed ? 'Tout déplier' : 'Tout replier' }}
+      </button>
+    </div>
 
     <p v-if="!facets" class="fr-hint-text">Lancez une recherche pour affiner les résultats.</p>
 
@@ -94,23 +111,27 @@ const dateTo = computed({
         empty-label="Aucune valeur"
         @toggle="store.toggleCustomFacet(field, $event)"
       />
+      <!-- Même coquille que les facettes ci-dessus : repliable, persistée
+           et comptée dans « tout replier ». Seul son corps diffère — deux
+           dates plutôt qu'une liste de valeurs. Elle est passée DANS le
+           `v-else` : hors de lui, elle s'affichait alors que les autres
+           étaient absentes, ce qui la faisait paraître d'une autre
+           nature. -->
+      <FacetSection id="facet-dates" title="Période de modification">
+        <div class="fr-input-group fr-input-group--sm">
+          <label class="fr-label" for="date-from">Du</label>
+          <input id="date-from" v-model="dateFrom" class="fr-input" type="date" />
+        </div>
+        <div class="fr-input-group fr-input-group--sm">
+          <label class="fr-label" for="date-to">Au</label>
+          <input id="date-to" v-model="dateTo" class="fr-input" type="date" />
+        </div>
+        <DsfrButton
+          size="sm"
+          label="Appliquer la période"
+          @click="store.applyDateRange(dateFrom, dateTo)"
+        />
+      </FacetSection>
     </template>
-
-    <div class="fr-mt-2w">
-      <h3 class="fr-h6">Période de modification</h3>
-      <div class="fr-input-group fr-input-group--sm">
-        <label class="fr-label" for="date-from">Du</label>
-        <input id="date-from" v-model="dateFrom" class="fr-input" type="date" />
-      </div>
-      <div class="fr-input-group fr-input-group--sm">
-        <label class="fr-label" for="date-to">Au</label>
-        <input id="date-to" v-model="dateTo" class="fr-input" type="date" />
-      </div>
-      <DsfrButton
-        size="sm"
-        label="Appliquer la période"
-        @click="store.applyDateRange(dateFrom, dateTo)"
-      />
-    </div>
   </div>
 </template>
