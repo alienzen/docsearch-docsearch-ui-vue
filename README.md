@@ -143,7 +143,8 @@ la bascule soit éprouvée :
 
 ```bash
 cd ../docsearch-infra
-docker compose --profile legacy up -d ui          # → port 8082
+# Les DEUX profils : « ui » dépend d'« api », déclaré dans « dev ».
+docker compose --profile dev --profile legacy up -d ui   # → port 8082
 docker compose -f docker-compose.dev-user-proxy.yml --profile legacy up -d
 ```
 
