@@ -122,13 +122,15 @@ coûté une séance de débogage.
 ## Déploiement
 
 Image multi-étages (`Dockerfile`) : build Node, puis Nginx servant `dist/`
-avec le `nginx.conf` du dépôt. Service `ui-vue` du `docker-compose.yml` de
-`docsearch-infra`, profils `dev` et `production`, port 8080. En production,
-c'est ce service que vise `upstream ui_backend` dans
-`docsearch-infra/nginx/nginx.conf`.
+avec le `nginx.conf` du dépôt. Unité `docsearch-ui-vue` de
+`docsearch-infra` (mono-hôte et rôle `frontend`), port 8080. En
+production, c'est ce conteneur que vise `upstream ui_backend` dans
+`docsearch-infra/nginx/nginx.conf` — via son alias réseau `ui-vue`.
 
 ```bash
-cd ../docsearch-infra && docker compose --profile dev up -d --build ui-vue
+cd ../docsearch-infra
+./manage.sh build ui
+sudo systemctl restart docsearch-ui-vue
 ```
 
 Pour naviguer au navigateur, l'API exige l'en-tête `X-User` : passer par
@@ -138,14 +140,14 @@ renvoie 401.
 
 ## Repli
 
-L'interface historique reste déclarée sous le profil `legacy`, le temps que
-la bascule soit éprouvée :
+L'interface historique n'a plus d'unité systemd, mais son image reste
+constructible et lançable à la main :
 
 ```bash
-cd ../docsearch-infra
-# Les DEUX profils : « ui » dépend d'« api », déclaré dans « dev ».
-docker compose --profile dev --profile legacy up -d ui   # → port 8082
-docker compose -f docker-compose.dev-user-proxy.yml --profile legacy up -d
+cd ../docsearch-ui
+podman build -t localhost/docsearch/ui:latest .
+sudo podman run -d --name docsearch-ui -p 8082:80 \\
+  --network docsearch-net localhost/docsearch/ui:latest
 ```
 
 Pour un retour arrière en production, repointer `upstream ui_backend` sur
