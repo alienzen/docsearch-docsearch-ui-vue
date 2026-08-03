@@ -334,6 +334,58 @@
   animation: ds-glow 4s ease-in-out infinite;
 }
 
+/* Indicateur d'attente d'une recherche. Écrit ici faute de composant
+   équivalent dans le DSFR comme dans vue-dsfr — d'où le préfixe `ds-`,
+   comme les autres ajouts maison de cette feuille.
+
+   Le cercle emprunte ses couleurs aux jetons DSFR plutôt qu'à des
+   valeurs fixes : c'est ce qui le fait suivre le thème sombre, pour la
+   même raison que les illustrations d'EmptySearchState. */
+.ds-spinner {
+  display: inline-block;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid var(--border-default-grey);
+  /* Un seul côté coloré : c'est ce segment qui rend la rotation
+     perceptible, un anneau uni paraîtrait immobile. */
+  border-top-color: var(--text-active-blue-france);
+  border-radius: 50%;
+  animation: ds-spin 0.8s linear infinite;
+}
+
+/* Version en ligne, à hauteur de texte, pour la barre d'outils. */
+.ds-spinner--sm {
+  width: 1rem;
+  height: 1rem;
+  border-width: 2px;
+  vertical-align: text-bottom;
+}
+
+/* Bloc centré occupant la zone de résultats à la première recherche. */
+.ds-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem 0;
+}
+
+/* Réaffinage sur des résultats déjà affichés : la liste reste en place
+   pour ne pas faire sauter le défilement, mais s'estompe et cesse de
+   répondre — sans quoi on pourrait cliquer un résultat en train d'être
+   remplacé. */
+.ds-results--loading {
+  opacity: 0.5;
+  pointer-events: none;
+  transition: opacity 0.15s ease-out;
+}
+
+@keyframes ds-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Réglage système « réduire les animations » : le bloc reste, le
    mouvement s'arrête. Doublure CSS du test JS d'EmptySearchState — celui-ci
    ne peut couper que la rotation des suggestions, pilotée par minuterie. */
@@ -341,6 +393,12 @@
   .ds-empty *,
   .ds-empty *::before,
   .ds-empty *::after {
+    animation: none !important;
+  }
+
+  /* Le cercle demeure, immobile : c'est le seul repère visuel de
+     l'attente, le supprimer laisserait la zone vide sans explication. */
+  .ds-spinner {
     animation: none !important;
   }
 }

@@ -55,6 +55,11 @@ async function exportAs(format: ExportFormat) {
     <p class="fr-mb-0">
       <strong>{{ countLabel }}</strong>
       <span v-if="pageLabel" class="fr-hint-text fr-ml-1w">{{ pageLabel }}</span>
+      <!-- Réaffinage sur des résultats déjà affichés : le seul signe
+           d'attente, la liste restant en place. `aria-hidden` car
+           l'annonce vocale est déjà portée par ResultsList — la répéter
+           ici la ferait entendre deux fois. -->
+      <span v-if="store.loading" class="ds-spinner ds-spinner--sm fr-ml-1w" aria-hidden="true" />
     </p>
 
     <div class="ds-toolbar__actions">

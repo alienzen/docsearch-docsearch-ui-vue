@@ -291,7 +291,13 @@ onMounted(() => {
              résultats, la place revient à ceux-ci. Animation désactivée
              par l'administrateur, l'invitation reste — sinon la page
              d'accueil serait entièrement vide. -->
-        <template v-if="!store.hasSearched">
+        <!-- `!store.loading` autant que `!store.hasSearched` :
+             hasSearched ne passe à true qu'APRÈS la réponse du serveur,
+             si bien que l'invitation restait affichée pendant tout
+             l'appel — visible surtout au clic sur un exemple, où la
+             recherche part sans que l'utilisateur ait rien saisi. Elle
+             cohabiterait de surcroît avec le spinner. -->
+        <template v-if="!store.hasSearched && !store.loading">
           <EmptySearchState v-if="uiConfig.config.empty_state_animation_enabled" />
           <p v-else class="fr-text--sm">Lancez une recherche pour voir les résultats.</p>
         </template>
