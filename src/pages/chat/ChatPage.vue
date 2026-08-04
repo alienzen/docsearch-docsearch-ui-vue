@@ -77,6 +77,9 @@ onMounted(() => {
     service-description="Assistant IA"
     :logo-text="uiConfig.logoText"
     home-to="/"
+    operator-img-src="/logo-docsearch.svg"
+    operator-img-alt="DocSearch"
+    operator-img-style="max-width: 2.5rem"
     :quick-links="[
       {
         label: 'Retour à la recherche',

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="DocSearch">
+  <title>DocSearch</title>
+  <!-- Pastille pleine plutôt qu'un tracé de couleur seul : la marque est
+       posée dans un <img>, sur lequel la feuille de style de la page n'a
+       aucune prise. Un aplat porteur du glyphe en blanc reste donc lisible
+       en thème clair COMME en thème sombre, sans media query interne qui
+       se désynchroniserait du thème DSFR forcé par l'utilisateur. -->
+  <rect width="48" height="48" rx="10" fill="#37635f"/>
+  <g fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="21.5" cy="21.5" r="9"/>
+    <path d="M28 28l6.5 6.5"/>
+    <path d="M16.5 19h10"/>
+    <path d="M16.5 24h6"/>
+  </g>
+</svg>

@@ -120,6 +120,9 @@ onMounted(() => {
     service-description="Administration"
     :logo-text="uiConfig.logoText"
     home-to="/"
+    operator-img-src="/logo-docsearch.svg"
+    operator-img-alt="DocSearch"
+    operator-img-style="max-width: 2.5rem"
     :quick-links="[
       { label: 'Statistiques', to: '/stats.html', class: 'fr-link--icon-left fr-icon-bar-chart-line' },
       {
@@ -214,6 +217,9 @@ onMounted(() => {
     licence-name=""
     :mandatory-links="[]"
     :ecosystem-links="[]"
+    operator-img-src="/logo-docsearch.svg"
+    operator-img-alt="DocSearch"
+    operator-img-style="max-width: 2.5rem"
   />
 
   <ShortcutsModal
