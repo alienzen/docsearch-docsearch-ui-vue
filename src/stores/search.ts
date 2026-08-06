@@ -18,7 +18,11 @@ import { useUiConfigStore } from './uiConfig'
 // actions qui le manipulent (facets.js, search.js).
 //
 // ext/author/keywords/folder/source : sélection CUMULATIVE (plusieurs
-// valeurs à la fois, combinées en OU côté Elasticsearch). `ext` stocke
+// valeurs à la fois). Côté Elasticsearch, ext/author/folder/source sont
+// combinées en OU — ces champs ne portent qu'une valeur par document,
+// un ET n'y matcherait jamais rien — tandis que keywords, multi-valué,
+// est combiné en ET : chaque mot-clé coché restreint le résultat (voir
+// _keywords_filter dans docsearch-api/app/search_api.py). `ext` stocke
 // les valeurs brutes du champ ES (".pdf", ".docx"), identiques aux clés
 // renvoyées par facets.extensions.
 
