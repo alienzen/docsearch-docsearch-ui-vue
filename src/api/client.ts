@@ -48,11 +48,58 @@ function detailToMessage(detail: unknown, status: number): string {
   return `Erreur ${status}`
 }
 
-export async function api<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
+/**
+ * Renouvellement de session en cours, s'il y en a un.
+ *
+ * Mutualisé volontairement : une page de recherche lance facilement cinq
+ * appels en parallèle au chargement, et le jeton d'accès expirant au bout
+ * de quinze minutes, ils reçoivent tous 401 en même temps. Sans ce
+ * partage, chacun tenterait son propre renouvellement — or le jeton de
+ * rafraîchissement ne sert QU'UNE FOIS (voir auth/router.py::refresh) :
+ * le premier réussirait, les quatre autres présenteraient un jeton déjà
+ * consommé et déconnecteraient l'utilisateur.
+ */
+let renouvellementEnCours: Promise<boolean> | null = null
+
+function renouvelerSession(): Promise<boolean> {
+  renouvellementEnCours ??= fetch('/auth/refresh', { method: 'POST' })
+    .then((r) => r.ok)
+    .catch(() => false)
+    .finally(() => {
+      renouvellementEnCours = null
+    })
+  return renouvellementEnCours
+}
+
+function redirigerVersConnexion() {
+  // Jamais depuis la page de connexion elle-même : elle appelle /auth/me
+  // pour savoir si une session existe déjà, et un 401 y est une réponse
+  // normale, pas une raison de recharger en boucle.
+  if (window.location.pathname.startsWith('/connexion')) return
+  const suite = encodeURIComponent(window.location.pathname + window.location.search)
+  window.location.assign(`/connexion?next=${suite}`)
+}
+
+export async function api<T = unknown>(
+  path: string,
+  options: RequestInit = {},
+  /** Usage interne : empêche le rejeu de se rejouer lui-même. */
+  rejouable = true,
+): Promise<T> {
   const res = await fetch(path, {
     headers: { 'Content-Type': 'application/json' },
     ...options,
   })
+
+  // Session expirée : une tentative de renouvellement, puis on rejoue.
+  // C'est ce qui rend l'expiration du jeton d'accès invisible — sans
+  // quoi l'application renverrait au formulaire toutes les quinze
+  // minutes, y compris en pleine saisie.
+  if (res.status === 401 && rejouable && !path.startsWith('/auth/')) {
+    if (await renouvelerSession()) return api<T>(path, options, false)
+    redirigerVersConnexion()
+  }
+
   if (!res.ok) {
     const body = await res.json().catch(() => ({}) as { detail?: unknown })
     throw new ApiError(detailToMessage(body.detail, res.status), res.status)

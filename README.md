@@ -39,7 +39,7 @@ l'identique de `docsearch-ui`, et un modèle d'accès inchangé.
 
 ```bash
 npm install
-npm run dev      # serveur Vite (proxy vers l'API, X-User simulé)
+npm run dev      # serveur Vite (proxy vers l'API)
 npm run build    # vue-tsc -b && vite build — le typage doit passer
 npm run test     # vitest run
 ```
@@ -131,10 +131,12 @@ c'est ce service que vise `upstream ui_backend` dans
 cd ../docsearch-infra && docker compose --profile dev up -d --build ui-vue
 ```
 
-Pour naviguer au navigateur, l'API exige l'en-tête `X-User` : passer par
-le proxy de test sur le port **8090** (voir
-`docsearch-infra/HOWTO-simuler-utilisateur.md`). Le port 8080 en direct
-renvoie 401.
+Pour naviguer au navigateur, il faut une session : ouvrir l'application
+et se laisser rediriger vers `/connexion`. Le raccourci de recette reste
+le proxy du port **8090**, qui injecte une identité fixe — il n'a d'effet
+que si l'API tourne avec `TRUST_X_USER_HEADER=true` (voir
+`docsearch-infra/HOWTO-simuler-utilisateur.md`). Sans session, toute page
+redirige vers le formulaire et toute route d'API répond 401.
 
 ## Repli
 

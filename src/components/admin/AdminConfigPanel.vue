@@ -41,7 +41,31 @@ async function reset() {
   }
 }
 
-const { confirm } = useDialogs()</script>
+const { confirm } = useDialogs()
+
+/**
+ * Paramètres à deux états, rendus par une liste déroulante plutôt que par
+ * un champ libre.
+ *
+ * Ils sont stockés en CHAÎNE et non en booléen, côté API : set_param()
+ * coerce la valeur reçue via `type(DEFAULT_RUNTIME[clé])`, et
+ * `bool("false")` vaut `True` en Python — un booléen y serait donc
+ * impossible à remettre à faux. La contrepartie est qu'un champ libre
+ * accepterait « False », « 0 » ou « oui », qui ne valent rien pour le
+ * serveur et échouent en silence. D'où cette liste.
+ */
+function estBooleen(valeur: unknown): boolean {
+  return valeur === 'true' || valeur === 'false'
+}
+
+/** Ce qu'un champ ne dit pas de lui-même. */
+const AIDES: Record<string, string> = {
+  sso_kerberos_enabled:
+    'Connexion automatique par ticket Kerberos. Exige un FQDN, un SPN ' +
+    'HTTP/<fqdn>, un keytab monté et une stratégie de parc autorisant les ' +
+    'navigateurs à envoyer un ticket — sans quoi les postes reçoivent un ' +
+    'défi que personne ne peut relever.',
+}</script>
 
 <template>
   <AdminPanel
@@ -63,17 +87,33 @@ const { confirm } = useDialogs()</script>
         </thead>
         <tbody>
           <tr v-for="(_, key) in data || {}" :key="key">
-            <td><code>{{ key }}</code></td>
             <td>
-              <!-- Le type du champ suit celui de la valeur : tous les
-                   paramètres n'étaient pas numériques (ocr_languages vaut
-                   « fra », ocr_strategy « auto »), et un champ `number`
-                   les rendait impossibles à saisir.
+              <code>{{ key }}</code>
+              <span v-if="AIDES[key]" class="fr-hint-text fr-mb-0">{{ AIDES[key] }}</span>
+            </td>
+            <td>
+              <!-- Un paramètre à deux états se règle par une liste : un
+                   champ libre accepterait « False » ou « oui », qui ne
+                   valent rien pour le serveur et échouent en silence. -->
+              <select
+                v-if="estBooleen((data || {})[key])"
+                v-model="values[key]"
+                class="fr-select fr-select--sm"
+                :aria-label="`Valeur de ${key}`"
+              >
+                <option value="true">activé</option>
+                <option value="false">désactivé</option>
+              </select>
+              <!-- Sinon, le type du champ suit celui de la valeur : tous
+                   les paramètres n'étaient pas numériques (ocr_languages
+                   vaut « fra », ocr_strategy « auto »), et un champ
+                   `number` les rendait impossibles à saisir.
                    `step="any"` : sans lui, le pas par défaut vaut 1 et le
                    navigateur invalide toute décimale — or les poids de
                    pertinence (search_boost_*) se règlent finement, un 2.5
                    doit passer. -->
               <input
+                v-else
                 v-model="values[key]"
                 class="fr-input fr-input--sm"
                 :type="typeof (data || {})[key] === 'number' ? 'number' : 'text'"
