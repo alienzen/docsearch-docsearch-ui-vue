@@ -10,8 +10,11 @@ import Components from 'unplugin-vue-components/vite'
 // ne sert qu'au dev local, où l'API est exposée sur le port 8000 de
 // l'hôte (voir docsearch-infra/docker-compose.yml, service "api").
 const API_TARGET = process.env.VITE_API_TARGET ?? 'http://localhost:8000'
-// En production, ce header est injecté par le SSO en amont du reverse
-// proxy ; en dev il n'y a pas de SSO, on simule donc un utilisateur.
+// Identité simulée pour `npm run dev`. ⚠️  N'a d'effet que si l'API tourne
+// avec TRUST_X_USER_HEADER=true (donc hors production, où elle refuse de
+// démarrer avec ce drapeau — voir app/auth/guardrails.py). Sans lui,
+// l'en-tête est ignoré et le serveur de développement se comporte comme
+// la production : il faut passer par /connexion.
 const DEV_USER = process.env.VITE_DEV_USER ?? 'dev-user'
 
 // Tous les préfixes proxifiés vers l'API — doit rester le miroir exact
@@ -101,6 +104,10 @@ export default defineConfig({
         stats: fileURLToPath(new URL('./stats.html', import.meta.url)),
         admin: fileURLToPath(new URL('./admin.html', import.meta.url)),
         'admin-help': fileURLToPath(new URL('./admin-help.html', import.meta.url)),
+        // Seule page PUBLIQUE : c'est celle qui permet d'obtenir une
+        // session, elle ne peut pas en exiger une (voir nginx.conf,
+        // location = /connexion, sans auth_request).
+        connexion: fileURLToPath(new URL('./connexion.html', import.meta.url)),
       },
     },
   },
