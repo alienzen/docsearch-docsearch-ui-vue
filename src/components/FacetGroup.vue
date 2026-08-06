@@ -18,6 +18,12 @@ const props = defineProps<{
   selected: string[]
   /** Message affiché quand la facette ne renvoie rien. */
   emptyLabel: string
+  /**
+   * Précision affichée au-dessus des cases, quand la facette ne se
+   * comporte pas comme les autres — aujourd'hui les mots-clés, seule
+   * facette combinée en ET côté API.
+   */
+  hint?: string
   /** Libellé affiché pour une valeur (défaut : la valeur elle-même). */
   labelOf?: (key: string) => string
 }>()
@@ -34,6 +40,7 @@ const rows = computed(() => props.buckets.filter((b) => b.key !== '' && b.key !=
   <FacetSection :id="id" :title="title">
     <p v-if="!rows.length" class="fr-hint-text fr-mb-0">{{ emptyLabel }}</p>
     <div v-else class="fr-fieldset__content">
+      <p v-if="hint" class="fr-hint-text fr-mb-1v">{{ hint }}</p>
       <div v-for="bucket in rows" :key="bucket.key" class="fr-checkbox-group fr-checkbox-group--sm">
         <input
           :id="`${id}-${bucket.key}`"

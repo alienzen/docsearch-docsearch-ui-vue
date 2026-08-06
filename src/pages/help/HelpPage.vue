@@ -24,6 +24,9 @@ onMounted(() => uiConfig.loadUiConfig())
     :service-description="uiConfig.headerSubtitle"
     :logo-text="uiConfig.logoText"
     home-to="/"
+    operator-img-src="/logo-docsearch.svg"
+    operator-img-alt="DocSearch"
+    operator-img-style="max-width: 2.5rem"
   />
 
   <main id="main-content" class="fr-container ds-prose fr-my-4w">

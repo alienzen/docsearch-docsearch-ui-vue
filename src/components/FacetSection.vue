@@ -53,8 +53,12 @@ onBeforeUnmount(() => preferences.unregisterFacet(props.id))
 
 <template>
   <details class="fr-accordion ds-facet" :open="open" @toggle="onToggle">
+    <!-- Même raison que dans CollapsiblePanel : le DSFR fait pivoter le
+         chevron sur .fr-accordion__btn[aria-expanded=true], et l'attribut
+         natif `open` de <details> ne déclenche pas cette règle. -->
     <summary
       class="fr-accordion__btn"
+      :aria-expanded="open"
       :title="shortcutDigit ? `${title} — replier ou déplier (${shortcutDigit})` : title"
       :aria-keyshortcuts="shortcutDigit || undefined"
     >

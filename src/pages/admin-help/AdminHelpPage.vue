@@ -27,6 +27,9 @@ onMounted(async () => {
     service-description="Aide administrateur"
     :logo-text="uiConfig.logoText"
     home-to="/"
+    operator-img-src="/logo-docsearch.svg"
+    operator-img-alt="DocSearch"
+    operator-img-style="max-width: 2.5rem"
     :quick-links="[
       {
         label: 'Administration',
@@ -103,5 +106,8 @@ onMounted(async () => {
     licence-name=""
     :mandatory-links="[]"
     :ecosystem-links="[]"
+    operator-img-src="/logo-docsearch.svg"
+    operator-img-alt="DocSearch"
+    operator-img-style="max-width: 2.5rem"
   />
 </template>

@@ -17,3 +17,19 @@ l'en-tête comme l'onglet retombent sur les valeurs par défaut.
 
 Pour utiliser une autre image : la déposer ici, puis saisir son nom dans
 le champ « Favicon personnalisé » du panneau « Interface ».
+
+## `logo-docsearch.svg` fait exception
+
+C'est la marque du LOGICIEL, pas de l'installation : elle n'est donc pas
+paramétrable et aucun réglage ne la désigne. Les six pages la citent en
+dur (`operator-img-src="/logo-docsearch.svg"`).
+
+Elle ne rouvre pas le réglage « Logo personnalisé (en-tête) » retiré
+ci-dessus : celui-ci se substituait au bloc-marque, alors que celle-ci
+occupe `.fr-header__operator`, l'emplacement que le DSFR prévoit à côté
+du bloc-marque et de son filet vertical.
+
+Servie depuis `public/` et non importée depuis `src/assets` : un asset
+importé devient un module commun aux six entrées, et Rollup en fait
+alors le nom du gros paquet partagé — la feuille DSFR d'un Mio se
+retrouve appelée `logo-docsearch-*.css`.

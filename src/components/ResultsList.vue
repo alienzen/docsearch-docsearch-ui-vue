@@ -48,8 +48,18 @@ const paginationPages = computed(() =>
 </script>
 
 <template>
-  <div>
-    <DsfrAlert v-if="store.error" type="error" :description="store.error" class="fr-mb-2w" />
+  <div :class="{ 'ds-results--loading': store.loading && store.results.length }">
+    <!-- Attente à écran vide : première recherche, ou reprise après une
+         erreur. Passe AVANT le test d'erreur, sinon le message de la
+         recherche précédente resterait affiché pendant la suivante.
+         `role="status"` porte l'annonce vocale — le cercle seul ne dit
+         rien à un lecteur d'écran. -->
+    <div v-if="store.loading && !store.results.length" class="ds-loading" role="status" aria-live="polite">
+      <span class="ds-spinner" aria-hidden="true" />
+      <p class="fr-text--sm fr-mb-0">Recherche en cours…</p>
+    </div>
+
+    <DsfrAlert v-else-if="store.error" type="error" :description="store.error" class="fr-mb-2w" />
 
     <!-- Rien avant la première recherche : l'invitation à en lancer une
          est portée par EmptySearchState, au-dessus. Deux messages

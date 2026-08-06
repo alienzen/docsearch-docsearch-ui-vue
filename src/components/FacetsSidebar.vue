@@ -87,6 +87,7 @@ const dateTo = computed({
         title="Mots-clés"
         :buckets="facets.keywords"
         :selected="store.keywords"
+        hint="Plusieurs mots-clés : seuls les documents portant tous les mots-clés cochés."
         empty-label="Aucun mot-clé"
         @toggle="store.toggleFacet('keywords', $event)"
       />

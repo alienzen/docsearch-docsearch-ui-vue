@@ -201,6 +201,9 @@ onMounted(() => {
     :service-description="uiConfig.headerSubtitle"
     :logo-text="uiConfig.logoText"
     home-to="/"
+    operator-img-src="/logo-docsearch.svg"
+    operator-img-alt="DocSearch"
+    operator-img-style="max-width: 2.5rem"
     :quick-links="quickLinks"
     show-search
     search-label="Rechercher un document"
@@ -291,7 +294,13 @@ onMounted(() => {
              résultats, la place revient à ceux-ci. Animation désactivée
              par l'administrateur, l'invitation reste — sinon la page
              d'accueil serait entièrement vide. -->
-        <template v-if="!store.hasSearched">
+        <!-- `!store.loading` autant que `!store.hasSearched` :
+             hasSearched ne passe à true qu'APRÈS la réponse du serveur,
+             si bien que l'invitation restait affichée pendant tout
+             l'appel — visible surtout au clic sur un exemple, où la
+             recherche part sans que l'utilisateur ait rien saisi. Elle
+             cohabiterait de surcroît avec le spinner. -->
+        <template v-if="!store.hasSearched && !store.loading">
           <EmptySearchState v-if="uiConfig.config.empty_state_animation_enabled" />
           <p v-else class="fr-text--sm">Lancez une recherche pour voir les résultats.</p>
         </template>
@@ -318,6 +327,9 @@ onMounted(() => {
     licence-name=""
     :mandatory-links="[]"
     :ecosystem-links="[]"
+    operator-img-src="/logo-docsearch.svg"
+    operator-img-alt="DocSearch"
+    operator-img-style="max-width: 2.5rem"
   />
 
   <BackToTop />

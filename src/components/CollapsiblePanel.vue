@@ -70,8 +70,14 @@ function onToggle(event: Event) {
     <!-- `fr-ml-1w` et non une espace littérale : Vue supprime les nœuds
          de texte purement blancs entre une interpolation et un élément,
          et le titre se retrouvait collé à son sous-titre. -->
+    <!-- `aria-expanded` est INDISPENSABLE au rendu, pas seulement à
+         l'accessibilité : le DSFR pivote le chevron et colore le fond
+         sur .fr-accordion__btn[aria-expanded=true]. L'attribut natif
+         `open` de <details> ne déclenche aucune de ces deux règles, si
+         bien que le chevron restait figé quel que soit l'état. -->
     <summary
       class="fr-accordion__btn"
+      :aria-expanded="open"
       :title="shortcutDigit ? `${title} — replier ou déplier (${shortcutDigit})` : title"
       :aria-keyshortcuts="shortcutDigit || undefined"
     >

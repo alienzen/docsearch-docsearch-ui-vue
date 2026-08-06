@@ -95,7 +95,7 @@ const cards = computed<Card[]>(() => {
     <p v-if="staleSince" class="fr-hint-text">
       Dernier rafraîchissement en échec ({{ staleSince }}) — valeurs précédentes affichées.
     </p>
-    <div class="ds-stats__cards">
+    <div class="ds-stats__cards fr-mt-2w">
       <div v-for="card in cards" :key="card.name" class="ds-stats__card">
         <p class="fr-hint-text fr-mb-0">{{ card.name }}</p>
         <p class="ds-stats__value">
