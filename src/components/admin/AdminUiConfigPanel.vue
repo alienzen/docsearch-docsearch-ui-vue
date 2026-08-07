@@ -54,6 +54,11 @@ const TOGGLES: { key: keyof UiConfig; label: string }[] = [
   { key: 'show_current_user_groups_enabled', label: '… avec ses groupes' },
   { key: 'show_current_user_enabled_admin', label: 'Badge « Connecté : … » côté administration' },
   { key: 'show_current_user_groups_enabled_admin', label: '… avec ses groupes' },
+  {
+    key: 'login_proconnect_enabled',
+    label:
+      'Connexion — jalon « Se connecter avec ProConnect » (bouton affiché mais désactivé : rien ne l’implémente côté serveur)',
+  },
 ]
 
 const TEXT_FIELDS: {
@@ -78,6 +83,16 @@ const TEXT_FIELDS: {
     label: 'Mention de bas de page',
     hint: 'Ligne tout en bas du pied de page. Vide = ligne masquée.',
     multiline: true,
+  },
+  {
+    key: 'login_inscription_url',
+    label: 'Connexion — lien « Pas encore de compte ? »',
+    hint: "URL de la démarche de demande de compte (formulaire intranet, portail d'annuaire…). DocSearch ne gère pas les comptes lui-même : la destination est forcément externe. Vide = lien masqué.",
+  },
+  {
+    key: 'login_mot_de_passe_oublie_url',
+    label: 'Connexion — lien « Mot de passe oublié ? »',
+    hint: 'URL du portail de réinitialisation. Vide = lien masqué.',
   },
   {
     key: 'sources_mount_display',

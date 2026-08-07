@@ -61,6 +61,19 @@ export type UiConfig = {
   sources_mount: string
   sources_mount_display: string
   /**
+   * Page de connexion — les trois éléments que charlie/app-front affiche
+   * sous le formulaire (voir LoginView.vue), ici optionnels.
+   *
+   * Les deux liens sont des URL et non des bascules : DocSearch n'a ni
+   * demande de compte ni réinitialisation de mot de passe, la destination
+   * est donc forcément externe (intranet, portail d'annuaire) et c'est
+   * l'administrateur qui la désigne. Vide = lien masqué.
+   */
+  login_inscription_url: string
+  login_mot_de_passe_oublie_url: string
+  /** Jalon ProConnect : bouton visible mais DÉSACTIVÉ, comme dans charlie. */
+  login_proconnect_enabled: boolean
+  /**
    * Apparence, réglée depuis l'administration. Le champ existait déjà,
    * mais portait l'un des 7 thèmes maison ('slate', 'red', 'dsfr'…) :
    * il ne peut désormais valoir que 'light', 'dark' ou 'system', le
@@ -114,6 +127,14 @@ const DEFAULT_UI_CONFIG: UiConfig = {
   footer_bottom_text: '',
   sources_mount: '/sources',
   sources_mount_display: '',
+  // Exception au « tout activé » ci-dessus, et c'est voulu : si
+  // /ui-config échoue, l'écran de connexion doit rester le formulaire
+  // seul. Un repli qui afficherait des liens sans URL ou un jalon
+  // ProConnect inventerait des éléments que l'installation n'a peut-être
+  // jamais configurés.
+  login_inscription_url: '',
+  login_mot_de_passe_oublie_url: '',
+  login_proconnect_enabled: false,
 }
 
 /**

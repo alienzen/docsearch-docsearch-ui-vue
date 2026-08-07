@@ -40,6 +40,15 @@ const identifiant = ref('')
 const motDePasse = ref('')
 const erreur = ref('')
 const enCours = ref(false)
+/**
+ * Échec SSO, tenu à part de `erreur` : c'est un avertissement affiché sous
+ * le bouton « session Windows », pas une erreur de saisie affichée dans le
+ * formulaire — même répartition que charlie/app-front (`ssoError` vs
+ * `error` dans LoginView.vue).
+ */
+const erreurSso = ref('')
+/** Tentative SSO déclenchée au clic ; l'automatique est couverte par `decouverte`. */
+const ssoEnCours = ref(false)
 /** Tant que la reprise de session et la tentative SSO n'ont pas répondu. */
 const decouverte = ref(true)
 /**
@@ -67,6 +76,29 @@ function entrer() {
   window.location.assign(destination.value)
 }
 
+/**
+ * Liens optionnels sous le formulaire (« Pas encore de compte ? », « Mot
+ * de passe oublié ? »), dont l'URL vient de l'administration — voir
+ * `login_*_url` dans docsearch-api/app/ui_config.py. Vide = lien masqué.
+ *
+ * Seuls `http(s)://` et les chemins internes sont rendus : un
+ * `javascript:…` enregistré dans la configuration s'exécuterait sur la
+ * seule page que tout le monde traverse, session ou non. Écrire cette
+ * configuration demande déjà d'être administrateur, mais ça reste le
+ * genre de valeur qui se recopie d'une installation à l'autre sans être
+ * relue.
+ */
+function lienExterne(brut: unknown): string {
+  const url = typeof brut === 'string' ? brut.trim() : ''
+  if (url.startsWith('/') && !url.startsWith('//')) return url
+  return /^https?:\/\//i.test(url) ? url : ''
+}
+
+const lienInscription = computed(() => lienExterne(uiConfig.config.login_inscription_url))
+const lienMotDePasseOublie = computed(() =>
+  lienExterne(uiConfig.config.login_mot_de_passe_oublie_url),
+)
+
 async function reprendreSession(): Promise<boolean> {
   const reponse = await fetch('/auth/refresh', { method: 'POST' }).catch(() => null)
   return reponse?.ok ?? false
@@ -76,6 +108,7 @@ async function essayerSso(forcer = false) {
   if (!forcer && !ssoAutorise()) return false
   if (forcer) autoriserSsoANouveau()
 
+  erreurSso.value = ''
   const resultat = await tenterSso()
   switch (resultat.etat) {
     case 'connecte':
@@ -88,7 +121,7 @@ async function essayerSso(forcer = false) {
     case 'panne':
       // Un ticket valide refusé, ou une panne franche : à afficher. Les
       // taire enverrait chercher un mot de passe là où il n'y en a pas.
-      erreur.value = resultat.message
+      erreurSso.value = resultat.message
       return false
     default:
       // Défi non relevé : poste hors domaine ou navigateur non
@@ -116,6 +149,16 @@ onMounted(async () => {
   await essayerSso()
   decouverte.value = false
 })
+
+/** Rattrapage manuel du SSO — voir le bouton dans le <template>. */
+async function ssoAuClic() {
+  ssoEnCours.value = true
+  try {
+    await essayerSso(true)
+  } finally {
+    ssoEnCours.value = false
+  }
+}
 
 async function soumettre() {
   erreur.value = ''
@@ -150,8 +193,16 @@ async function soumettre() {
   <!-- Largeur de saisie, champ de mot de passe et icône du bouton alignés
        sur charlie/app-front/src/views/LoginView.vue : c'est l'écran que les
        mêmes personnes voient dans les deux applications, deux mises en page
-       différentes s'y remarquent immédiatement. -->
-  <main id="main-content" class="fr-container fr-my-6w">
+       différentes s'y remarquent immédiatement.
+
+       Espacement vertical compris : `fr-mt-4w fr-mb-6w` (2 rem / 3 rem)
+       reproduit le `.app-main-container` de charlie/app-front/src/style.css
+       (padding-top 2rem, padding-bottom 3rem). L'en-tête DSFR hors session
+       fait exactement la même hauteur dans les deux applications, donc à
+       marge égale les deux écrans se superposent au pixel. Un `fr-my-6w`
+       symétrique — ce qu'il y avait ici — descendait tout le formulaire de
+       16 px par rapport à charlie. -->
+  <main id="main-content" class="fr-container fr-mt-4w fr-mb-6w">
     <div class="fr-grid-row fr-grid-row--center">
       <div class="fr-col-12 fr-col-md-6">
         <h1 class="fr-h4">Connexion</h1>
@@ -161,14 +212,6 @@ async function soumettre() {
         </p>
 
         <template v-else>
-          <DsfrAlert
-            v-if="erreur"
-            type="error"
-            :description="erreur"
-            small
-            class="fr-mb-3w"
-          />
-
           <form class="fr-mt-3w" @submit.prevent="soumettre">
             <DsfrInput
               id="identifiant"
@@ -190,28 +233,84 @@ async function soumettre() {
               required
               class="fr-mb-3w"
             />
+            <!-- Message d'échec ENTRE les champs et le bouton, comme dans
+                 charlie : au-dessus du formulaire, il décalait vers le bas
+                 tout ce qui suit dès la première erreur de saisie. -->
+            <DsfrAlert
+              v-if="erreur"
+              type="error"
+              :description="erreur"
+              small
+              class="fr-mb-3w"
+            />
+
+            <!-- Désactivé pendant l'envoi SEULEMENT : un bouton grisé tant
+                 que les deux champs sont vides, c'est ce que charlie
+                 n'affiche pas, et l'écran s'ouvrait donc sur un bouton gris
+                 là où l'autre application en montre un bleu. Les champs sont
+                 `required` : la soumission à vide reste bloquée par le
+                 navigateur, qui pointe en plus le champ fautif. -->
             <DsfrButton
               type="submit"
               icon="fr-icon-lock-unlock-line"
-              :disabled="enCours || !identifiant || !motDePasse"
+              :disabled="enCours"
               :label="enCours ? 'Connexion…' : 'Se connecter'"
             />
           </form>
+
+          <!-- Liens de démarche, aux mêmes places que dans charlie
+               (fr-mt-3w puis fr-mt-2w). Absents tant que l'administration
+               n'a pas saisi d'URL : DocSearch ne gère ni demande de compte
+               ni réinitialisation, la destination est donc propre à
+               l'installation — annuaire, portail intranet — et personne ne
+               peut la deviner à sa place. Voir `login_*_url` dans
+               docsearch-api/app/ui_config.py. -->
+          <p v-if="lienInscription" class="fr-mt-3w fr-mb-0">
+            <a class="fr-link" :href="lienInscription">
+              Pas encore de compte ? Faire une demande d'inscription
+            </a>
+          </p>
+
+          <p v-if="lienMotDePasseOublie" class="fr-mt-2w fr-mb-0">
+            <a class="fr-link" :href="lienMotDePasseOublie">Mot de passe oublié ?</a>
+          </p>
 
           <!-- Rattrapage : pour qui vient de se déconnecter et veut se
                reconnecter sans changer de compte, et pour diagnostiquer
                un poste dont on ne sait pas s'il est configuré. Masqué si
                le serveur a répondu 501 — le SSO est éteint, le bouton ne
                ferait que promettre ce qui n'existe pas. -->
-          <p v-if="ssoDisponible" class="fr-mt-4w">
+          <template v-if="ssoDisponible">
             <DsfrButton
+              class="fr-mt-3w"
               secondary
-              icon="ri-windows-line"
-              label="Se connecter avec ma session Windows"
-              :disabled="enCours"
-              @click="essayerSso(true)"
+              :disabled="ssoEnCours"
+              :label="ssoEnCours ? 'Connexion…' : 'Se connecter avec ma session Windows'"
+              @click="ssoAuClic"
             />
-          </p>
+            <DsfrAlert
+              v-if="erreurSso"
+              type="warning"
+              :description="erreurSso"
+              small
+              class="fr-mt-2w"
+            />
+          </template>
+
+          <!-- Jalon ProConnect, désactivé — même bouton, même libellé et
+               même place que dans charlie. Volontairement pas cliquable :
+               aucune route de l'API ne l'implémente (voir
+               docsearch-api/app/auth/router.py), un bouton actif mènerait
+               droit à une erreur. Masqué par défaut ; à n'activer que sur
+               une installation où ProConnect est effectivement attendu. -->
+          <DsfrButton
+            v-if="uiConfig.config.login_proconnect_enabled"
+            class="fr-mt-3w"
+            secondary
+            disabled
+            title="ProConnect n'est pas encore implémenté côté serveur"
+            label="Se connecter avec ProConnect (bientôt disponible)"
+          />
         </template>
       </div>
     </div>
