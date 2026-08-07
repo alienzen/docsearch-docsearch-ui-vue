@@ -13,6 +13,19 @@ export type ClusterStatus = {
   status?: string
 }
 
+/**
+ * Identité d'un composant DocSearch déployé — voir
+ * docsearch-api/app/version.py. `source` précise d'où vient la valeur
+ * quand ce n'est pas le composant lui-même qui la rapporte (l'ingestion
+ * passe par le battement de cœur du watcher).
+ */
+export type ComponentVersion = {
+  version?: string
+  commit?: string
+  build_date?: string
+  source?: string
+}
+
 export type AdminStatus = {
   elasticsearch?: ClusterStatus
   redis?: { up?: boolean }
@@ -20,6 +33,13 @@ export type AdminStatus = {
   tika?: { up_count?: number; total?: number }
   workers?: { active_workers?: number; pending_documents?: number }
   watcher?: { alive?: boolean; last_seen_seconds_ago?: number | null }
+  /**
+   * Clés « api » et « ingestion ». L'interface ne s'y trouve pas : sa
+   * version est figée dans son propre bundle (voir src/version.ts).
+   * « ingestion » est absente tant qu'aucun battement de watcher n'a été
+   * reçu, et d'un battement écrit par une version antérieure à 2.2.0.
+   */
+  versions?: Record<string, ComponentVersion>
   sources?: unknown
 }
 
