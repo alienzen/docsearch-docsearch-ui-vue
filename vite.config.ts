@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
 // `vitest/config` plutôt que `vite` : même defineConfig, mais qui type
 // aussi la clé `test` en bas de fichier.
@@ -16,6 +17,18 @@ const API_TARGET = process.env.VITE_API_TARGET ?? 'http://localhost:8000'
 // l'en-tête est ignoré et le serveur de développement se comporte comme
 // la production : il faut passer par /connexion.
 const DEV_USER = process.env.VITE_DEV_USER ?? 'dev-user'
+
+// ── Identité de la livraison ────────────────────────────────
+// Figée dans le bundle au build : l'interface est servie en statique par
+// Nginx, il n'y a aucune exécution côté serveur pour lire une variable
+// d'environnement à la volée.
+//
+// La version PRODUIT vient du fichier VERSION, seule source de vérité —
+// et NON du champ `version` de package.json, qui reste à 0.0.0 : ce
+// paquet n'est jamais publié, et deux valeurs à maintenir en parallèle
+// finiraient par diverger. L'estampille de build (commit + date) est
+// injectée par ./manage.sh build via les ARG du Containerfile.
+const VERSION = readFileSync(fileURLToPath(new URL('./VERSION', import.meta.url)), 'utf-8').trim()
 
 // Tous les préfixes proxifiés vers l'API — doit rester le miroir exact
 // des blocs `location` de nginx.conf. Ajouter un chemin ici sans
@@ -48,6 +61,16 @@ const API_ROUTES =
   ')'
 
 export default defineConfig({
+  define: {
+    // DOCSEARCH_VERSION reste prioritaire sur le fichier : c'est
+    // ./manage.sh build qui le passe, et il le lit du même VERSION —
+    // l'égalité est donc garantie. Le repli sur le fichier sert
+    // `npm run dev` et `npm run build` lancés à la main.
+    __DOCSEARCH_VERSION__: JSON.stringify(process.env.DOCSEARCH_VERSION || VERSION),
+    __DOCSEARCH_COMMIT__: JSON.stringify(process.env.DOCSEARCH_COMMIT || 'inconnu'),
+    __DOCSEARCH_BUILD_DATE__: JSON.stringify(process.env.DOCSEARCH_BUILD_DATE || 'inconnu'),
+  },
+
   plugins: [
     vue(),
     // Auto-import des composants DSFR (<DsfrButton />, <DsfrModal />...)

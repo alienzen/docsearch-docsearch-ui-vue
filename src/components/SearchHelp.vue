@@ -12,6 +12,7 @@
  * infobulles des commandes.
  */
 import { SHORTCUTS } from '@/constants'
+import { versionComplete } from '@/version'
 
 const operators: [string, string, string][] = [
   ['auteur:', 'auteur:"Jean Dupont"', 'Facette Auteur'],
@@ -88,5 +89,10 @@ const operators: [string, string, string][] = [
 
     <h2 class="fr-h5">Besoin d'aide&nbsp;?</h2>
     <p>Contactez l'équipe technique pour toute question sur l'utilisation de DocSearch.</p>
+    <!-- Version en toutes lettres, à recopier dans un signalement. Ici
+         plutôt que dans le seul pied de page, que l'administration peut
+         désactiver (`footer_enabled`) : un utilisateur qui signale un
+         problème doit toujours pouvoir dire sur quelle version. -->
+    <p class="fr-hint-text">{{ versionComplete }}</p>
   </div>
 </template>

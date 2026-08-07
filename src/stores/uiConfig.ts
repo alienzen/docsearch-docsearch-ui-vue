@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { api } from '@/api/client'
+import { versionCourte } from '@/version'
 
 // Portage de docsearch-ui/public/js/config.js — les caches
 // uiConfigCache / isAdminCache / currentUserCache et les sources
@@ -245,6 +246,25 @@ export const useUiConfigStore = defineStore('uiConfig', () => {
   )
 
   /**
+   * Mention tout en bas du pied de page, suffixée de la version du
+   * produit — présente sur les cinq pages qui affichent un pied de page.
+   *
+   * Suffixée plutôt qu'ajoutée en élément distinct : DsfrFooter ne
+   * propose, sous les liens obligatoires, qu'une ligne de licence, et un
+   * second réglage « afficher la version » se serait retrouvé en
+   * concurrence avec `footer_bottom_text` que l'administrateur édite
+   * déjà. Le séparateur n'apparaît que si le texte configuré n'est pas
+   * vide, la ligne restant sinon masquée par DsfrFooter.
+   *
+   * Le pied de page étant désactivable (`footer_enabled`), il ne peut
+   * pas être le seul endroit où lire la version : l'aide la porte aussi,
+   * en toutes lettres (voir SearchHelp.vue).
+   */
+  const footerBottomText = computed(() =>
+    [config.value.footer_bottom_text, versionCourte].filter(Boolean).join(' · '),
+  )
+
+  /**
    * Libellé d'affichage d'une source à partir de son nom (clé de
    * registre) — repli sur le nom brut si elle n'est pas (encore) connue.
    */
@@ -401,6 +421,7 @@ export const useUiConfigStore = defineStore('uiConfig', () => {
     headerTitle,
     headerSubtitle,
     footerText,
+    footerBottomText,
     sourceLabel,
     sourceCardFields,
     sourceCollectable,

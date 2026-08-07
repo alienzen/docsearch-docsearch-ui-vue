@@ -226,7 +226,7 @@ async function soumettre() {
     v-if="uiConfig.config.footer_enabled"
     :logo-text="uiConfig.logoText"
     :desc-text="uiConfig.footerText"
-    :licence-text="uiConfig.config.footer_bottom_text"
+    :licence-text="uiConfig.footerBottomText"
     licence-name=""
     :mandatory-links="[]"
     :ecosystem-links="[]"
