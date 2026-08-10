@@ -129,7 +129,7 @@ production, c'est ce conteneur que vise `upstream ui_backend` dans
 
 ```bash
 cd ../docsearch-infra
-./manage.sh build ui
+sudo ./manage.sh build ui
 sudo systemctl restart docsearch-ui-vue
 ```
 
@@ -142,16 +142,19 @@ redirige vers le formulaire et toute route d'API répond 401.
 
 ## Repli
 
-L'interface historique n'a plus d'unité systemd, mais son image reste
-constructible et lançable à la main :
+L'interface historique (`docsearch-ui`) n'a plus d'unité systemd, et son
+dépôt n'est plus cloné : il est archivé en bundle git à la racine
+(`docsearch-ui-2026-08-10.bundle`). Un retour arrière n'est donc plus une
+bascule d'amont — il faut d'abord restaurer le dépôt, puis construire et
+lancer l'image à la main.
 
-```bash
-cd ../docsearch-ui
-podman build -t localhost/docsearch/ui:latest .
-sudo podman run -d --name docsearch-ui -p 8082:80 \\
-  --network docsearch-net localhost/docsearch/ui:latest
-```
+La procédure tient dans `docsearch-infra/README.md`, § Architecture
+multi-dépôts, et n'est volontairement écrite qu'à cet endroit : elle vivait
+jusqu'ici en trois copies qui ont divergé. Deux points en retenir, parce
+qu'ils échouent en silence :
 
-Pour un retour arrière en production, repointer `upstream ui_backend` sur
-`ui:80` puis **redémarrer** `docsearch-nginx` — Nginx résout ses amonts au
-démarrage et garde l'adresse.
+- la construction se fait avec `sudo`, sinon l'image atterrit dans un
+  magasin rootless que les unités, root, ne voient pas ;
+- l'amont `ui_backend` doit viser `docsearch-ui:80` et non le 8082, qui
+  n'est publié que sur l'hôte. Après quoi **redémarrer** `docsearch-nginx` :
+  Nginx résout ses amonts au démarrage et garde l'adresse.
