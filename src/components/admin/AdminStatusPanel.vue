@@ -47,6 +47,7 @@ const cards = computed<Card[]>(() => {
   const tika = s.tika || {}
   const workers = s.workers || {}
   const watcher = s.watcher || {}
+  const journal = s.search_log || {}
   return [
     {
       name: 'Elasticsearch',
@@ -82,8 +83,38 @@ const cards = computed<Card[]>(() => {
       up: null,
       hint: 'document(s) en attente de traitement',
     },
+    // Aucune des cartes ci-dessus ne couvre ce cas : un cluster « green »
+    // dont les index sont bloqués en lecture seule affiche du vert
+    // partout, pendant que plus une recherche n'est journalisée. Voir le
+    // commentaire de search_log.health() côté API.
+    {
+      name: 'Journalisation',
+      value: journal.ok == null ? 'inconnue' : journal.ok ? 'active' : 'en échec',
+      up: journal.ok ?? null,
+      hint:
+        journal.ok == null
+          ? journal.reason
+          : `dernière tentative il y a ${journal.last_attempt_seconds_ago ?? '?'}s`,
+    },
   ]
 })
+
+/**
+ * L'échec est le seul état qui mérite d'interrompre la lecture : il est
+ * invisible partout ailleurs, y compris pour l'utilisateur, à qui trois
+ * fonctionnalités disparaissent sans explication. Le message d'ES est
+ * repris tel quel — c'est lui qui nomme la cause (disque saturé, mapping
+ * refusé, index bloqué), et le résumer reviendrait à la deviner.
+ */
+const journalEnEchec = computed(() => data.value?.search_log?.ok === false)
+
+const descriptionEchecJournal = computed(
+  () =>
+    `${data.value?.search_log?.error || 'cause non rapportée'} — conséquences côté utilisateur, ` +
+    `elles aussi silencieuses : plus de pouce « utile / peu utile » sous les résultats, ` +
+    `plus de popup de satisfaction, plus de suivi des clics, et la page Statistiques ` +
+    `cesse de se remplir.`,
+)
 
 // ── Versions déployées ──────────────────────────────────────
 /**
@@ -149,6 +180,13 @@ const versionsDivergentes = computed(() => {
     <p v-if="staleSince" class="fr-hint-text">
       Dernier rafraîchissement en échec ({{ staleSince }}) — valeurs précédentes affichées.
     </p>
+    <DsfrAlert
+      v-if="journalEnEchec"
+      type="error"
+      title="Les recherches ne sont plus journalisées"
+      :description="descriptionEchecJournal"
+      class="fr-mt-2w"
+    />
     <div class="ds-stats__cards fr-mt-2w">
       <div v-for="card in cards" :key="card.name" class="ds-stats__card">
         <p class="fr-hint-text fr-mb-0">{{ card.name }}</p>

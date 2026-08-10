@@ -23,14 +23,14 @@ const BASE = {
   watcher: { alive: true, last_seen_seconds_ago: 2 },
 }
 
-function monterAvec(versions: unknown) {
+function monterAvec(versions: unknown, reste: Record<string, unknown> = {}) {
   vi.stubGlobal(
     'fetch',
     vi.fn(() =>
       Promise.resolve({
         ok: true,
         status: 200,
-        json: () => Promise.resolve({ ...BASE, versions }),
+        json: () => Promise.resolve({ ...BASE, ...reste, versions }),
       }),
     ),
   )
@@ -87,5 +87,62 @@ describe('AdminStatusPanel — versions déployées', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('estampille de build absente')
+  })
+})
+
+// La carte « Journalisation » existe pour un cas précis : ES refuse les
+// écritures alors que TOUT LE RESTE est au vert (BASE ci-dessus décrit
+// exactement cette situation — cluster « green », Redis, Kafka, workers
+// et watcher en bon état). Ce qu'on vérifie donc, c'est qu'elle sait
+// contredire ses voisines, et qu'elle se tait quand elle n'a rien appris.
+
+describe('AdminStatusPanel — journalisation des recherches', () => {
+  const versionsSaines = { api: { version: __DOCSEARCH_VERSION__, commit: 'a1b2c3d' } }
+
+  beforeEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('alerte, en nommant la cause, quand la journalisation est en échec', async () => {
+    const wrapper = monterAvec(versionsSaines, {
+      search_log: {
+        ok: false,
+        last_attempt_seconds_ago: 3.2,
+        error: 'ApiError(429, ...disk usage exceeded flood-stage watermark...)',
+      },
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Les recherches ne sont plus journalisées')
+    expect(wrapper.text()).toContain('flood-stage watermark')
+    // L'effet visible côté utilisateur, que rien d'autre ne rattache à
+    // cette panne : c'est par là que le diagnostic commence en pratique.
+    expect(wrapper.text()).toContain('plus de pouce')
+    expect(wrapper.text()).toContain('en échec')
+  })
+
+  it("n'alerte pas quand la journalisation fonctionne", async () => {
+    const wrapper = monterAvec(versionsSaines, {
+      search_log: { ok: true, last_attempt_seconds_ago: 12 },
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('Les recherches ne sont plus journalisées')
+    expect(wrapper.text()).toContain('dernière tentative il y a 12s')
+  })
+
+  it("reste neutre tant qu'aucune recherche n'a été journalisée", async () => {
+    // Installation neuve ou Redis vidé : ne rien savoir n'est pas une
+    // panne. Une carte rouge au démarrage de chaque instance apprendrait
+    // à l'administrateur à ignorer ce voyant, ce qui la rendrait inutile
+    // le jour où elle a quelque chose à dire.
+    const wrapper = monterAvec(versionsSaines, {
+      search_log: { ok: null, reason: 'aucune recherche journalisée depuis le démarrage' },
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('Les recherches ne sont plus journalisées')
+    expect(wrapper.text()).toContain('inconnue')
+    expect(wrapper.text()).toContain('aucune recherche journalisée depuis le démarrage')
   })
 })

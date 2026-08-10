@@ -34,6 +34,18 @@ export type AdminStatus = {
   workers?: { active_workers?: number; pending_documents?: number }
   watcher?: { alive?: boolean; last_seen_seconds_ago?: number | null }
   /**
+   * Journalisation des recherches — voir search_log.health(). `ok` à
+   * null n'est pas une panne mais une absence d'information (aucune
+   * recherche depuis le dernier vidage de Redis), auquel cas `reason`
+   * dit laquelle.
+   */
+  search_log?: {
+    ok?: boolean | null
+    last_attempt_seconds_ago?: number
+    error?: string | null
+    reason?: string
+  }
+  /**
    * Clés « api » et « ingestion ». L'interface ne s'y trouve pas : sa
    * version est figée dans son propre bundle (voir src/version.ts).
    * « ingestion » est absente tant qu'aucun battement de watcher n'a été
