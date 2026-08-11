@@ -127,6 +127,7 @@ onMounted(refreshBadge)
 <template>
   <NavMenuItem
     v-if="total"
+    id="alertes"
     ref="menu"
     label="Alertes"
     :badge="unseen > 0 ? badge : null"
@@ -137,8 +138,19 @@ onMounted(refreshBadge)
       <DsfrAlert type="error" small :description="error" />
     </li>
 
-    <li v-for="(notification, i) in notifications" v-else :key="i" class="ds-menu__entry">
-      <button class="fr-nav__link ds-menu__button" @click="apply(notification)">
+    <li
+      v-for="(notification, i) in notifications"
+      v-else
+      :key="i"
+      class="ds-menu__entry"
+      data-testid="alerte"
+      :data-recherche="notification.saved_search_id"
+    >
+      <button
+        class="fr-nav__link ds-menu__button"
+        data-testid="alerte-appliquer"
+        @click="apply(notification)"
+      >
         <span class="ds-menu__name">{{ notification.saved_search_name }}</span>
         <span class="fr-hint-text fr-mb-0">
           {{
@@ -157,6 +169,7 @@ onMounted(refreshBadge)
     <li v-if="notifications.length" class="ds-menu__entry ds-menu__footer">
       <div class="fr-px-2w">
         <DsfrButton
+          id="alertes-purger"
           size="sm"
           tertiary
           label="Effacer toutes les notifications"

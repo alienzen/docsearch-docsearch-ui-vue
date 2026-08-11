@@ -74,10 +74,17 @@ const AIDES: Record<string, string> = {
     subtitle="effectifs sous ~10s, sans redémarrage"
     :error="error"
   >
-    <DsfrAlert v-if="actionError" type="error" small :description="actionError" class="fr-mb-2w" />
+    <DsfrAlert
+      v-if="actionError"
+      id="config-erreur"
+      type="error"
+      small
+      :description="actionError"
+      class="fr-mb-2w"
+    />
 
     <div class="fr-table fr-table--bordered ds-stats__table">
-      <table>
+      <table id="config-tableau">
         <thead>
           <tr>
             <th scope="col">Paramètre</th>
@@ -86,7 +93,7 @@ const AIDES: Record<string, string> = {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(_, key) in data || {}" :key="key">
+          <tr v-for="(_, key) in data || {}" :key="key" data-testid="config-ligne" :data-cle="key">
             <td>
               <code>{{ key }}</code>
               <span v-if="AIDES[key]" class="fr-hint-text fr-mb-0">{{ AIDES[key] }}</span>
@@ -122,7 +129,13 @@ const AIDES: Record<string, string> = {
               />
             </td>
             <td class="ds-admin__actions">
-              <DsfrButton size="sm" secondary label="Enregistrer" @click="save(String(key))" />
+              <DsfrButton
+                size="sm"
+                secondary
+                label="Enregistrer"
+                data-testid="config-enregistrer"
+                @click="save(String(key))"
+              />
               <span v-if="saved === key" class="fr-hint-text fr-mb-0">✓ enregistré</span>
             </td>
           </tr>
@@ -131,6 +144,7 @@ const AIDES: Record<string, string> = {
     </div>
 
     <DsfrButton
+      id="config-defauts"
       class="fr-mt-2w"
       size="sm"
       secondary

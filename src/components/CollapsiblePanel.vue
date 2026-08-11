@@ -23,6 +23,12 @@ type CollapseStore = {
 }
 
 const props = defineProps<{
+  /**
+   * Clé de pli dans le store ET identifiant du `<details>` dans le
+   * document. Les deux rôles se confondent volontairement : un panneau
+   * est unique dans sa page, et une clé de pli qui ne serait pas unique
+   * replierait déjà deux panneaux à la fois.
+   */
   id: string
   title: string
   subtitle?: string
@@ -62,6 +68,7 @@ function onToggle(event: Event) {
 
 <template>
   <details
+    :id="id"
     class="fr-accordion ds-panel-block"
     :class="{ 'ds-panel-block--group': group }"
     :open="open"

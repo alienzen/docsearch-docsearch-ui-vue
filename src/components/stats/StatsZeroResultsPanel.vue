@@ -22,7 +22,7 @@ const { data, error } = useStatsPanel(getZeroResults)
     :error="error"
   >
     <div class="fr-table fr-table--bordered ds-stats__table">
-      <table>
+      <table id="zero-results-tableau">
         <thead>
           <tr>
             <th scope="col">Requête</th>
@@ -34,7 +34,7 @@ const { data, error } = useStatsPanel(getZeroResults)
           <tr v-if="!data?.results.length">
             <td colspan="3" class="fr-hint-text">Aucune recherche sans résultat pour l'instant.</td>
           </tr>
-          <tr v-for="row in data?.results || []" :key="row.query">
+          <tr v-for="row in data?.results || []" :key="row.query" data-testid="zero-result-ligne">
             <td>{{ row.query }}</td>
             <td>{{ row.count }}</td>
             <td>{{ fmtDateTime(row.last_seen) }}</td>
@@ -45,6 +45,7 @@ const { data, error } = useStatsPanel(getZeroResults)
 
     <StatsGroupCounts
       v-if="data"
+      id="zero-results-groupes"
       :rows="data.by_group"
       title="Recherches sans résultat par groupe"
       count-label="Recherches"

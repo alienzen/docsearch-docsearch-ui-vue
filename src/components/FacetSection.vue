@@ -16,7 +16,13 @@ import { onBeforeUnmount, onMounted, computed } from 'vue'
 import { usePreferencesStore } from '@/stores/preferences'
 
 const props = defineProps<{
-  /** Identifiant stable, clé de persistance du pli. */
+  /**
+   * Identifiant stable : clé de persistance du pli ET identifiant du
+   * `<details>` dans le document. Les deux rôles se confondent, comme
+   * pour CollapsiblePanel — une section de facettes est unique dans la
+   * page, et une clé de pli non unique replierait déjà deux sections à
+   * la fois.
+   */
   id: string
   title: string
 }>()
@@ -52,7 +58,7 @@ onBeforeUnmount(() => preferences.unregisterFacet(props.id))
 </script>
 
 <template>
-  <details class="fr-accordion ds-facet" :open="open" @toggle="onToggle">
+  <details :id="id" class="fr-accordion ds-facet" :open="open" @toggle="onToggle">
     <!-- Même raison que dans CollapsiblePanel : le DSFR fait pivoter le
          chevron sur .fr-accordion__btn[aria-expanded=true], et l'attribut
          natif `open` de <details> ne déclenche pas cette règle. -->

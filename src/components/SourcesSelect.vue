@@ -56,9 +56,9 @@ function toggle(name: string) {
 </script>
 
 <template>
-  <details ref="panel" class="ds-sources">
-    <summary class="fr-btn fr-btn--secondary fr-btn--sm">{{ label }}</summary>
-    <div class="ds-sources__panel">
+  <details id="sources" ref="panel" class="ds-sources">
+    <summary id="sources-bouton" class="fr-btn fr-btn--secondary fr-btn--sm">{{ label }}</summary>
+    <div id="sources-panneau" class="ds-sources__panel">
       <p v-if="!uiConfig.allSources.length" class="fr-hint-text fr-mb-0">
         Aucune source disponible
       </p>
@@ -67,6 +67,8 @@ function toggle(name: string) {
           v-for="src in uiConfig.allSources"
           :key="src.name"
           class="fr-checkbox-group fr-checkbox-group--sm"
+          data-testid="source-choix"
+          :data-source="src.name"
         >
           <input
             :id="`source-${src.name}`"

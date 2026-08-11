@@ -35,7 +35,7 @@ const maxCount = computed(() => Math.max(1, ...(data.value?.by_day || []).map((b
 <template>
   <StatsPanel id="summary-panel" title="Vue d'ensemble" :error="error">
     <div v-if="data">
-      <div class="ds-stats__cards">
+      <div id="summary-cartes" class="ds-stats__cards">
         <div class="ds-stats__card">
           <p class="fr-hint-text fr-mb-0">Recherches effectuées</p>
           <p class="ds-stats__value">{{ data.total_searches.toLocaleString('fr-FR') }}</p>
@@ -66,8 +66,14 @@ const maxCount = computed(() => Math.max(1, ...(data.value?.by_day || []).map((b
 
       <template v-if="data.by_day.length">
         <p class="fr-hint-text fr-mt-2w fr-mb-1v">Recherches par jour (14 derniers jours)</p>
-        <ul class="ds-stats__bars">
-          <li v-for="day in data.by_day" :key="day.date" class="ds-stats__bar">
+        <ul id="summary-histogramme" class="ds-stats__bars">
+          <li
+            v-for="day in data.by_day"
+            :key="day.date"
+            class="ds-stats__bar"
+            data-testid="summary-jour"
+            :data-jour="day.date"
+          >
             <span class="ds-stats__bar-count">{{ day.count }}</span>
             <span
               class="ds-stats__bar-fill"
@@ -82,6 +88,7 @@ const maxCount = computed(() => Math.max(1, ...(data.value?.by_day || []).map((b
 
     <StatsGroupCounts
       v-if="data"
+      id="summary-groupes"
       :rows="data.searches_by_group"
       title="Recherches par groupe"
       count-label="Recherches"
@@ -93,9 +100,9 @@ const maxCount = computed(() => Math.max(1, ...(data.value?.by_day || []).map((b
     </StatsGroupCounts>
 
     <template v-if="avisParGroupe.length">
-      <h3 class="fr-h6 fr-mt-3w">Avis par groupe</h3>
+      <h3 id="summary-avis-groupes-titre" class="fr-h6 fr-mt-3w">Avis par groupe</h3>
       <div class="fr-table fr-table--bordered ds-stats__table">
-        <table>
+        <table id="summary-avis-groupes">
           <thead>
             <tr>
               <th scope="col">Groupe</th>
@@ -106,7 +113,7 @@ const maxCount = computed(() => Math.max(1, ...(data.value?.by_day || []).map((b
             </tr>
           </thead>
           <tbody>
-            <tr v-for="g in avisParGroupe" :key="g.group">
+            <tr v-for="g in avisParGroupe" :key="g.group" data-testid="summary-avis-groupe">
               <td>{{ groupLabel(g.group) }}</td>
               <td>{{ g.total }}</td>
               <td>

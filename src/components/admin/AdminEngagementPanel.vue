@@ -50,12 +50,20 @@ onMounted(() => uiConfig.loadEngagementConfig())
     title="Mesure de satisfaction"
     subtitle="effectif immédiatement, pas de redémarrage"
   >
-    <DsfrAlert v-if="error" type="error" small :description="error" class="fr-mb-2w" />
+    <DsfrAlert
+      v-if="error"
+      id="engagement-erreur"
+      type="error"
+      small
+      :description="error"
+      class="fr-mb-2w"
+    />
 
-    <div class="fr-fieldset__content">
+    <div id="engagement-bascules" class="fr-fieldset__content">
       <div v-for="toggle in TOGGLES" :key="toggle.key" class="fr-checkbox-group">
         <input
           :id="`eng-${toggle.key}`"
+          data-testid="engagement-bascule"
           type="checkbox"
           :checked="uiConfig.engagement[toggle.key]"
           @change="update(toggle.key, ($event.target as HTMLInputElement).checked)"

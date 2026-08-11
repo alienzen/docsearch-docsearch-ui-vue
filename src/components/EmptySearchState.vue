@@ -71,7 +71,13 @@ onBeforeUnmount(() => clearInterval(timer))
 </script>
 
 <template>
-  <section class="ds-empty" :class="`ds-empty--${variant}`" aria-label="Bienvenue">
+  <section
+    id="invite-recherche"
+    class="ds-empty"
+    :class="`ds-empty--${variant}`"
+    :data-variante="variant"
+    aria-label="Bienvenue"
+  >
     <!-- Variante « balayage » : une loupe dérive lentement au-dessus
          d'un semis de documents, qui s'éclairent à tour de rôle sur son
          passage. Tout est visible à l'arrêt — seuls la dérive et les

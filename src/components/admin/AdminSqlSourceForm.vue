@@ -137,12 +137,19 @@ async function save() {
 </script>
 
 <template>
-  <div class="ds-admin__form fr-mt-2w">
-    <h4 class="fr-h6">
+  <div id="sql-formulaire" class="ds-admin__form fr-mt-2w">
+    <h4 id="sql-formulaire-titre" class="fr-h6">
       {{ isEdit ? `Modifier « ${name} »` : 'Nouvelle source SQL' }}
     </h4>
 
-    <DsfrAlert v-if="error" type="error" small :description="error" class="fr-mb-2w" />
+    <DsfrAlert
+      v-if="error"
+      id="sql-erreur"
+      type="error"
+      small
+      :description="error"
+      class="fr-mb-2w"
+    />
 
     <div class="ds-admin__row">
       <div class="fr-input-group fr-mb-0">
@@ -237,9 +244,9 @@ async function save() {
       />
     </div>
 
-    <h5 class="fr-h6 fr-mt-2w">Mapping colonnes → champs Elasticsearch</h5>
+    <h5 id="sql-colonnes-titre" class="fr-h6 fr-mt-2w">Mapping colonnes → champs Elasticsearch</h5>
     <div class="fr-table fr-table--bordered ds-stats__table">
-      <table>
+      <table id="sql-colonnes-tableau">
         <thead>
           <tr>
             <th scope="col">Colonne SQL</th>
@@ -253,7 +260,7 @@ async function save() {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(field, i) in form.fields" :key="i">
+          <tr v-for="(field, i) in form.fields" :key="i" data-testid="sql-colonne">
             <td>
               <input
                 v-model="field.column"
@@ -328,6 +335,7 @@ async function save() {
                 tertiary
                 no-outline
                 label="✕"
+                data-testid="sql-colonne-retirer"
                 title="Retirer cette colonne"
                 @click="form.fields.splice(i, 1)"
               />
@@ -337,6 +345,7 @@ async function save() {
       </table>
     </div>
     <DsfrButton
+      id="sql-colonne-ajouter"
       class="fr-mt-1w"
       size="sm"
       secondary
@@ -354,8 +363,8 @@ async function save() {
     </p>
 
     <div class="ds-admin__row fr-mt-1w">
-      <DsfrButton size="sm" label="Enregistrer" :disabled="busy" @click="save" />
-      <DsfrButton size="sm" secondary label="Annuler" @click="emit('cancel')" />
+      <DsfrButton id="sql-enregistrer" size="sm" label="Enregistrer" :disabled="busy" @click="save" />
+      <DsfrButton id="sql-annuler" size="sm" secondary label="Annuler" @click="emit('cancel')" />
     </div>
   </div>
 </template>

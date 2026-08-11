@@ -40,10 +40,17 @@ async function updateStatus(suggestion: Suggestion, status: string) {
     subtitle="recueillies via « Suggérer une idée » — anonymes par défaut"
     :error="error"
   >
-    <DsfrAlert v-if="statusError" type="error" small :description="statusError" class="fr-mb-2w" />
+    <DsfrAlert
+      v-if="statusError"
+      id="suggestions-erreur-statut"
+      type="error"
+      small
+      :description="statusError"
+      class="fr-mb-2w"
+    />
 
     <div class="fr-table fr-table--bordered ds-stats__table">
-      <table>
+      <table id="suggestions-tableau">
         <thead>
           <tr>
             <th scope="col">Date / heure</th>
@@ -57,7 +64,12 @@ async function updateStatus(suggestion: Suggestion, status: string) {
           <tr v-if="!data?.results.length">
             <td colspan="5" class="fr-hint-text">Aucune suggestion pour l'instant.</td>
           </tr>
-          <tr v-for="suggestion in data?.results || []" :key="suggestion.id">
+          <tr
+            v-for="suggestion in data?.results || []"
+            :key="suggestion.id"
+            data-testid="suggestion-ligne"
+            :data-suggestion-id="suggestion.id"
+          >
             <td>{{ fmtDateTime(suggestion.timestamp) }}</td>
             <td>{{ CATEGORY_LABELS[suggestion.category || ''] || '—' }}</td>
             <td>{{ suggestion.text }}</td>
@@ -68,6 +80,7 @@ async function updateStatus(suggestion: Suggestion, status: string) {
             <td>
               <select
                 class="fr-select fr-select--sm"
+                data-testid="suggestion-statut"
                 :aria-label="`Statut de la suggestion du ${fmtDateTime(suggestion.timestamp)}`"
                 :value="suggestion.status || 'nouveau'"
                 @change="updateStatus(suggestion, ($event.target as HTMLSelectElement).value)"
@@ -83,6 +96,7 @@ async function updateStatus(suggestion: Suggestion, status: string) {
     </div>
 
     <StatsPager
+      id="suggestions-pagination"
       :from="from"
       :page-size="PAGE_SIZE"
       :total="data?.total || 0"
@@ -91,6 +105,7 @@ async function updateStatus(suggestion: Suggestion, status: string) {
 
     <StatsGroupCounts
       v-if="data"
+      id="suggestions-groupes"
       :rows="data.by_group"
       title="Suggestions par groupe"
       count-label="Suggestions"

@@ -24,15 +24,15 @@ const operators: [string, string, string][] = [
 </script>
 
 <template>
-  <div class="ds-help">
-    <h2 class="fr-h5">Raccourcis clavier</h2>
+  <div id="aide" class="ds-help">
+    <h2 id="aide-raccourcis" class="fr-h5">Raccourcis clavier</h2>
     <div class="fr-table fr-table--bordered ds-stats__table">
-      <table>
+      <table id="aide-raccourcis-tableau">
         <thead>
           <tr><th scope="col">Raccourci</th><th scope="col">Action</th></tr>
         </thead>
         <tbody>
-          <tr v-for="shortcut in SHORTCUTS" :key="shortcut.keys">
+          <tr v-for="shortcut in SHORTCUTS" :key="shortcut.keys" data-testid="aide-raccourci">
             <td><kbd>{{ shortcut.keys }}</kbd></td>
             <td>{{ shortcut.label }}</td>
           </tr>
@@ -43,7 +43,7 @@ const operators: [string, string, string][] = [
       Inactifs pendant la saisie dans un champ de texte ou une liste déroulante.
     </p>
 
-    <h2 class="fr-h5">Syntaxe avancée (barre de recherche)</h2>
+    <h2 id="aide-syntaxe" class="fr-h5">Syntaxe avancée (barre de recherche)</h2>
     <p>
       En plus des facettes de la colonne de gauche, ces opérateurs peuvent être tapés
       directement dans la barre de recherche, combinés entre eux et avec du texte libre —
@@ -54,7 +54,7 @@ const operators: [string, string, string][] = [
       champs-là).
     </p>
     <div class="fr-table fr-table--bordered ds-stats__table">
-      <table>
+      <table id="aide-operateurs-tableau">
         <thead>
           <tr>
             <th scope="col">Opérateur</th>
@@ -63,7 +63,7 @@ const operators: [string, string, string][] = [
           </tr>
         </thead>
         <tbody>
-          <tr v-for="[op, example, equiv] in operators" :key="op">
+          <tr v-for="[op, example, equiv] in operators" :key="op" data-testid="aide-operateur">
             <td><code>{{ op }}</code></td>
             <td><code>{{ example }}</code></td>
             <td>{{ equiv }}</td>
@@ -77,7 +77,7 @@ const operators: [string, string, string][] = [
       sans texte libre, cherche tous les documents correspondant à ce filtre.
     </p>
 
-    <h3 class="fr-h6">Facettes personnalisées</h3>
+    <h3 id="aide-facettes-personnalisees" class="fr-h6">Facettes personnalisées</h3>
     <p>
       Certaines sources (bases de données SQL) ajoutent leurs propres facettes — elles
       deviennent automatiquement des opérateurs supplémentaires, reconnus par leur nom de
@@ -87,12 +87,12 @@ const operators: [string, string, string][] = [
       exacte, guillemets si espaces).
     </p>
 
-    <h2 class="fr-h5">Besoin d'aide&nbsp;?</h2>
+    <h2 id="aide-contact" class="fr-h5">Besoin d'aide&nbsp;?</h2>
     <p>Contactez l'équipe technique pour toute question sur l'utilisation de DocSearch.</p>
     <!-- Version en toutes lettres, à recopier dans un signalement. Ici
          plutôt que dans le seul pied de page, que l'administration peut
          désactiver (`footer_enabled`) : un utilisateur qui signale un
          problème doit toujours pouvoir dire sur quelle version. -->
-    <p class="fr-hint-text">{{ versionComplete }}</p>
+    <p id="aide-version" class="fr-hint-text">{{ versionComplete }}</p>
   </div>
 </template>

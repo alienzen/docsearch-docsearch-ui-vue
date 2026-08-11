@@ -21,9 +21,21 @@ const label = computed(() => {
 </script>
 
 <template>
-  <div v-if="visible" class="ds-selection fr-mb-2w">
-    <p class="fr-mb-0"><strong>{{ label }}</strong></p>
-    <DsfrButton size="sm" label="Ajouter à une collection" @click="emit('add')" />
-    <DsfrButton size="sm" tertiary no-outline label="Annuler la sélection" @click="selection.clear()" />
+  <div v-if="visible" id="selection" class="ds-selection fr-mb-2w">
+    <p id="selection-decompte" class="fr-mb-0"><strong>{{ label }}</strong></p>
+    <DsfrButton
+      id="selection-ajouter-collection"
+      size="sm"
+      label="Ajouter à une collection"
+      @click="emit('add')"
+    />
+    <DsfrButton
+      id="selection-annuler"
+      size="sm"
+      tertiary
+      no-outline
+      label="Annuler la sélection"
+      @click="selection.clear()"
+    />
   </div>
 </template>

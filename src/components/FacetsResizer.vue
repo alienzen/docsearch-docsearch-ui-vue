@@ -76,6 +76,7 @@ function onKeydown(event: KeyboardEvent) {
 
 <template>
   <div
+    id="facettes-poignee"
     class="ds-resizer"
     :class="{ 'ds-resizer--active': dragging }"
     role="separator"

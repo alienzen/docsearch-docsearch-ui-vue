@@ -14,10 +14,18 @@
  * vue-dsfr réimplémente ces interactions côté Vue — donc cette bascule
  * de classe est bien ce qui pilote l'ouverture.
  */
-import { nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useOutsideClose } from '@/composables/useOutsideClose'
 
 const props = defineProps<{
+  /**
+   * Identifiant de l'entrée dans le document, d'où sont dérivés ceux du
+   * bouton et du menu. Explicite et non plus tiré de `useId()` : celui-ci
+   * rend un jeton opaque, dépendant de l'ordre de montage, donc inutile
+   * comme point d'accroche et instable dès qu'une entrée devient
+   * conditionnelle.
+   */
+  id: string
   label: string
   /** Compteur affiché en badge, masqué à zéro. */
   badge?: string | number | null
@@ -25,7 +33,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{ open: [] }>()
 
-const menuId = `menu-${useId()}`
+const buttonId = computed(() => `${props.id}-bouton`)
+const menuId = computed(() => `${props.id}-menu`)
 const open = ref(false)
 const item = ref<HTMLElement | null>(null)
 const menu = ref<HTMLElement | null>(null)
@@ -73,8 +82,9 @@ defineExpose({ close: () => (open.value = false), open: () => (open.value = true
 </script>
 
 <template>
-  <li ref="item" class="fr-nav__item">
+  <li :id="id" ref="item" class="fr-nav__item">
     <button
+      :id="buttonId"
       class="fr-nav__btn"
       :aria-expanded="open"
       :aria-controls="menuId"

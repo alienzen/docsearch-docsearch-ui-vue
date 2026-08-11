@@ -42,9 +42,14 @@ async function toggle(source: string, entry: TreeEntry) {
       <!-- « exclu » prime visuellement sur « liste blanche », comme la
            règle métier : un chemin exclu le reste même s'il correspond
            aussi à un motif inclus. -->
+      <!-- Aucun `id` ici : ce composant se rend RÉCURSIVEMENT, donc
+           autant de fois qu'il y a de niveaux de dossiers. Le chemin,
+           lui, est unique dans l'arbre — il va donc dans un `data-*`. -->
       <component
         :is="entry.type === 'dir' ? 'button' : 'span'"
         class="ds-tree__entry"
+        data-testid="arbre-entree"
+        :data-chemin="entry.path"
         :class="{
           'ds-tree__entry--excluded': entry.excluded,
           'ds-tree__entry--included': !entry.excluded && entry.included,

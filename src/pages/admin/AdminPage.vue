@@ -146,11 +146,18 @@ onMounted(() => {
   />
 
   <main id="main-content" class="fr-container fr-my-4w">
-    <DsfrAlert v-if="accessDenied" type="error" title="Accès refusé" :description="accessDenied" />
+    <DsfrAlert
+      v-if="accessDenied"
+      id="admin-acces-refuse"
+      type="error"
+      title="Accès refusé"
+      :description="accessDenied"
+    />
 
     <template v-else>
-      <div class="ds-stats__toolbar">
+      <div id="admin-outils" class="ds-stats__toolbar">
         <DsfrButton
+          id="admin-recharger"
           size="sm"
           tertiary
           no-outline
@@ -160,6 +167,7 @@ onMounted(() => {
           @click="reloadAll"
         />
         <DsfrButton
+          id="admin-tout-replier"
           size="sm"
           tertiary
           no-outline

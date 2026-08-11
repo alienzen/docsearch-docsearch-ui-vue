@@ -30,7 +30,7 @@ onMounted(() => uiConfig.loadUiConfig())
   />
 
   <main id="main-content" class="fr-container ds-prose fr-my-4w">
-    <h1 class="fr-h3">Aide</h1>
+    <h1 id="aide-titre" class="fr-h3">Aide</h1>
     <SearchHelp />
   </main>
 </template>

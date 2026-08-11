@@ -48,23 +48,35 @@ const paginationPages = computed(() =>
 </script>
 
 <template>
-  <div :class="{ 'ds-results--loading': store.loading && store.results.length }">
+  <div id="resultats" :class="{ 'ds-results--loading': store.loading && store.results.length }">
     <!-- Attente à écran vide : première recherche, ou reprise après une
          erreur. Passe AVANT le test d'erreur, sinon le message de la
          recherche précédente resterait affiché pendant la suivante.
          `role="status"` porte l'annonce vocale — le cercle seul ne dit
          rien à un lecteur d'écran. -->
-    <div v-if="store.loading && !store.results.length" class="ds-loading" role="status" aria-live="polite">
+    <div
+      v-if="store.loading && !store.results.length"
+      id="resultats-attente"
+      class="ds-loading"
+      role="status"
+      aria-live="polite"
+    >
       <span class="ds-spinner" aria-hidden="true" />
       <p class="fr-text--sm fr-mb-0">Recherche en cours…</p>
     </div>
 
-    <DsfrAlert v-else-if="store.error" type="error" :description="store.error" class="fr-mb-2w" />
+    <DsfrAlert
+      v-else-if="store.error"
+      id="resultats-erreur"
+      type="error"
+      :description="store.error"
+      class="fr-mb-2w"
+    />
 
     <!-- Rien avant la première recherche : l'invitation à en lancer une
          est portée par EmptySearchState, au-dessus. Deux messages
          disaient la même chose à quelques lignes d'écart. -->
-    <p v-else-if="store.hasSearched && !store.results.length" class="fr-text--sm">
+    <p v-else-if="store.hasSearched && !store.results.length" id="resultats-vides" class="fr-text--sm">
       Aucun résultat ne correspond à ces critères.
     </p>
 
@@ -81,6 +93,7 @@ const paginationPages = computed(() =>
 
       <DsfrPagination
         v-if="pages > 1"
+        id="resultats-pagination"
         :current-page="store.page - 1"
         :pages="paginationPages"
         @update:current-page="store.goToPage($event + 1)"

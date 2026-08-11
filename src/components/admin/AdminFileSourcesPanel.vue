@@ -92,6 +92,7 @@ const { confirm } = useDialogs()</script>
   >
     <DsfrAlert
       v-if="actionError || fieldError"
+      id="filesources-erreur"
       type="error"
       small
       :description="actionError || fieldError || ''"
@@ -99,7 +100,7 @@ const { confirm } = useDialogs()</script>
     />
 
     <div class="fr-table fr-table--bordered ds-stats__table">
-      <table>
+      <table id="filesources-tableau">
         <thead>
           <tr>
             <th scope="col">Nom</th>
@@ -112,7 +113,7 @@ const { confirm } = useDialogs()</script>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(source, name) in data || {}" :key="name">
+          <tr v-for="(source, name) in data || {}" :key="name" data-testid="filesources-ligne" :data-source="name">
             <td><code>{{ name }}</code></td>
             <td>{{ source.label || name }}</td>
             <td><code>{{ source.es_index }}</code></td>
@@ -122,6 +123,7 @@ const { confirm } = useDialogs()</script>
               <div class="fr-checkbox-group fr-checkbox-group--sm">
                 <input
                   :id="`ocr-${name}`"
+                  data-testid="filesources-ocr"
                   type="checkbox"
                   :checked="source.ocr_enabled"
                   @change="
@@ -139,6 +141,7 @@ const { confirm } = useDialogs()</script>
                 tertiary
                 no-outline
                 label="Libellé"
+                data-testid="filesources-libelle"
                 @click="edit('file', String(name), 'label', source.label || String(name))"
               />
               <DsfrButton
@@ -146,6 +149,7 @@ const { confirm } = useDialogs()</script>
                 tertiary
                 no-outline
                 label="Description"
+                data-testid="filesources-description"
                 @click="edit('file', String(name), 'description', source.description || '')"
               />
               <!-- « documents » est la source par défaut de
@@ -156,6 +160,7 @@ const { confirm } = useDialogs()</script>
                 size="sm"
                 tertiary
                 label="Retirer"
+                data-testid="filesources-retirer"
                 @click="remove(String(name))"
               />
             </td>
@@ -164,7 +169,7 @@ const { confirm } = useDialogs()</script>
       </table>
     </div>
 
-    <h3 class="fr-h6 fr-mt-3w">Ajouter une source</h3>
+    <h3 id="filesources-ajout-titre" class="fr-h6 fr-mt-3w">Ajouter une source</h3>
     <div class="ds-admin__row">
       <div class="fr-input-group fr-mb-0">
         <label class="fr-label fr-sr-only" for="new-file-name">Nom</label>
@@ -220,7 +225,7 @@ const { confirm } = useDialogs()</script>
           placeholder="description (optionnel)"
         />
       </div>
-      <DsfrButton size="sm" label="Ajouter" @click="add" />
+      <DsfrButton id="filesources-ajouter" size="sm" label="Ajouter" @click="add" />
     </div>
 
     <p class="fr-hint-text fr-mt-2w">

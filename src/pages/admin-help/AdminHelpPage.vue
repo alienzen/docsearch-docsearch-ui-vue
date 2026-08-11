@@ -43,16 +43,20 @@ onMounted(async () => {
   />
 
   <main id="main-content" class="fr-container ds-prose fr-my-4w">
-    <h1 class="fr-h3">Aide administrateur</h1>
+    <h1 id="aide-admin-titre" class="fr-h3">Aide administrateur</h1>
 
-    <h2 class="fr-h5">Raccourcis clavier</h2>
+    <h2 id="aide-admin-raccourcis" class="fr-h5">Raccourcis clavier</h2>
     <div class="fr-table fr-table--bordered">
-      <table>
+      <table id="aide-admin-raccourcis-tableau">
         <thead>
           <tr><th scope="col">Raccourci</th><th scope="col">Action</th></tr>
         </thead>
         <tbody>
-          <tr v-for="shortcut in ADMIN_SHORTCUTS" :key="shortcut.keys">
+          <tr
+            v-for="shortcut in ADMIN_SHORTCUTS"
+            :key="shortcut.keys"
+            data-testid="aide-admin-raccourci"
+          >
             <td><kbd>{{ shortcut.keys }}</kbd></td>
             <td>{{ shortcut.label }}</td>
           </tr>
@@ -63,7 +67,7 @@ onMounted(async () => {
       Inactifs pendant la saisie dans un champ texte, une liste déroulante ou un formulaire.
     </p>
 
-    <h2 class="fr-h5">Sources</h2>
+    <h2 id="aide-admin-sources" class="fr-h5">Sources</h2>
     <p>
       Les panneaux « Sources fichiers », « Sources SQL » et « Sources web » permettent d'enregistrer
       une source, d'activer ou de désactiver sa visibilité dans la recherche, de modifier son
@@ -72,21 +76,21 @@ onMounted(async () => {
       le libellé affiché et la description peuvent l'être à tout moment.
     </p>
 
-    <h2 class="fr-h5">État des composants</h2>
+    <h2 id="aide-admin-etat" class="fr-h5">État des composants</h2>
     <p>
       Vue d'ensemble d'Elasticsearch, Redis, Kafka, Tika et des workers, avec la file d'indexation
       en attente. Ce panneau se rafraîchit seul toutes les 5 secondes ; en cas d'échec passager, il
       conserve les dernières valeurs connues et le signale plutôt que d'afficher une erreur.
     </p>
 
-    <h2 class="fr-h5">Apparence</h2>
+    <h2 id="aide-admin-apparence" class="fr-h5">Apparence</h2>
     <p>
       L'interface suit le Système de Design de l'État. Le panneau « Interface » ne règle plus que le
       mode clair ou sombre, séparément pour les pages de recherche et d'administration ; les anciens
       thèmes de couleur ont été retirés.
     </p>
 
-    <h2 class="fr-h5">Besoin d'aide&nbsp;?</h2>
+    <h2 id="aide-admin-contact" class="fr-h5">Besoin d'aide&nbsp;?</h2>
     <p>
       Consultez la documentation du projet (<code>docsearch-docs</code>) ou contactez l'équipe
       technique.

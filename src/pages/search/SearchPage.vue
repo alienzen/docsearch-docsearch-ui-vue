@@ -206,6 +206,7 @@ onMounted(() => {
     operator-img-style="max-width: 2.5rem"
     :quick-links="quickLinks"
     show-search
+    searchbar-id="recherche"
     search-label="Rechercher un document"
     :placeholder="uiConfig.headerSubtitle"
     @search="store.searchFromFirstPage()"
@@ -223,6 +224,7 @@ onMounted(() => {
                pouvant redevenir visible entre-temps. -->
           <li v-if="store.hasSearched" class="fr-nav__item">
             <button
+              id="recherche-enregistrer"
               class="fr-nav__link"
               type="button"
               title="Enregistrer cette recherche (s)"
@@ -240,7 +242,7 @@ onMounted(() => {
           />
           <AlertsPanel v-if="uiConfig.config.alerts_enabled" />
           <li v-if="uiConfig.config.chat_enabled" class="fr-nav__item">
-            <a class="fr-nav__link" href="/chat">Assistant IA</a>
+            <a id="lien-assistant" class="fr-nav__link" href="/chat">Assistant IA</a>
           </li>
         </ul>
       </nav>
@@ -248,9 +250,10 @@ onMounted(() => {
   </DsfrHeader>
 
   <Teleport v-if="headerSearch" :to="headerSearch">
-    <div class="ds-header__controls">
+    <div id="outils-entete" class="ds-header__controls">
       <SourcesSelect />
       <DsfrButton
+        id="recherche-reinitialiser"
         size="sm"
         secondary
         label="Réinitialiser la recherche"
@@ -262,7 +265,14 @@ onMounted(() => {
   </Teleport>
 
   <div class="fr-container fr-my-4w">
-    <DsfrAlert v-if="saveError" type="error" small :description="saveError" class="fr-mt-1w" />
+    <DsfrAlert
+      v-if="saveError"
+      id="recherche-erreur-enregistrement"
+      type="error"
+      small
+      :description="saveError"
+      class="fr-mt-1w"
+    />
 
     <!-- Grille propre plutôt que `fr-grid-row` + `fr-col-md-3/9` : la
          largeur de la colonne devient réglable, ce qu'un pas de douzième
@@ -302,7 +312,7 @@ onMounted(() => {
              cohabiterait de surcroît avec le spinner. -->
         <template v-if="!store.hasSearched && !store.loading">
           <EmptySearchState v-if="uiConfig.config.empty_state_animation_enabled" />
-          <p v-else class="fr-text--sm">Lancez une recherche pour voir les résultats.</p>
+          <p v-else id="invite-recherche-texte" class="fr-text--sm">Lancez une recherche pour voir les résultats.</p>
         </template>
 
         <ActiveFilters />

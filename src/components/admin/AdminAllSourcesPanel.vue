@@ -90,10 +90,17 @@ async function editGroups(name: string, entry: AllSourceEntry) {
     subtitle="documents bureautiques, web et SQL confondus"
     :error="error"
   >
-    <DsfrAlert v-if="actionError" type="error" small :description="actionError" class="fr-mb-2w" />
+    <DsfrAlert
+      v-if="actionError"
+      id="allsources-erreur"
+      type="error"
+      small
+      :description="actionError"
+      class="fr-mb-2w"
+    />
 
     <div class="fr-table fr-table--bordered ds-stats__table">
-      <table>
+      <table id="allsources-tableau">
         <thead>
           <tr>
             <th scope="col">Source</th>
@@ -111,7 +118,7 @@ async function editGroups(name: string, entry: AllSourceEntry) {
           <tr v-if="!sources.length">
             <td colspan="9" class="fr-hint-text">Aucune source enregistrée.</td>
           </tr>
-          <tr v-for="[name, entry] in sources" :key="name">
+          <tr v-for="[name, entry] in sources" :key="name" data-testid="allsources-ligne" :data-source="name">
             <td>{{ entry.label }}</td>
             <td>{{ TYPE_LABELS[entry.type] || entry.type }}</td>
             <td><code>{{ entry.es_index }}</code></td>
@@ -122,6 +129,7 @@ async function editGroups(name: string, entry: AllSourceEntry) {
               <div class="fr-checkbox-group fr-checkbox-group--sm">
                 <input
                   :id="`searchable-${name}`"
+                  data-testid="allsources-recherche"
                   type="checkbox"
                   :checked="entry.searchable"
                   @change="
@@ -137,6 +145,7 @@ async function editGroups(name: string, entry: AllSourceEntry) {
               <div class="fr-checkbox-group fr-checkbox-group--sm">
                 <input
                   :id="`collectable-${name}`"
+                  data-testid="allsources-collections"
                   type="checkbox"
                   :checked="entry.collectable"
                   @change="
@@ -157,6 +166,7 @@ async function editGroups(name: string, entry: AllSourceEntry) {
                 tertiary
                 no-outline
                 label="Modifier"
+                data-testid="allsources-groupes-modifier"
                 :title="`Modifier les groupes autorisés de ${name}`"
                 @click="editGroups(name, entry)"
               />

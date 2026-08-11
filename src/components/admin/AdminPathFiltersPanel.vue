@@ -101,7 +101,14 @@ const { confirm } = useDialogs()</script>
     subtitle="motifs glob, relatifs au dossier de la source"
     :error="error"
   >
-    <DsfrAlert v-if="actionError" type="error" small :description="actionError" class="fr-mb-2w" />
+    <DsfrAlert
+      v-if="actionError"
+      id="pathfilters-erreur"
+      type="error"
+      small
+      :description="actionError"
+      class="fr-mb-2w"
+    />
 
     <div class="fr-select-group ds-admin__source-select">
       <label class="fr-label" for="filter-source">Source</label>
@@ -111,9 +118,15 @@ const { confirm } = useDialogs()</script>
     </div>
 
     <p class="fr-hint-text fr-mt-2w fr-mb-1v">Liste noire (exclus)</p>
-    <ul v-if="data?.excluded.length" class="fr-tags-group">
+    <ul v-if="data?.excluded.length" id="pathfilters-exclus" class="fr-tags-group">
       <li v-for="p in data.excluded" :key="p">
-        <button class="fr-tag fr-tag--dismiss" :aria-label="`Retirer ${p}`" @click="remove(p)">
+        <button
+          class="fr-tag fr-tag--dismiss"
+          data-testid="pathfilters-exclu"
+          :data-motif="p"
+          :aria-label="`Retirer ${p}`"
+          @click="remove(p)"
+        >
           {{ p }}
         </button>
       </li>
@@ -123,9 +136,15 @@ const { confirm } = useDialogs()</script>
     <p class="fr-hint-text fr-mt-2w fr-mb-1v">
       Liste blanche (si non vide, seuls ces chemins sont indexés)
     </p>
-    <ul v-if="data?.included.length" class="fr-tags-group">
+    <ul v-if="data?.included.length" id="pathfilters-inclus" class="fr-tags-group">
       <li v-for="p in data.included" :key="p">
-        <button class="fr-tag fr-tag--dismiss" :aria-label="`Retirer ${p}`" @click="remove(p)">
+        <button
+          class="fr-tag fr-tag--dismiss"
+          data-testid="pathfilters-inclus-motif"
+          :data-motif="p"
+          :aria-label="`Retirer ${p}`"
+          @click="remove(p)"
+        >
           {{ p }}
         </button>
       </li>
@@ -143,8 +162,20 @@ const { confirm } = useDialogs()</script>
           placeholder="ex : confidentiel ou */tmp"
         />
       </div>
-      <DsfrButton size="sm" secondary label="Exclure" @click="add('exclude')" />
-      <DsfrButton size="sm" secondary label="Inclure (liste blanche)" @click="add('include')" />
+      <DsfrButton
+        id="pathfilters-exclure"
+        size="sm"
+        secondary
+        label="Exclure"
+        @click="add('exclude')"
+      />
+      <DsfrButton
+        id="pathfilters-inclure"
+        size="sm"
+        secondary
+        label="Inclure (liste blanche)"
+        @click="add('include')"
+      />
     </div>
 
     <hr class="fr-mt-3w fr-mb-2w" />
@@ -161,10 +192,17 @@ const { confirm } = useDialogs()</script>
           placeholder="motif à purger"
         />
       </div>
-      <DsfrButton size="sm" secondary label="Aperçu" @click="runPreview" />
+      <DsfrButton id="pathfilters-apercu" size="sm" secondary label="Aperçu" @click="runPreview" />
     </div>
 
-    <DsfrAlert v-if="purgeError" type="error" small :description="purgeError" class="fr-mt-1w" />
+    <DsfrAlert
+      v-if="purgeError"
+      id="pathfilters-erreur-purge"
+      type="error"
+      small
+      :description="purgeError"
+      class="fr-mt-1w"
+    />
 
     <div v-if="preview" class="ds-admin__row fr-mt-1w">
       <p class="fr-hint-text fr-mb-0">
@@ -173,6 +211,7 @@ const { confirm } = useDialogs()</script>
       </p>
       <DsfrButton
         v-if="preview.matched > 0"
+        id="pathfilters-confirmer-purge"
         size="sm"
         label="Confirmer la suppression"
         @click="confirmPurge"

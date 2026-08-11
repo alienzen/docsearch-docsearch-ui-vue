@@ -104,14 +104,16 @@ onMounted(() => {
   <main id="main-content" class="fr-container fr-my-4w">
     <DsfrAlert
       v-if="accessDenied"
+      id="stats-acces-refuse"
       type="error"
       title="Accès refusé"
       :description="accessDenied"
     />
 
     <template v-else>
-      <div class="ds-stats__toolbar">
+      <div id="stats-outils" class="ds-stats__toolbar">
         <DsfrButton
+          id="stats-tout-replier"
           size="sm"
           tertiary
           no-outline

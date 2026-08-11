@@ -36,12 +36,13 @@ const dateTo = computed({
 
 <template>
   <div class="ds-facets">
-    <div class="ds-facets__head">
+    <div id="facettes-entete" class="ds-facets__head">
       <h2 class="fr-h6 fr-mb-0">Affiner</h2>
       <!-- N'apparaît qu'avec des sections à replier : sans facettes, le
            bouton n'aurait aucun effet observable. -->
       <button
         v-if="preferences.presentFacets.length"
+        id="facettes-tout-replier"
         class="fr-btn fr-btn--sm fr-btn--tertiary-no-outline"
         type="button"
         :title="`${preferences.allFacetsCollapsed ? 'Tout déplier' : 'Tout replier'} (t)`"
@@ -128,6 +129,7 @@ const dateTo = computed({
           <input id="date-to" v-model="dateTo" class="fr-input" type="date" />
         </div>
         <DsfrButton
+          id="facet-dates-appliquer"
           size="sm"
           label="Appliquer la période"
           @click="store.applyDateRange(dateFrom, dateTo)"

@@ -150,12 +150,20 @@ onMounted(async () => {
     title="Interface"
     subtitle="effectif immédiatement, pas de redémarrage"
   >
-    <DsfrAlert v-if="error" type="error" small :description="error" class="fr-mb-2w" />
+    <DsfrAlert
+      v-if="error"
+      id="ui-config-erreur"
+      type="error"
+      small
+      :description="error"
+      class="fr-mb-2w"
+    />
 
-    <div class="fr-fieldset__content">
+    <div id="ui-config-bascules" class="fr-fieldset__content">
       <div v-for="toggle in TOGGLES" :key="toggle.key" class="fr-checkbox-group">
         <input
           :id="`ui-${toggle.key}`"
+          data-testid="ui-config-bascule"
           type="checkbox"
           :checked="!!uiConfig.config[toggle.key]"
           @change="saveKey(String(toggle.key), ($event.target as HTMLInputElement).checked)"
@@ -164,7 +172,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <h3 class="fr-h6 fr-mt-3w">Apparence</h3>
+    <h3 id="ui-config-apparence-titre" class="fr-h6 fr-mt-3w">Apparence</h3>
     <p class="fr-hint-text">
       L'interface suit le Système de Design de l'État. Seul le mode clair ou sombre est réglable ;
       les anciens thèmes de couleur ont été retirés.
@@ -172,20 +180,28 @@ onMounted(async () => {
     <div class="ds-admin__row">
       <DsfrSelect
         v-model="searchScheme"
+        select-id="ui-config-theme-recherche"
         label="Thème — Recherche"
         label-visible
         :options="SCHEMES"
       />
       <DsfrSelect
         v-model="adminScheme"
+        select-id="ui-config-theme-admin"
         label="Thème — Administration"
         label-visible
         :options="SCHEMES"
       />
     </div>
 
-    <h3 class="fr-h6 fr-mt-3w">Personnalisation</h3>
-    <div v-for="field in TEXT_FIELDS" :key="field.key" class="ds-admin__row fr-mt-1w">
+    <h3 id="ui-config-textes-titre" class="fr-h6 fr-mt-3w">Personnalisation</h3>
+    <div
+      v-for="field in TEXT_FIELDS"
+      :key="field.key"
+      class="ds-admin__row fr-mt-1w"
+      data-testid="ui-config-texte"
+      :data-cle="field.key"
+    >
       <div class="fr-input-group fr-mb-0">
         <label class="fr-label" :for="`ui-${field.key}`">
           {{ field.label }}
@@ -210,6 +226,7 @@ onMounted(async () => {
         size="sm"
         secondary
         label="Enregistrer"
+        data-testid="ui-config-enregistrer"
         @click="saveKey(String(field.key), texts[field.key])"
       />
       <span v-if="saved === field.key" class="fr-hint-text fr-mb-0">✓ enregistré</span>

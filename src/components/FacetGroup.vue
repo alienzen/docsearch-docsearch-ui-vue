@@ -41,7 +41,13 @@ const rows = computed(() => props.buckets.filter((b) => b.key !== '' && b.key !=
     <p v-if="!rows.length" class="fr-hint-text fr-mb-0">{{ emptyLabel }}</p>
     <div v-else class="fr-fieldset__content">
       <p v-if="hint" class="fr-hint-text fr-mb-1v">{{ hint }}</p>
-      <div v-for="bucket in rows" :key="bucket.key" class="fr-checkbox-group fr-checkbox-group--sm">
+      <div
+        v-for="bucket in rows"
+        :key="bucket.key"
+        class="fr-checkbox-group fr-checkbox-group--sm"
+        data-testid="facette-valeur"
+        :data-valeur="bucket.key"
+      >
         <input
           :id="`${id}-${bucket.key}`"
           type="checkbox"

@@ -40,9 +40,12 @@ async function copy(kind: 'dir' | 'full') {
   <span class="ds-copy">
     <!-- L'icône bascule sur une coche : c'est le seul retour visible une
          fois le libellé masqué. -->
+    <!-- Aucun `id` : ce composant est rendu une fois par carte de
+         résultat, et une seconde fois dans la fiche détail. -->
     <button
       class="fr-btn fr-btn--sm fr-btn--tertiary-no-outline"
       :class="copied === 'dir' ? 'fr-icon-check-line' : 'fr-icon-folder-2-line'"
+      data-testid="copier-dossier"
       type="button"
       :title="copied === 'dir' ? 'Dossier copié' : 'Copier le dossier'"
       @click="copy('dir')"
@@ -52,6 +55,7 @@ async function copy(kind: 'dir' | 'full') {
     <button
       class="fr-btn fr-btn--sm fr-btn--tertiary-no-outline"
       :class="copied === 'full' ? 'fr-icon-check-line' : 'fr-icon-clipboard-line'"
+      data-testid="copier-chemin"
       type="button"
       :title="copied === 'full' ? 'Chemin copié' : 'Copier le chemin'"
       @click="copy('full')"

@@ -19,7 +19,7 @@ const parGroupe = computed(() =>
     subtitle="recommanderiez-vous DocSearch à un collègue ?"
     :error="error"
   >
-    <div v-if="data" class="ds-stats__cards">
+    <div v-if="data" id="nps-cartes" class="ds-stats__cards">
       <div class="ds-stats__card">
         <p class="fr-hint-text fr-mb-0">Score NPS</p>
         <p class="ds-stats__value">{{ data.nps_score ?? '—' }}</p>
@@ -40,9 +40,9 @@ const parGroupe = computed(() =>
     </div>
 
     <template v-if="parGroupe.length">
-      <h3 class="fr-h6 fr-mt-3w">Score par groupe</h3>
+      <h3 id="nps-groupes-titre" class="fr-h6 fr-mt-3w">Score par groupe</h3>
       <div class="fr-table fr-table--bordered ds-stats__table">
-        <table>
+        <table id="nps-groupes">
           <thead>
             <tr>
               <th scope="col">Groupe</th>
@@ -54,7 +54,7 @@ const parGroupe = computed(() =>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="g in parGroupe" :key="g.group">
+            <tr v-for="g in parGroupe" :key="g.group" data-testid="nps-groupe">
               <td>{{ groupLabel(g.group) }}</td>
               <td>{{ g.responses }}</td>
               <td>{{ g.nps_score ?? '—' }}</td>

@@ -29,7 +29,12 @@ async function send(score: number) {
 </script>
 
 <template>
-  <DsfrModal :opened="opened" title="Une question rapide" @close="emit('close')">
+  <DsfrModal
+    modal-id="modale-nps"
+    :opened="opened"
+    title="Une question rapide"
+    @close="emit('close')"
+  >
     <p v-if="thanks" class="fr-mb-0">Merci pour votre retour !</p>
     <template v-else>
       <p>Sur une échelle de 0 à 10, recommanderiez-vous DocSearch à un collègue&nbsp;?</p>

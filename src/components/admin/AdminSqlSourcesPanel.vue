@@ -94,10 +94,17 @@ const { confirm } = useDialogs()</script>
     subtitle="requêtes PostgreSQL/MySQL indexées, réconciliées à chaque passage"
     :error="error"
   >
-    <DsfrAlert v-if="actionError" type="error" small :description="actionError" class="fr-mb-2w" />
+    <DsfrAlert
+      v-if="actionError"
+      id="sqlsources-erreur"
+      type="error"
+      small
+      :description="actionError"
+      class="fr-mb-2w"
+    />
 
     <div class="fr-table fr-table--bordered ds-stats__table">
-      <table>
+      <table id="sqlsources-tableau">
         <thead>
           <tr>
             <th scope="col">Nom</th>
@@ -113,7 +120,7 @@ const { confirm } = useDialogs()</script>
           <tr v-if="!Object.keys(data?.sources || {}).length">
             <td colspan="7" class="fr-hint-text">Aucune source SQL.</td>
           </tr>
-          <tr v-for="(source, name) in data?.sources || {}" :key="name">
+          <tr v-for="(source, name) in data?.sources || {}" :key="name" data-testid="sqlsources-ligne" :data-source="name">
             <td><code>{{ name }}</code></td>
             <td>{{ source.label || '' }}</td>
             <td><code>{{ source.es_index }}</code></td>
@@ -125,9 +132,16 @@ const { confirm } = useDialogs()</script>
                 size="sm"
                 secondary
                 label="Modifier"
+                data-testid="sqlsources-modifier"
                 @click="editing = { name: String(name), source }"
               />
-              <DsfrButton size="sm" tertiary label="Retirer" @click="removeSource(String(name))" />
+              <DsfrButton
+                size="sm"
+                tertiary
+                label="Retirer"
+                data-testid="sqlsources-retirer"
+                @click="removeSource(String(name))"
+              />
             </td>
           </tr>
         </tbody>
@@ -145,6 +159,7 @@ const { confirm } = useDialogs()</script>
     />
     <DsfrButton
       v-else
+      id="sqlsources-nouvelle"
       class="fr-mt-2w"
       size="sm"
       secondary
@@ -152,9 +167,9 @@ const { confirm } = useDialogs()</script>
       @click="editing = { name: null }"
     />
 
-    <h3 class="fr-h6 fr-mt-3w">DSN chiffrés</h3>
+    <h3 id="sqlsources-dsn-titre" class="fr-h6 fr-mt-3w">DSN chiffrés</h3>
     <div class="fr-table fr-table--bordered ds-stats__table">
-      <table>
+      <table id="sqlsources-dsn-tableau">
         <thead>
           <tr>
             <th scope="col">Nom</th>
@@ -166,11 +181,17 @@ const { confirm } = useDialogs()</script>
           <tr v-if="!data?.dsns.length">
             <td colspan="3" class="fr-hint-text">Aucun DSN enregistré ici.</td>
           </tr>
-          <tr v-for="dsn in data?.dsns || []" :key="dsn.name">
+          <tr v-for="dsn in data?.dsns || []" :key="dsn.name" data-testid="sqlsources-dsn-ligne" :data-dsn="dsn.name">
             <td><code>{{ dsn.name }}</code></td>
             <td>{{ dsn.hint }}</td>
             <td>
-              <DsfrButton size="sm" tertiary label="Retirer" @click="removeDsn(dsn.name)" />
+              <DsfrButton
+                size="sm"
+                tertiary
+                label="Retirer"
+                data-testid="sqlsources-dsn-retirer"
+                @click="removeDsn(dsn.name)"
+              />
             </td>
           </tr>
         </tbody>
@@ -201,7 +222,7 @@ const { confirm } = useDialogs()</script>
           placeholder="postgresql+psycopg2://user:motdepasse@host:5432/db"
         />
       </div>
-      <DsfrButton size="sm" label="Enregistrer le DSN" @click="addDsn" />
+      <DsfrButton id="sqlsources-dsn-enregistrer" size="sm" label="Enregistrer le DSN" @click="addDsn" />
     </div>
 
     <p class="fr-hint-text fr-mt-2w">

@@ -128,16 +128,22 @@ async function onRemoveKeyword(keyword: string) {
 
 <template>
   <DsfrModal
+    modal-id="modale-document"
     :opened="opened"
     title="Détail du document"
     size="lg"
     @close="emit('close')"
   >
     <p v-if="loading">Chargement…</p>
-    <DsfrAlert v-else-if="error" type="error" :description="`Impossible de charger ce document : ${error}`" />
+    <DsfrAlert
+      v-else-if="error"
+      id="document-erreur"
+      type="error"
+      :description="`Impossible de charger ce document : ${error}`"
+    />
 
     <template v-else-if="doc">
-      <div class="ds-detail__head">
+      <div id="document-entete" class="ds-detail__head">
         <span class="fr-badge">{{ extLabel(doc.extension) }}</span>
         <div>
           <p class="fr-text--lead fr-mb-0">{{ doc.title || doc.filename }}</p>
@@ -157,12 +163,17 @@ async function onRemoveKeyword(keyword: string) {
         class="fr-mb-2w"
       />
       <p v-else-if="previewable">
-        <a class="fr-link fr-icon-eye-line fr-link--icon-left" :href="`/api/preview/${documentId}`" target="_blank">
+        <a
+          id="document-apercu"
+          class="fr-link fr-icon-eye-line fr-link--icon-left"
+          :href="`/api/preview/${documentId}`"
+          target="_blank"
+        >
           Voir l'aperçu
         </a>
       </p>
 
-      <ul class="ds-detail__rows fr-text--sm">
+      <ul id="document-champs" class="ds-detail__rows fr-text--sm">
         <li v-if="doc.author"><span>Auteur</span><span>{{ doc.author }}</span></li>
         <!-- Masquée s'il n'y a ni mot-clé ni possibilité d'en ajouter :
              une ligne SQL n'en a pas, et affichait « — ». -->
@@ -170,11 +181,18 @@ async function onRemoveKeyword(keyword: string) {
           <span>Mots-clés</span>
           <span class="ds-detail__keywords">
             <template v-if="doc.keywords?.length">
-              <span v-for="keyword in doc.keywords" :key="keyword" class="fr-tag fr-tag--sm">
+              <span
+                v-for="keyword in doc.keywords"
+                :key="keyword"
+                class="fr-tag fr-tag--sm"
+                data-testid="document-mot-cle"
+                :data-mot-cle="keyword"
+              >
                 {{ keyword }}
                 <button
                   v-if="canEditKeywords"
                   class="ds-detail__keyword-remove"
+                  data-testid="document-mot-cle-retirer"
                   :aria-label="`Retirer le mot-clé ${keyword}`"
                   @click="onRemoveKeyword(keyword)"
                 >
@@ -211,6 +229,7 @@ async function onRemoveKeyword(keyword: string) {
 
       <div v-if="canEditKeywords" class="ds-detail__keyword-add fr-mt-1w">
         <input
+          id="document-mot-cle-nouveau"
           v-model="newKeyword"
           class="fr-input fr-input--sm"
           type="text"
@@ -218,13 +237,20 @@ async function onRemoveKeyword(keyword: string) {
           placeholder="Ajouter un ou plusieurs mots-clés (séparés par ;)…"
           @keydown.enter.prevent="onAddKeyword"
         />
-        <DsfrButton size="sm" secondary label="Ajouter" @click="onAddKeyword" />
+        <DsfrButton id="document-mot-cle-ajouter" size="sm" secondary label="Ajouter" @click="onAddKeyword" />
       </div>
-      <DsfrAlert v-if="keywordError" type="error" small :description="keywordError" class="fr-mt-1w" />
+      <DsfrAlert
+        v-if="keywordError"
+        id="document-erreur-mot-cle"
+        type="error"
+        small
+        :description="keywordError"
+        class="fr-mt-1w"
+      />
 
       <template v-if="showAcl">
-        <h3 class="fr-h6 fr-mt-3w">Droits d'accès</h3>
-        <ul class="fr-tags-group">
+        <h3 id="document-droits-titre" class="fr-h6 fr-mt-3w">Droits d'accès</h3>
+        <ul id="document-droits" class="fr-tags-group">
           <li v-if="doc.acl?.owner">
             <span class="fr-tag fr-tag--sm">Propriétaire : {{ doc.acl.owner }}</span>
           </li>

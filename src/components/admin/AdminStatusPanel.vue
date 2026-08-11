@@ -182,13 +182,20 @@ const versionsDivergentes = computed(() => {
     </p>
     <DsfrAlert
       v-if="journalEnEchec"
+      id="status-journal-echec"
       type="error"
       title="Les recherches ne sont plus journalisées"
       :description="descriptionEchecJournal"
       class="fr-mt-2w"
     />
-    <div class="ds-stats__cards fr-mt-2w">
-      <div v-for="card in cards" :key="card.name" class="ds-stats__card">
+    <div id="status-cartes" class="ds-stats__cards fr-mt-2w">
+      <div
+        v-for="card in cards"
+        :key="card.name"
+        class="ds-stats__card"
+        data-testid="status-carte"
+        :data-brique="card.name"
+      >
         <p class="fr-hint-text fr-mb-0">{{ card.name }}</p>
         <p class="ds-stats__value">
           <DsfrBadge
@@ -204,16 +211,23 @@ const versionsDivergentes = computed(() => {
       </div>
     </div>
 
-    <h3 class="fr-h6 fr-mt-4w fr-mb-1w">Versions déployées</h3>
+    <h3 id="status-versions-titre" class="fr-h6 fr-mt-4w fr-mb-1w">Versions déployées</h3>
     <DsfrAlert
       v-if="versionsDivergentes"
+      id="status-versions-divergentes"
       type="warning"
       small
       description="Les briques n'annoncent pas la même version : une mise à jour est probablement incomplète."
       class="fr-mb-2w"
     />
-    <div class="ds-stats__cards">
-      <div v-for="ligne in versions" :key="ligne.nom" class="ds-stats__card">
+    <div id="status-versions" class="ds-stats__cards">
+      <div
+        v-for="ligne in versions"
+        :key="ligne.nom"
+        class="ds-stats__card"
+        data-testid="status-version"
+        :data-brique="ligne.nom"
+      >
         <p class="fr-hint-text fr-mb-0">{{ ligne.nom }}</p>
         <p class="ds-stats__value">{{ ligne.version }}</p>
         <p class="fr-hint-text fr-mb-0">{{ ligne.detail }}</p>

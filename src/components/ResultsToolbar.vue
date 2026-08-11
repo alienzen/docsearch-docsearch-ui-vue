@@ -51,8 +51,8 @@ async function exportAs(format: ExportFormat) {
 </script>
 
 <template>
-  <div v-if="store.hasSearched" class="ds-toolbar fr-mb-2w">
-    <p class="fr-mb-0">
+  <div v-if="store.hasSearched" id="resultats-outils" class="ds-toolbar fr-mb-2w">
+    <p id="resultats-decompte" class="fr-mb-0">
       <strong>{{ countLabel }}</strong>
       <span v-if="pageLabel" class="fr-hint-text fr-ml-1w">{{ pageLabel }}</span>
       <!-- Réaffinage sur des résultats déjà affichés : le seul signe
@@ -68,6 +68,7 @@ async function exportAs(format: ExportFormat) {
            plus aucun moyen de la rouvrir. `aria-expanded` porte l'état,
            ce qui évite un libellé changeant à chaque clic. -->
       <button
+        id="filtres-bascule"
         class="fr-btn fr-btn--sm fr-btn--secondary fr-btn--icon-left fr-icon-filter-line"
         type="button"
         aria-controls="facets"
@@ -81,6 +82,7 @@ async function exportAs(format: ExportFormat) {
 
       <DsfrSelect
         v-if="uiConfig.config.sort_enabled"
+        select-id="resultats-tri"
         :model-value="store.sort"
         label="Trier par"
         label-visible
@@ -91,6 +93,7 @@ async function exportAs(format: ExportFormat) {
       <!-- Rien à densifier quand la liste est vide. -->
       <DsfrButton
         v-if="store.total > 0"
+        id="resultats-vue-compacte"
         size="sm"
         secondary
         :label="preferences.resultsCompact ? 'Vue détaillée' : 'Vue compacte'"
@@ -100,8 +103,20 @@ async function exportAs(format: ExportFormat) {
       />
 
       <template v-if="uiConfig.config.export_enabled">
-        <DsfrButton size="sm" secondary label="Export XLSX" @click="exportAs('xlsx')" />
-        <DsfrButton size="sm" secondary label="Export DOCX" @click="exportAs('docx')" />
+        <DsfrButton
+          id="resultats-export-xlsx"
+          size="sm"
+          secondary
+          label="Export XLSX"
+          @click="exportAs('xlsx')"
+        />
+        <DsfrButton
+          id="resultats-export-docx"
+          size="sm"
+          secondary
+          label="Export DOCX"
+          @click="exportAs('docx')"
+        />
       </template>
     </div>
 
@@ -110,6 +125,7 @@ async function exportAs(format: ExportFormat) {
          portera que sur les documents effectivement rapatriés. -->
     <DsfrAlert
       v-if="capped"
+      id="resultats-trop-nombreux"
       type="warning"
       small
       description="Votre recherche renvoie trop de résultats pour être comptée précisément. Affinez-la avec les filtres ou des mots-clés supplémentaires pour obtenir un décompte exact et des résultats plus pertinents."
@@ -118,6 +134,7 @@ async function exportAs(format: ExportFormat) {
 
     <DsfrAlert
       v-if="exportError"
+      id="resultats-erreur-export"
       type="error"
       small
       :description="`Impossible d'exporter les résultats : ${exportError}`"

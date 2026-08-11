@@ -18,6 +18,12 @@ import { groupLabel, type CountByGroup } from '@/api/stats'
 const props = withDefaults(
   defineProps<{
     /**
+     * Identifiant du tableau, passé par le panneau appelant : ce
+     * composant est instancié plusieurs fois dans la même page, un
+     * identifiant écrit en dur ici se retrouverait donc en double.
+     */
+    id: string
+    /**
      * Facultatif à dessein : une réponse d'API sans `by_group` — version
      * antérieure, ou champ absent — ne doit pas faire planter le rendu du
      * panneau entier. Le tableau disparaît simplement.
@@ -36,9 +42,9 @@ const sorted = computed(() => [...(props.rows || [])].sort((a, b) => b.count - a
 
 <template>
   <template v-if="sorted.length">
-    <h3 class="fr-h6 fr-mt-3w">{{ title }}</h3>
+    <h3 :id="`${id}-titre`" class="fr-h6 fr-mt-3w">{{ title }}</h3>
     <div class="fr-table fr-table--bordered ds-stats__table">
-      <table>
+      <table :id="id">
         <thead>
           <tr>
             <th scope="col">Groupe</th>
@@ -46,7 +52,7 @@ const sorted = computed(() => [...(props.rows || [])].sort((a, b) => b.count - a
           </tr>
         </thead>
         <tbody>
-          <tr v-for="row in sorted" :key="row.group">
+          <tr v-for="row in sorted" :key="row.group" data-testid="groupe-ligne">
             <td>{{ groupLabel(row.group) }}</td>
             <td>{{ row.count.toLocaleString('fr-FR') }}</td>
           </tr>

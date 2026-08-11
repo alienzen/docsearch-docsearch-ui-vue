@@ -45,9 +45,9 @@ async function send(rating: 'up' | 'down') {
 </script>
 
 <template>
-  <div v-if="visible" class="ds-feedback fr-mt-2w">
+  <div v-if="visible" id="avis" class="ds-feedback fr-mt-2w">
     <template v-if="sent">
-      <p class="fr-mb-0">Merci pour votre retour !</p>
+      <p id="avis-merci" class="fr-mb-0">Merci pour votre retour !</p>
     </template>
     <template v-else>
       <p class="fr-mb-0">Cette recherche vous a-t-elle été utile&nbsp;?</p>
@@ -62,6 +62,7 @@ async function send(rating: 'up' | 'down') {
            accessible est une phrase entière, « Oui » ne voulant rien dire
            hors du contexte de la question. -->
       <button
+        id="avis-utile"
         class="fr-btn fr-btn--sm fr-btn--secondary fr-btn--icon-left fr-icon-thumb-up-line"
         type="button"
         :disabled="busy"
@@ -71,6 +72,7 @@ async function send(rating: 'up' | 'down') {
         <span class="fr-sr-only">— cette recherche m'a été utile</span>
       </button>
       <button
+        id="avis-peu-utile"
         class="fr-btn fr-btn--sm fr-btn--secondary fr-btn--icon-left fr-icon-thumb-down-line"
         type="button"
         :disabled="busy"
@@ -80,6 +82,12 @@ async function send(rating: 'up' | 'down') {
         <span class="fr-sr-only">— cette recherche ne m'a pas été utile</span>
       </button>
     </template>
-    <DsfrAlert v-if="error" type="error" small :description="`Impossible d'enregistrer votre avis : ${error}`" />
+    <DsfrAlert
+      v-if="error"
+      id="avis-erreur"
+      type="error"
+      small
+      :description="`Impossible d'enregistrer votre avis : ${error}`"
+    />
   </div>
 </template>

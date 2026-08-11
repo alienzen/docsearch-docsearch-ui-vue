@@ -72,7 +72,7 @@ const FEEDBACK_LABELS: Record<string, { icone: string; texte: string }> = {
 
 <template>
   <StatsPanel id="logs-panel" title="Historique des recherches" :error="error">
-    <div class="ds-stats__filters fr-mb-2w">
+    <div id="logs-filtres" class="ds-stats__filters fr-mb-2w">
       <div class="fr-input-group fr-mb-0">
         <label class="fr-label fr-sr-only" for="logs-filter">Filtrer par mot-clé</label>
         <input
@@ -84,12 +84,19 @@ const FEEDBACK_LABELS: Record<string, { icone: string; texte: string }> = {
           @keydown.enter.prevent="applyFilter"
         />
       </div>
-      <DsfrButton size="sm" label="Filtrer" @click="applyFilter" />
-      <DsfrButton size="sm" secondary label="Réinitialiser" @click="resetFilter" />
+      <DsfrButton id="logs-filtrer" size="sm" label="Filtrer" @click="applyFilter" />
+      <DsfrButton
+        id="logs-reinitialiser"
+        size="sm"
+        secondary
+        label="Réinitialiser"
+        @click="resetFilter"
+      />
       <!-- L'export couvre TOUTES les lignes correspondant au filtre, pas
            la page affichée ; Content-Disposition déclenche le
            téléchargement sans quitter la page. -->
       <a
+        id="logs-export"
         class="fr-btn fr-btn--secondary fr-btn--sm"
         :href="searchLogsExportUrl(query)"
         target="_blank"
@@ -100,7 +107,7 @@ const FEEDBACK_LABELS: Record<string, { icone: string; texte: string }> = {
     </div>
 
     <div class="fr-table fr-table--bordered ds-stats__table">
-      <table>
+      <table id="logs-tableau">
         <thead>
           <tr>
             <th scope="col">Date / heure</th>
@@ -117,7 +124,7 @@ const FEEDBACK_LABELS: Record<string, { icone: string; texte: string }> = {
           <tr v-if="!data?.results.length">
             <td colspan="8" class="fr-hint-text">Aucune recherche ne correspond à ces critères.</td>
           </tr>
-          <tr v-for="entry in data?.results || []" :key="entry.id">
+          <tr v-for="entry in data?.results || []" :key="entry.id" data-testid="log-ligne">
             <td>{{ fmtDateTime(entry.timestamp) }}</td>
             <td>{{ entry.query }}</td>
             <td>{{ asList(entry.source).join(', ') || 'toutes' }}</td>
@@ -141,6 +148,7 @@ const FEEDBACK_LABELS: Record<string, { icone: string; texte: string }> = {
     </div>
 
     <StatsPager
+      id="logs-pagination"
       :from="from"
       :page-size="PAGE_SIZE"
       :total="data?.total || 0"

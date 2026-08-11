@@ -58,10 +58,17 @@ async function launch() {
           placeholder="sous-dossier (vide = dossier complet)"
         />
       </div>
-      <DsfrButton size="sm" label="Lancer un scan" :disabled="busy" @click="launch" />
+      <DsfrButton id="scan-lancer" size="sm" label="Lancer un scan" :disabled="busy" @click="launch" />
     </div>
 
-    <DsfrAlert v-if="error" type="error" small :description="error" class="fr-mt-1w" />
-    <p v-if="result" class="fr-hint-text fr-mt-1w">{{ result }}</p>
+    <DsfrAlert
+      v-if="error"
+      id="scan-erreur"
+      type="error"
+      small
+      :description="error"
+      class="fr-mt-1w"
+    />
+    <p v-if="result" id="scan-resultat" class="fr-hint-text fr-mt-1w">{{ result }}</p>
   </AdminPanel>
 </template>

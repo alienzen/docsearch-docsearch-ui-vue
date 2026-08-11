@@ -115,6 +115,7 @@ const { confirm } = useDialogs()</script>
   >
     <DsfrAlert
       v-if="actionError || fieldError"
+      id="websources-erreur"
       type="error"
       small
       :description="actionError || fieldError || ''"
@@ -122,7 +123,7 @@ const { confirm } = useDialogs()</script>
     />
 
     <div class="fr-table fr-table--bordered ds-stats__table">
-      <table>
+      <table id="websources-tableau">
         <thead>
           <tr>
             <th scope="col">Nom</th>
@@ -139,7 +140,7 @@ const { confirm } = useDialogs()</script>
           <tr v-if="!Object.keys(data || {}).length">
             <td colspan="8" class="fr-hint-text">Aucune source web.</td>
           </tr>
-          <tr v-for="(source, name) in data || {}" :key="name">
+          <tr v-for="(source, name) in data || {}" :key="name" data-testid="websources-ligne" :data-source="name">
             <td><code>{{ name }}</code></td>
             <td class="ds-admin__actions">
               {{ source.label }}
@@ -148,6 +149,7 @@ const { confirm } = useDialogs()</script>
                 tertiary
                 no-outline
                 label="Modifier"
+                data-testid="websources-libelle"
                 @click="edit('web', String(name), 'label', source.label)"
               />
             </td>
@@ -161,6 +163,7 @@ const { confirm } = useDialogs()</script>
                 tertiary
                 no-outline
                 label="Modifier"
+                data-testid="websources-description"
                 @click="edit('web', String(name), 'description', source.description || '')"
               />
             </td>
@@ -168,6 +171,7 @@ const { confirm } = useDialogs()</script>
               <div class="fr-checkbox-group fr-checkbox-group--sm">
                 <input
                   :id="`web-active-${name}`"
+                  data-testid="websources-actif"
                   type="checkbox"
                   :checked="!source.paused"
                   @change="
@@ -180,7 +184,13 @@ const { confirm } = useDialogs()</script>
               </div>
             </td>
             <td>
-              <DsfrButton size="sm" tertiary label="Retirer" @click="remove(String(name))" />
+              <DsfrButton
+                size="sm"
+                tertiary
+                label="Retirer"
+                data-testid="websources-retirer"
+                @click="remove(String(name))"
+              />
             </td>
           </tr>
         </tbody>
@@ -193,7 +203,7 @@ const { confirm } = useDialogs()</script>
       poursuit son cycle indépendamment.
     </p>
 
-    <h3 class="fr-h6 fr-mt-3w">Ajouter une source</h3>
+    <h3 id="websources-ajout-titre" class="fr-h6 fr-mt-3w">Ajouter une source</h3>
     <div class="ds-admin__row">
       <div class="fr-input-group fr-mb-0">
         <label class="fr-label fr-sr-only" for="new-web-name">Nom</label>
@@ -267,7 +277,7 @@ const { confirm } = useDialogs()</script>
           placeholder="description (optionnel)"
         />
       </div>
-      <DsfrButton size="sm" label="Ajouter" @click="add" />
+      <DsfrButton id="websources-ajouter" size="sm" label="Ajouter" @click="add" />
     </div>
 
     <p class="fr-hint-text fr-mt-2w">

@@ -108,6 +108,56 @@ coûté une séance de débogage.
   fusionne le JSON stocké par-dessus les défauts, une clé disparue du
   code y survivrait.
 
+## Identifiants des éléments d'interface
+
+Règle de départage, en un mot : **un élément qui peut apparaître deux fois
+dans la même page prend un `data-testid`, les autres prennent un `id`.**
+Un `id` doit être unique dans le document — deux éléments qui le partagent
+cassent en silence `label for` et `aria-controls`, qui ne désignent plus
+que le premier.
+
+- **Format** : kebab-case, en français, `zone-element`
+  (`recherches-enregistrees-bouton`, `modale-suggestion`).
+- **Éléments répétés** : `data-testid` stable et **non suffixé**
+  (`data-testid="carte-resultat"` sur les vingt cartes), la clé métier
+  restant portée par un `data-*` dédié quand il faut en viser une.
+- **Ids suffixés déjà en place** — `select-${result.id}`, `ft-${ext}`,
+  `ocr-${name}`, `facet-extensions-${bucket.key}`… : ils existent pour
+  lier un `<label for>` à sa case, pas pour servir d'accroche. Les garder,
+  ne pas s'en servir, leur ajouter un `data-testid` à côté.
+- **Trois ids sont porteurs** et ne se renomment pas : `#main-content`
+  (cible des `DsfrSkipLinks` **et** sélecteur dans `app.css`), `#facets`
+  (lien d'évitement), `#navigation`.
+- **Composants DSFR** : chacun a sa propre prop, et un `id` posé en
+  attribut n'atterrit pas au même endroit — `DsfrModal` → `modal-id`,
+  `DsfrSelect` → `select-id`, `DsfrHeader` → `searchbar-id`, `DsfrInput` →
+  `id`. Sans valeur explicite, `vue-dsfr` **tire l'identifiant au sort**
+  (`Math.random()`) : il change à chaque rendu.
+- **Ne pas fabriquer d'identifiant avec `useId()`** : le jeton produit est
+  opaque et dépend de l'ordre de montage. Passer l'identifiant en prop,
+  comme `NavMenuItem`.
+- **Panneaux repliables** : la prop `id` de `CollapsiblePanel` — et celle
+  de `FacetSection`, qui avait le même défaut — sert à la fois de clé de
+  pli dans le store et d'identifiant du `<details>`. Les deux rôles se
+  confondent volontairement : une clé de pli non unique replierait déjà
+  deux panneaux à la fois. **Ne pas renommer ces identifiants-là** : ils
+  sont persistés en `localStorage` (`docsearch-stats-collapsed-panels`,
+  préférences de facettes), et les renommer réinitialise en silence
+  l'état replié de tous les utilisateurs.
+- **Composant instancié plusieurs fois dans une page** (`StatsPager`,
+  `StatsGroupCounts`, `NavMenuItem`) : identifiant passé en **prop** par
+  l'appelant, d'où sont dérivés ceux des enfants (`${id}-suivant`). Ce
+  n'est pas un élément de liste — c'est une commande distincte, qui
+  mérite une identité propre plutôt qu'un `data-testid` commun aux trois.
+  Exception : un composant **récursif** (`AdminTreeNode`) ne peut recevoir
+  aucun identifiant dérivé, il n'a que des `data-*`.
+
+Le garde-fou est `idsDupliques()` (`src/test/ids.ts`), appelé depuis la
+spec de chaque page. **Il ne prouve quelque chose que si les réponses
+bouchonnées comportent au moins deux entrées par liste** : avec une seule,
+un `id` littéral posé dans un `v-for` ne se dédouble jamais et le contrôle
+passe au vert sans rien vérifier.
+
 ## Écarts assumés avec `docsearch-ui`
 
 - **Thèmes** : les 7 thèmes maison (Ardoise, Rouge, Vert, Contraste

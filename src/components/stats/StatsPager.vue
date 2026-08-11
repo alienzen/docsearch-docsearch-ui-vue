@@ -7,6 +7,13 @@
 import { computed } from 'vue'
 
 const props = defineProps<{
+  /**
+   * Identifiant du pagineur, d'où sont dérivés ceux des deux boutons. Il
+   * est passé par le panneau appelant : ce composant est instancié trois
+   * fois dans la même page (suggestions, historique, audit), et un
+   * identifiant écrit en dur ici se retrouverait donc en triple.
+   */
+  id: string
   from: number
   pageSize: number
   total: number
@@ -22,9 +29,10 @@ const label = computed(() =>
 </script>
 
 <template>
-  <div class="ds-stats__pager fr-mt-2w">
-    <span class="fr-hint-text fr-mb-0">{{ label }}</span>
+  <div :id="id" class="ds-stats__pager fr-mt-2w">
+    <span :id="`${id}-etendue`" class="fr-hint-text fr-mb-0">{{ label }}</span>
     <DsfrButton
+      :id="`${id}-precedent`"
       size="sm"
       secondary
       label="← Précédent"
@@ -32,6 +40,7 @@ const label = computed(() =>
       @click="emit('update:from', Math.max(0, from - pageSize))"
     />
     <DsfrButton
+      :id="`${id}-suivant`"
       size="sm"
       secondary
       label="Suivant →"

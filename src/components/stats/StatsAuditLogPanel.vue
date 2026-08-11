@@ -40,7 +40,7 @@ function body(value: Record<string, unknown> | undefined): string {
     :error="error"
   >
     <div class="fr-table fr-table--bordered ds-stats__table">
-      <table>
+      <table id="audit-log-tableau">
         <thead>
           <tr>
             <th scope="col">Date / heure</th>
@@ -55,7 +55,7 @@ function body(value: Record<string, unknown> | undefined): string {
           <tr v-if="!data?.results.length">
             <td colspan="6" class="fr-hint-text">Aucune action enregistrée pour l'instant.</td>
           </tr>
-          <tr v-for="entry in data?.results || []" :key="entry.id">
+          <tr v-for="entry in data?.results || []" :key="entry.id" data-testid="audit-ligne">
             <td>{{ fmtDateTime(entry.timestamp) }}</td>
             <td>{{ entry.username }}</td>
             <td>{{ entry.method }}</td>
@@ -68,6 +68,7 @@ function body(value: Record<string, unknown> | undefined): string {
     </div>
 
     <StatsPager
+      id="audit-log-pagination"
       :from="from"
       :page-size="PAGE_SIZE"
       :total="data?.total || 0"

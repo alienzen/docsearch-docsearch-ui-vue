@@ -5,6 +5,7 @@ import { createPinia } from 'pinia'
 import { VIcon } from '@gouvminint/vue-dsfr'
 import StatsPage from './StatsPage.vue'
 import RouterLinkShim from '@/components/RouterLinkShim.vue'
+import { idsDupliques } from '@/test/ids'
 
 // Même garde-fou que ChatPage : monter la page détecte une boucle de
 // rendu (dépassement de délai) et vérifie que les six panneaux se
@@ -17,9 +18,24 @@ const RESPONSES: Record<string, unknown> = {
     total_searches: 2736,
     unique_users: 7,
     unique_ips: 3,
-    by_day: [{ date: '2026-07-16', count: 168 }],
+    by_day: [
+      { date: '2026-07-16', count: 168 },
+      { date: '2026-07-17', count: 205 },
+    ],
     feedback_up: 7,
     feedback_down: 4,
+    // Les ventilations par groupe manquaient : `StatsGroupCounts` et les
+    // tableaux « par groupe » n'étaient donc jamais rendus, et le contrôle
+    // d'unicité ne voyait rien de ce que ce composant produit — alors
+    // qu'il est instancié TROIS fois dans la page.
+    by_group: [
+      { group: 'docsearch-users', searches: 2000, feedback_up: 5, feedback_down: 2 },
+      { group: '__sans_groupe__', searches: 736, feedback_up: 2, feedback_down: 2 },
+    ],
+    searches_by_group: [
+      { group: 'docsearch-users', count: 2000 },
+      { group: '__sans_groupe__', count: 736 },
+    ],
   },
   '/admin/nps-summary': {
     total_responses: 2,
@@ -27,9 +43,31 @@ const RESPONSES: Record<string, unknown> = {
     detractors: 1,
     passives: 0,
     promoters: 1,
+    by_group: [
+      {
+        group: 'docsearch-users',
+        responses: 1,
+        detractors: 0,
+        passives: 0,
+        promoters: 1,
+        nps_score: 100,
+      },
+      {
+        group: '__sans_groupe__',
+        responses: 1,
+        detractors: 1,
+        passives: 0,
+        promoters: 0,
+        nps_score: -100,
+      },
+    ],
   },
+  // ⚠️ DEUX entrées par liste, jamais une seule : c'est ce qui permet au
+  // contrôle d'unicité des identifiants de démontrer quelque chose. Avec
+  // une entrée, un `id` littéral posé dans un `v-for` ne se dédouble
+  // jamais et le contrôle passe au vert sans rien vérifier.
   '/admin/suggestions': {
-    total: 1,
+    total: 2,
     results: [
       {
         id: 's1',
@@ -39,14 +77,33 @@ const RESPONSES: Record<string, unknown> = {
         status: 'nouveau',
         username: null,
       },
+      {
+        id: 's2',
+        timestamp: '2026-07-21T09:00:00Z',
+        text: 'Exporter en CSV',
+        category: 'idea',
+        status: 'nouveau',
+        username: 'bob.user',
+      },
+    ],
+    by_group: [
+      { group: 'docsearch-users', count: 1 },
+      { group: '__sans_groupe__', count: 1 },
     ],
   },
   '/admin/search-logs/zero-results': {
     total_zero_result_searches: 12,
-    results: [{ query: 'xyzzy', count: 3, last_seen: '2026-07-20T10:00:00Z' }],
+    results: [
+      { query: 'xyzzy', count: 3, last_seen: '2026-07-20T10:00:00Z' },
+      { query: 'plugh', count: 1, last_seen: '2026-07-21T08:00:00Z' },
+    ],
+    by_group: [
+      { group: 'docsearch-users', count: 3 },
+      { group: '__sans_groupe__', count: 1 },
+    ],
   },
   '/admin/search-logs': {
-    total: 1,
+    total: 2,
     results: [
       {
         id: 'l1',
@@ -59,10 +116,21 @@ const RESPONSES: Record<string, unknown> = {
         source: ['documents'],
         feedback: 'up',
       },
+      {
+        id: 'l2',
+        timestamp: '2026-07-21T11:00:00Z',
+        username: 'bob.user',
+        query: 'note de service',
+        total_results: 12,
+        result_files: ['e.pdf'],
+        extension: ['.pdf'],
+        source: ['documents'],
+        feedback: null,
+      },
     ],
   },
   '/admin/audit-log': {
-    total: 1,
+    total: 2,
     results: [
       {
         id: 'a1',
@@ -72,6 +140,15 @@ const RESPONSES: Record<string, unknown> = {
         path: '/admin/scan',
         path_params: {},
         body: { source: 'documents' },
+      },
+      {
+        id: 'a2',
+        timestamp: '2026-07-21T12:00:00Z',
+        username: 'alice.admin',
+        method: 'POST',
+        path: '/admin/ui-config',
+        path_params: {},
+        body: { footer_enabled: true },
       },
     ],
   },
@@ -157,6 +234,79 @@ describe('StatsPage', () => {
     const wrapper = mountPage()
     await flush()
     expect(wrapper.text()).toContain('a.docx, b.docx, c.docx +1')
+  })
+
+  it('pose un identifiant distinct sur chacun des trois pagineurs', async () => {
+    // Le cas qui justifie la prop `id` de StatsPager : trois instances
+    // dans la même page. Un identifiant écrit en dur dans le composant
+    // s'y retrouverait en triple, et `label for` / `aria-controls` ne
+    // désigneraient plus que le premier.
+    vi.stubGlobal('fetch', respondWith())
+    const wrapper = mountPage()
+    await flush()
+    for (const id of ['suggestions-pagination', 'logs-pagination', 'audit-log-pagination']) {
+      expect(wrapper.find(`#${id}`).exists(), id).toBe(true)
+      expect(wrapper.find(`#${id}-precedent`).element.tagName, id).toBe('BUTTON')
+      expect(wrapper.find(`#${id}-suivant`).element.tagName, id).toBe('BUTTON')
+    }
+  })
+
+  it('pose les identifiants des zones des panneaux', async () => {
+    vi.stubGlobal('fetch', respondWith())
+    const wrapper = mountPage()
+    await flush()
+    for (const id of [
+      'stats-outils',
+      'stats-tout-replier',
+      'summary-cartes',
+      'summary-histogramme',
+      'summary-groupes',
+      'summary-avis-groupes',
+      'nps-cartes',
+      'nps-groupes',
+      'suggestions-tableau',
+      'suggestions-groupes',
+      'zero-results-tableau',
+      'zero-results-groupes',
+      'logs-filtres',
+      'logs-filtrer',
+      'logs-reinitialiser',
+      'logs-export',
+      'logs-tableau',
+      'audit-log-tableau',
+    ]) {
+      expect(wrapper.find(`#${id}`).exists(), id).toBe(true)
+    }
+  })
+
+  it('marque chaque ligne répétée d’un data-testid', async () => {
+    vi.stubGlobal('fetch', respondWith())
+    const wrapper = mountPage()
+    await flush()
+    // Une marque par ligne, et autant de lignes que d'entrées
+    // bouchonnées : c'est ce qui distingue une accroche posée sur la
+    // boucle d'une accroche posée par erreur sur le conteneur.
+    expect(wrapper.findAll('[data-testid="summary-jour"]')).toHaveLength(2)
+    expect(wrapper.findAll('[data-testid="summary-avis-groupe"]')).toHaveLength(2)
+    expect(wrapper.findAll('[data-testid="nps-groupe"]')).toHaveLength(2)
+    expect(wrapper.findAll('[data-testid="suggestion-ligne"]')).toHaveLength(2)
+    expect(wrapper.findAll('[data-testid="suggestion-statut"]')).toHaveLength(2)
+    expect(wrapper.findAll('[data-testid="zero-result-ligne"]')).toHaveLength(2)
+    expect(wrapper.findAll('[data-testid="log-ligne"]')).toHaveLength(2)
+    expect(wrapper.findAll('[data-testid="audit-ligne"]')).toHaveLength(2)
+    // Trois tableaux « par groupe » de deux lignes chacun.
+    expect(wrapper.findAll('[data-testid="groupe-ligne"]')).toHaveLength(6)
+  })
+
+  it('n’expose que des identifiants uniques', async () => {
+    // Vider le corps du document : les modales des tests précédents y
+    // sont téléportées et y restent, faute de démontage.
+    document.body.innerHTML = ''
+    vi.stubGlobal('fetch', respondWith())
+    const wrapper = mountPage()
+    await flush()
+    expect(idsDupliques(wrapper)).toEqual([])
+    wrapper.unmount()
   })
 
   it('remplace la page par un bandeau unique en cas de refus d’accès', async () => {

@@ -77,6 +77,8 @@ const selectable = computed(
        même nom sur `.result-card` dans docsearch-ui. -->
   <div
     class="fr-card fr-card--no-arrow ds-result"
+    data-testid="carte-resultat"
+    :data-id="result.id"
     :data-source="result.source || undefined"
     :style="custom?.accent ? { '--ds-result-accent': custom.accent } : undefined"
   >
@@ -84,6 +86,7 @@ const selectable = computed(
       <div v-if="selectable" class="fr-checkbox-group fr-checkbox-group--sm ds-result__select">
         <input
           :id="`select-${result.id}`"
+          data-testid="carte-resultat-selection"
           type="checkbox"
           :checked="selected"
           @change="emit('update:selected', ($event.target as HTMLInputElement).checked)"
@@ -95,6 +98,7 @@ const selectable = computed(
 
       <button
         class="ds-result__toggle"
+        data-testid="carte-resultat-titre"
         :aria-expanded="expanded"
         :aria-controls="`body-${result.id}`"
         @click="expanded = !expanded"
@@ -146,6 +150,7 @@ const selectable = computed(
           size="sm"
           tertiary
           label="Voir le détail du document"
+          data-testid="carte-resultat-detail"
           @click="emit('detail', result.id)"
         />
         <!-- Aperçu accessible sans ouvrir la fiche détail, qui ne servait
@@ -153,6 +158,7 @@ const selectable = computed(
         <a
           v-if="previewable"
           class="fr-link fr-link--sm fr-icon-eye-line fr-link--icon-left"
+          data-testid="carte-resultat-apercu"
           :href="`/api/preview/${result.id}`"
           target="_blank"
           rel="noopener"

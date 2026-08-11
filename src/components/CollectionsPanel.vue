@@ -161,14 +161,31 @@ defineExpose({ openAdd })
 </script>
 
 <template>
-  <NavMenuItem v-if="collections.length" ref="menu" label="Mes collections" @open="refresh">
+  <NavMenuItem
+    v-if="collections.length"
+    id="collections"
+    ref="menu"
+    label="Mes collections"
+    @open="refresh"
+  >
     <li v-if="loading" class="ds-menu__message">Chargement…</li>
     <li v-else-if="error" class="ds-menu__message">
       <DsfrAlert type="error" small :description="error" />
     </li>
 
-    <li v-for="collection in collections" v-else :key="collection.id" class="ds-menu__entry">
-      <button class="fr-nav__link ds-menu__button" @click="view(collection)">
+    <li
+      v-for="collection in collections"
+      v-else
+      :key="collection.id"
+      class="ds-menu__entry"
+      data-testid="collection"
+      :data-id="collection.id"
+    >
+      <button
+        class="fr-nav__link ds-menu__button"
+        data-testid="collection-ouvrir"
+        @click="view(collection)"
+      >
         <span class="ds-menu__name">{{ collection.name }}</span>
         <span class="fr-hint-text fr-mb-0">
           {{ collection.doc_ids.length }} document{{ collection.doc_ids.length > 1 ? 's' : '' }}
@@ -180,6 +197,7 @@ defineExpose({ openAdd })
           tertiary
           no-outline
           label="Supprimer"
+          data-testid="collection-supprimer"
           :title="`Supprimer la collection ${collection.name}`"
           @click="remove(collection)"
         />
@@ -193,6 +211,7 @@ defineExpose({ openAdd })
        refermé. DsfrModal ne téléporte pas de lui-même. -->
   <Teleport to="body">
     <DsfrModal
+      modal-id="modale-collection"
       :opened="mode === 'view'"
       :title="current?.name || 'Collection'"
       @close="closeModal"
@@ -200,7 +219,7 @@ defineExpose({ openAdd })
       <p v-if="busy">Chargement…</p>
       <p v-else-if="!documents.length" class="fr-hint-text">Collection vide.</p>
       <ul v-else class="ds-collection__docs">
-        <li v-for="entry in documents" :key="entry.id">
+        <li v-for="entry in documents" :key="entry.id" data-testid="collection-document" :data-id="entry.id">
           <button v-if="entry.title" class="fr-link" @click="openDetail(entry.id)">
             {{ entry.title }}
           </button>
@@ -218,6 +237,7 @@ defineExpose({ openAdd })
     </DsfrModal>
 
     <DsfrModal
+      modal-id="modale-collection-ajout"
       :opened="mode === 'add'"
       :title="`Ajouter ${selection.count} document${selection.count > 1 ? 's' : ''} à une collection`"
       @close="closeModal"

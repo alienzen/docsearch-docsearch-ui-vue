@@ -50,7 +50,12 @@ async function send() {
 </script>
 
 <template>
-  <DsfrModal :opened="opened" title="Suggérer une idée" @close="emit('close')">
+  <DsfrModal
+    modal-id="modale-suggestion"
+    :opened="opened"
+    title="Suggérer une idée"
+    @close="emit('close')"
+  >
     <p v-if="thanks" class="fr-mb-0">Merci pour votre suggestion !</p>
     <template v-else>
       <p>

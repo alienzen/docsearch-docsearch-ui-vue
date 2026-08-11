@@ -53,6 +53,7 @@ function submit() {
   <Teleport to="body">
     <DsfrModal
       v-if="pending?.kind === 'confirm'"
+      modal-id="modale-confirmation"
       opened
       :title="pending.title"
       :is-alert="pending.danger"
@@ -68,6 +69,7 @@ function submit() {
 
     <DsfrModal
       v-else-if="pending?.kind === 'prompt'"
+      modal-id="modale-saisie"
       opened
       :title="pending.title"
       size="sm"

@@ -124,13 +124,30 @@ async function updateAlert(saved: SavedSearch, enabled: boolean, frequency: stri
 </script>
 
 <template>
-  <NavMenuItem v-if="list.length" ref="menu" label="Mes recherches" @open="load">
+  <NavMenuItem
+    v-if="list.length"
+    id="recherches-enregistrees"
+    ref="menu"
+    label="Mes recherches"
+    @open="load"
+  >
     <li v-if="loading" class="ds-menu__message">Chargement…</li>
     <li v-else-if="error" class="ds-menu__message">
       <DsfrAlert type="error" small :description="error" />
     </li>
-    <li v-for="saved in list" v-else :key="saved.id" class="ds-menu__entry">
-      <button class="fr-nav__link ds-menu__button" @click="apply(saved)">
+    <li
+      v-for="saved in list"
+      v-else
+      :key="saved.id"
+      class="ds-menu__entry"
+      data-testid="recherche-enregistree"
+      :data-id="saved.id"
+    >
+      <button
+        class="fr-nav__link ds-menu__button"
+        data-testid="recherche-enregistree-appliquer"
+        @click="apply(saved)"
+      >
         <span class="ds-menu__name">{{ saved.name }}</span>
         <span class="fr-hint-text fr-mb-0">« {{ saved.query }} »</span>
       </button>
@@ -153,6 +170,7 @@ async function updateAlert(saved: SavedSearch, enabled: boolean, frequency: stri
           <div class="fr-checkbox-group fr-checkbox-group--sm">
             <input
               :id="`alert-${saved.id}`"
+              data-testid="recherche-enregistree-alerte"
               type="checkbox"
               :checked="saved.alert_enabled"
               @change="
@@ -167,6 +185,7 @@ async function updateAlert(saved: SavedSearch, enabled: boolean, frequency: stri
           </div>
           <select
             class="fr-select fr-select--sm"
+            data-testid="recherche-enregistree-frequence"
             :aria-label="`Fréquence de l'alerte pour ${saved.name}`"
             :disabled="!saved.alert_enabled"
             :value="saved.alert_frequency === 'weekly' ? 'weekly' : 'daily'"
@@ -181,6 +200,7 @@ async function updateAlert(saved: SavedSearch, enabled: boolean, frequency: stri
           tertiary
           no-outline
           label="Supprimer"
+          data-testid="recherche-enregistree-supprimer"
           :title="`Supprimer ${saved.name}`"
           @click="remove(saved)"
         />

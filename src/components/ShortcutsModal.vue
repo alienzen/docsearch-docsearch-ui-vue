@@ -25,6 +25,7 @@ defineEmits<{ close: [] }>()
 
 <template>
   <DsfrModal
+    modal-id="modale-raccourcis"
     :opened="opened"
     title="Raccourcis clavier"
     icon="fr-icon-keyboard-line"

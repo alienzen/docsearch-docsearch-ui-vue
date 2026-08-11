@@ -60,7 +60,14 @@ watch(
     </div>
 
     <p v-if="loading" class="fr-hint-text fr-mt-2w">Chargement…</p>
-    <DsfrAlert v-else-if="error" type="error" small :description="error" class="fr-mt-2w" />
+    <DsfrAlert
+      v-else-if="error"
+      id="source-tree-erreur"
+      type="error"
+      small
+      :description="error"
+      class="fr-mt-2w"
+    />
     <p v-else-if="!entries.length" class="fr-hint-text fr-mt-2w">(dossier vide)</p>
     <AdminTreeNode v-else class="fr-mt-2w" :source="selected" :entries="entries" />
   </AdminPanel>

@@ -91,21 +91,28 @@ onMounted(() => {
 
   <main id="main-content" class="fr-container fr-my-4w ds-chat">
     <DsfrAlert
+      id="chat-avertissement"
       type="warning"
       title="Aperçu — réponses de démonstration"
       description="Cette page illustre l'assistant envisagé. Les réponses sont préparées à l'avance : aucune recherche n'est faite dans vos documents."
       class="fr-mb-3w"
     />
 
-    <div ref="list" class="ds-chat__messages">
+    <div id="chat-conversation" ref="list" class="ds-chat__messages">
+      <!-- `data-role` plutôt que de se raccrocher à la classe
+           `ds-chat__msg--user` : la classe décrit une apparence et peut
+           être renommée avec la feuille de style, l'attribut décrit qui
+           parle. -->
       <div
         v-for="(message, i) in messages"
         :key="i"
         class="ds-chat__msg"
         :class="`ds-chat__msg--${message.role}`"
+        data-testid="chat-message"
+        :data-role="message.role"
       >
         <div class="ds-chat__bubble">
-          <p v-if="message.pending" class="fr-mb-0">
+          <p v-if="message.pending" class="fr-mb-0" data-testid="chat-attente">
             <span class="fr-sr-only">Réponse en cours de rédaction</span>
             <span aria-hidden="true">…</span>
           </p>
@@ -118,7 +125,7 @@ onMounted(() => {
           <p v-if="message.sources.length" class="ds-chat__sources fr-mb-0">
             Sources :
             <template v-for="(source, j) in message.sources" :key="source">
-              <a class="fr-link fr-link--sm" href="/">{{ source }}</a>
+              <a class="fr-link fr-link--sm" href="/" data-testid="chat-source">{{ source }}</a>
               <template v-if="j < message.sources.length - 1">, </template>
             </template>
           </p>
@@ -126,13 +133,15 @@ onMounted(() => {
       </div>
     </div>
 
-    <ul class="fr-tags-group fr-mt-2w">
+    <ul id="chat-suggestions" class="fr-tags-group fr-mt-2w">
       <li v-for="suggestion in SUGGESTIONS" :key="suggestion">
-        <button class="fr-tag" @click="ask(suggestion)">{{ suggestion }}</button>
+        <button class="fr-tag" data-testid="chat-suggestion" @click="ask(suggestion)">
+          {{ suggestion }}
+        </button>
       </li>
     </ul>
 
-    <div class="ds-chat__input fr-mt-2w">
+    <div id="chat-saisie" class="ds-chat__input fr-mt-2w">
       <div class="fr-input-group fr-mb-0">
         <label class="fr-label fr-sr-only" for="chat-question">Votre question</label>
         <input
@@ -144,7 +153,7 @@ onMounted(() => {
           @keydown.enter.prevent="send"
         />
       </div>
-      <DsfrButton label="Envoyer" @click="send" />
+      <DsfrButton id="chat-envoyer" label="Envoyer" @click="send" />
     </div>
   </main>
 </template>

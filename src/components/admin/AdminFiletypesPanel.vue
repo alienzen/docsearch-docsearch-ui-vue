@@ -111,7 +111,14 @@ const { confirm } = useDialogs()</script>
     subtitle="par source — chaque source a sa propre configuration"
     :error="error"
   >
-    <DsfrAlert v-if="actionError" type="error" small :description="actionError" class="fr-mb-2w" />
+    <DsfrAlert
+      v-if="actionError"
+      id="filetypes-erreur"
+      type="error"
+      small
+      :description="actionError"
+      class="fr-mb-2w"
+    />
 
     <div class="fr-select-group ds-admin__source-select">
       <label class="fr-label" for="filetype-source">Source</label>
@@ -121,7 +128,7 @@ const { confirm } = useDialogs()</script>
     </div>
 
     <div class="fr-table fr-table--bordered ds-stats__table fr-mt-2w">
-      <table>
+      <table id="filetypes-tableau">
         <thead>
           <tr>
             <th scope="col">Extension</th>
@@ -131,7 +138,7 @@ const { confirm } = useDialogs()</script>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(rule, ext) in rules" :key="ext">
+          <tr v-for="(rule, ext) in rules" :key="ext" data-testid="filetypes-ligne" :data-extension="ext">
             <td><code>{{ ext }}</code></td>
             <td>
               <div class="fr-checkbox-group fr-checkbox-group--sm">
@@ -144,6 +151,7 @@ const { confirm } = useDialogs()</script>
             <td>
               <input
                 v-model.number="rule.max_size_mb"
+                data-testid="filetypes-taille"
                 class="fr-input fr-input--sm"
                 type="number"
                 min="0"
@@ -152,7 +160,13 @@ const { confirm } = useDialogs()</script>
               />
             </td>
             <td class="ds-admin__actions">
-              <DsfrButton size="sm" secondary label="Enregistrer" @click="save(String(ext))" />
+              <DsfrButton
+                size="sm"
+                secondary
+                label="Enregistrer"
+                data-testid="filetypes-enregistrer"
+                @click="save(String(ext))"
+              />
               <span v-if="saved === ext" class="fr-hint-text fr-mb-0">✓ enregistré</span>
               <!-- « default » est la règle de repli : la supprimer
                    laisserait les extensions inconnues sans consigne. -->
@@ -161,6 +175,7 @@ const { confirm } = useDialogs()</script>
                 size="sm"
                 tertiary
                 label="Supprimer"
+                data-testid="filetypes-supprimer"
                 @click="remove(String(ext))"
               />
             </td>
@@ -191,8 +206,9 @@ const { confirm } = useDialogs()</script>
           placeholder="Mo"
         />
       </div>
-      <DsfrButton size="sm" label="Ajouter" @click="add" />
+      <DsfrButton id="filetypes-ajouter" size="sm" label="Ajouter" @click="add" />
       <DsfrButton
+        id="filetypes-defauts"
         size="sm"
         secondary
         label="Charger les extensions par défaut"

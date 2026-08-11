@@ -205,14 +205,14 @@ async function soumettre() {
   <main id="main-content" class="fr-container fr-mt-4w fr-mb-6w">
     <div class="fr-grid-row fr-grid-row--center">
       <div class="fr-col-12 fr-col-md-6">
-        <h1 class="fr-h4">Connexion</h1>
+        <h1 id="connexion-titre" class="fr-h4">Connexion</h1>
 
-        <p v-if="decouverte" class="fr-text--sm fr-mb-3w">
+        <p v-if="decouverte" id="connexion-verification" class="fr-text--sm fr-mb-3w">
           Vérification de votre session…
         </p>
 
         <template v-else>
-          <form class="fr-mt-3w" @submit.prevent="soumettre">
+          <form id="formulaire-connexion" class="fr-mt-3w" @submit.prevent="soumettre">
             <DsfrInput
               id="identifiant"
               v-model="identifiant"
@@ -238,6 +238,7 @@ async function soumettre() {
                  tout ce qui suit dès la première erreur de saisie. -->
             <DsfrAlert
               v-if="erreur"
+              id="connexion-erreur"
               type="error"
               :description="erreur"
               small
@@ -251,6 +252,7 @@ async function soumettre() {
                  `required` : la soumission à vide reste bloquée par le
                  navigateur, qui pointe en plus le champ fautif. -->
             <DsfrButton
+              id="connexion-valider"
               type="submit"
               icon="fr-icon-lock-unlock-line"
               :disabled="enCours"
@@ -266,13 +268,15 @@ async function soumettre() {
                peut la deviner à sa place. Voir `login_*_url` dans
                docsearch-api/app/ui_config.py. -->
           <p v-if="lienInscription" class="fr-mt-3w fr-mb-0">
-            <a class="fr-link" :href="lienInscription">
+            <a id="connexion-inscription" class="fr-link" :href="lienInscription">
               Pas encore de compte ? Faire une demande d'inscription
             </a>
           </p>
 
           <p v-if="lienMotDePasseOublie" class="fr-mt-2w fr-mb-0">
-            <a class="fr-link" :href="lienMotDePasseOublie">Mot de passe oublié ?</a>
+            <a id="connexion-mot-de-passe-oublie" class="fr-link" :href="lienMotDePasseOublie">
+              Mot de passe oublié ?
+            </a>
           </p>
 
           <!-- Rattrapage : pour qui vient de se déconnecter et veut se
@@ -282,6 +286,7 @@ async function soumettre() {
                ferait que promettre ce qui n'existe pas. -->
           <template v-if="ssoDisponible">
             <DsfrButton
+              id="connexion-sso"
               class="fr-mt-3w"
               secondary
               :disabled="ssoEnCours"
@@ -290,6 +295,7 @@ async function soumettre() {
             />
             <DsfrAlert
               v-if="erreurSso"
+              id="connexion-erreur-sso"
               type="warning"
               :description="erreurSso"
               small
@@ -305,6 +311,7 @@ async function soumettre() {
                une installation où ProConnect est effectivement attendu. -->
           <DsfrButton
             v-if="uiConfig.config.login_proconnect_enabled"
+            id="connexion-proconnect"
             class="fr-mt-3w"
             secondary
             disabled
