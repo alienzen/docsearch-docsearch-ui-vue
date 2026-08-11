@@ -22,14 +22,15 @@ sous-requêtes `auth_request` vers l'API (seule à interroger LDAP) :
 | Emplacement | Contrôle | Groupe exigé |
 |---|---|---|
 | `/`, `= /help`, `= /chat` | `/auth/check-access` | `docsearch-users` |
+| `= /admin-help`, `= /stats-help` | `/auth/check-access` | `docsearch-users` |
 | `= /admin`, `= /admin.html` | `/auth/check-admin` | `docsearch-admins` |
 
 Une SPA à point d'entrée unique (`try_files ... /index.html`) ferait
 disparaître ce gardiennage : le HTML d'administration serait servi à tout
-le monde et seule l'API refuserait les appels. D'où **six entrées HTML
+le monde et seule l'API refuserait les appels. D'où **sept entrées HTML
 physiques** déclarées dans `vite.config.ts` (`index`, `help`, `chat`,
-`stats`, `admin`, `admin-help`), un `nginx.conf` repris quasiment à
-l'identique de `docsearch-ui`, et un modèle d'accès inchangé.
+`stats`, `stats-help`, `admin`, `admin-help`), un `nginx.conf` repris
+quasiment à l'identique de `docsearch-ui`, et un modèle d'accès inchangé.
 
 ⚠️ Corollaire : les fichiers statiques produits par Vite ne doivent
 **jamais** se retrouver sous un préfixe proxifié (`/search`, `/admin`,

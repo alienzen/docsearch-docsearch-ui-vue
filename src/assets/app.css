@@ -748,13 +748,6 @@ body.ds-resizing {
   overflow-wrap: anywhere;
 }
 
-/* Badge « Connecté : … » dans les outils de l'en-tête. Rendu comme un
-   lien sans href (voir quickLinks dans SearchPage) : il ne doit donc pas
-   en avoir l'apparence interactive. */
-.ds-header__user {
-  color: var(--text-mention-grey);
-  cursor: default;
-}
 /* Largeur du menu : le DSFR fixe `.fr-menu__list { width: 20rem }`.
    C'est CETTE largeur qui compte, pas celle du menu qui l'enveloppe —
    élargir le menu seul ne changeait rien, la liste gardait ses 20rem et
@@ -769,10 +762,46 @@ body.ds-resizing {
   overflow-y: auto;
 }
 /* Aligné sur le bord droit de son entrée — posé par NavMenuItem quand
-   l'alignement à gauche ferait sortir le menu de l'écran. */
+   l'alignement à gauche ferait sortir le menu de l'écran, et en dur par
+   HeaderUserMenu, dont on connaît la place : le bord droit de l'en-tête. */
 .fr-nav .fr-menu.ds-menu--right {
   left: auto;
   right: 0;
+}
+
+/* Menu « compte » des outils de l'en-tête (HeaderUserMenu).
+
+   `position: relative` est indispensable : au-delà de 62em le DSFR passe
+   `.fr-nav__item` en `position: initial` et le menu en absolu. Sans
+   ancre ici, celui-ci se positionnerait sur un ancêtre lointain et
+   partirait à l'autre bout de l'en-tête. C'est exactement ce que le DSFR
+   fait pour son sélecteur de langue (`.fr-translate`), bâti sur le même
+   balisage. */
+.ds-header__account {
+  position: relative;
+}
+/* La largeur ci-dessus vaut pour les menus de la navigation, qui portent
+   des puces de critères et des cases à cocher ; celui-ci n'a que deux
+   lignes et se contente de la largeur de son contenu. */
+.ds-header__account .fr-menu__list {
+  width: auto;
+  min-width: 16rem;
+  max-height: none;
+  overflow-y: visible;
+}
+/* Ligne d'information « Connecté : … » : même gouttière qu'un lien du
+   menu, sans en avoir l'apparence interactive. */
+.ds-header__account-user {
+  padding: 0.75rem 1rem;
+  color: var(--text-mention-grey);
+}
+/* La déconnexion est détachée des liens de navigation qui la précèdent
+   (Statistiques, Administration) : on ne clique pas dessus par erreur en
+   visant l'entrée du dessus. Le DSFR ne sépare pas les entrées d'un
+   `.fr-menu__list`, d'où ce filet, posé seulement s'il y a quelque chose
+   au-dessus à séparer. */
+.ds-header__account-logout:not(:first-child) .fr-nav__link {
+  border-top: 1px solid var(--border-default-grey);
 }
 
 .ds-selection,

@@ -17,8 +17,18 @@ const props = withDefaults(
     shortcuts?: Shortcut[]
     /** Lien vers l'aide, masqué là où elle n'existe pas. */
     helpHref?: string | null
+    /**
+     * Libellé du lien. Le défaut ne vaut que pour la recherche : c'est sa
+     * syntaxe avancée qui justifie d'aller lire l'aide en entier. Les
+     * pages d'administration et de statistiques annoncent la leur.
+     */
+    helpLabel?: string
   }>(),
-  { shortcuts: () => SHORTCUTS, helpHref: '/help' },
+  {
+    shortcuts: () => SHORTCUTS,
+    helpHref: '/help',
+    helpLabel: 'Aide complète (syntaxe avancée)',
+  },
 )
 defineEmits<{ close: [] }>()
 </script>
@@ -63,7 +73,7 @@ defineEmits<{ close: [] }>()
       rel="noopener"
       title="Aide complète — nouvelle fenêtre"
     >
-      Aide complète (syntaxe avancée)
+      {{ props.helpLabel }}
     </a>
   </DsfrModal>
 </template>

@@ -85,21 +85,33 @@ onMounted(() => {
         'aria-keyshortcuts': '?',
         onClick: () => (shortcutsOpen = !shortcutsOpen),
       },
-      {
-        label: 'Administration',
-        to: '/admin.html',
-        class: 'fr-link--icon-left fr-icon-settings-5-line',
-      },
-      {
-        label: 'Retour à la recherche',
-        to: '/',
-        class: 'fr-link--icon-left fr-icon-arrow-left-line',
-      },
-      // En dernier : le badge se place ainsi tout à droite des outils
-      // d'en-tête, à l'écart des liens d'action.
-      ...uiConfig.userQuickLinks('admin'),
+      { label: 'Aide', to: '/stats-help', class: 'fr-link--icon-left fr-icon-question-line' },
     ]"
-  />
+  >
+    <!-- Après les liens rapides : le menu du compte se place ainsi tout à
+         droite des outils d'en-tête, à l'écart des liens d'action. Il
+         porte aussi les deux liens d'administration, comme sur la page de
+         recherche — mêmes entrées dans le même ordre d'une page à
+         l'autre, celle où l'on se trouve étant marquée `current`.
+
+         « Retour à la recherche » a été retiré : le bloc-marque et le
+         logo pointent déjà vers `/`, c'est la sortie que le DSFR prévoit
+         et elle est présente sur toutes les pages. -->
+    <template #after-quick-links>
+      <HeaderUserMenu
+        family="admin"
+        :links="[
+          {
+            label: 'Statistiques',
+            href: '/stats.html',
+            icon: 'fr-icon-bar-chart-line',
+            current: false,
+          },
+          { label: 'Administration', href: '/admin.html', icon: 'fr-icon-settings-5-line' },
+        ]"
+      />
+    </template>
+  </DsfrHeader>
 
   <main id="main-content" class="fr-container fr-my-4w">
     <DsfrAlert
@@ -136,7 +148,8 @@ onMounted(() => {
   <ShortcutsModal
     :opened="shortcutsOpen"
     :shortcuts="STATS_SHORTCUTS"
-    :help-href="null"
+    :help-href="'/stats-help'"
+    help-label="Aide des statistiques"
     @close="shortcutsOpen = false"
   />
 

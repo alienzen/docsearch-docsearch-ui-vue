@@ -52,6 +52,7 @@ declare module 'vue' {
     FacetsResizer: typeof import('./components/FacetsResizer.vue')['default']
     FacetsSidebar: typeof import('./components/FacetsSidebar.vue')['default']
     FeedbackBar: typeof import('./components/FeedbackBar.vue')['default']
+    HeaderUserMenu: typeof import('./components/HeaderUserMenu.vue')['default']
     NavMenuItem: typeof import('./components/NavMenuItem.vue')['default']
     NpsModal: typeof import('./components/NpsModal.vue')['default']
     PasswordInput: typeof import('./components/PasswordInput.vue')['default']

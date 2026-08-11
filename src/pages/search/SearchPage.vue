@@ -80,18 +80,29 @@ const quickLinks = computed(() => {
       onClick: () => (suggestionOpen.value = true),
     })
   }
-  if (uiConfig.showAdminLinks) {
-    // Les deux liens sont gouvernés par la même bascule et le même
-    // groupe LDAP, comme dans docsearch-ui (admin-link et
-    // footer-stats-link).
-    links.push({ label: 'Statistiques', to: '/stats.html', class: 'fr-link--icon-left fr-icon-bar-chart-line' })
-    links.push({ label: 'Administration', to: '/admin.html', class: 'fr-link--icon-left fr-icon-settings-5-line' })
-  }
-  // En dernier : le badge « Connecté : … » se place ainsi tout à droite
-  // des outils d'en-tête, à l'écart des liens d'action.
-  links.push(...uiConfig.userQuickLinks('search'))
+  // Ni le badge « Connecté : … », ni « Se déconnecter », ni les deux
+  // liens d'administration ne sont ici : ils vivent dans HeaderUserMenu,
+  // posé après ces liens.
   return links
 })
+
+/**
+ * Liens versés dans le menu du compte plutôt que déployés dans les outils
+ * de l'en-tête, où ils tenaient deux entrées de plus. Ils s'adressent aux
+ * seuls administrateurs, comme la déconnexion aux seuls connectés : le
+ * menu est déjà le bon endroit pour ce qui dépend de qui l'on est.
+ *
+ * Les deux sont gouvernés par la même bascule et le même groupe LDAP,
+ * comme dans docsearch-ui (admin-link et footer-stats-link).
+ */
+const adminLinks = computed(() =>
+  uiConfig.showAdminLinks
+    ? [
+        { label: 'Statistiques', href: '/stats.html', icon: 'fr-icon-bar-chart-line' },
+        { label: 'Administration', href: '/admin.html', icon: 'fr-icon-settings-5-line' },
+      ]
+    : [],
+)
 
 // ── Raccourcis clavier ──────────────────────────────────────
 /** Palette ouverte par la touche « ? » ou par la barre d'outils. */
@@ -120,9 +131,11 @@ const skipLinks = computed(() => {
 
 /**
  * Conteneur de la barre de recherche dans l'en-tête, rendu par
- * DsfrHeader. Celui-ci n'expose aucun slot dans .fr-header__tools : pour
- * placer la présélection de sources et la remise à zéro À CÔTÉ de la
- * barre, on y téléporte ces commandes une fois l'en-tête monté.
+ * DsfrHeader. Celui-ci n'expose aucun slot dans .fr-header__search (à la
+ * différence de .fr-header__tools-links, où débouchent `before-` et
+ * `after-quick-links`) : pour placer la présélection de sources et la
+ * remise à zéro À CÔTÉ de la barre, on y téléporte ces commandes une
+ * fois l'en-tête monté.
  */
 const headerSearch = ref<Element | null>(null)
 
@@ -211,6 +224,12 @@ onMounted(() => {
     :placeholder="uiConfig.headerSubtitle"
     @search="store.searchFromFirstPage()"
   >
+    <!-- Après les liens rapides : le menu du compte se place ainsi tout à
+         droite des outils d'en-tête, à l'écart des liens d'action. -->
+    <template #after-quick-links>
+      <HeaderUserMenu family="search" :links="adminLinks" />
+    </template>
+
     <!-- Slot `mainnav` : la barre de navigation du DSFR, dans le
          <header> lui-même. Les panneaux déroulants (recherches
          enregistrées, collections, alertes) s'ouvrent donc depuis

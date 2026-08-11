@@ -125,6 +125,7 @@ export default defineConfig({
         help: fileURLToPath(new URL('./help.html', import.meta.url)),
         chat: fileURLToPath(new URL('./chat.html', import.meta.url)),
         stats: fileURLToPath(new URL('./stats.html', import.meta.url)),
+        'stats-help': fileURLToPath(new URL('./stats-help.html', import.meta.url)),
         admin: fileURLToPath(new URL('./admin.html', import.meta.url)),
         'admin-help': fileURLToPath(new URL('./admin-help.html', import.meta.url)),
         // Seule page PUBLIQUE : c'est celle qui permet d'obtenir une

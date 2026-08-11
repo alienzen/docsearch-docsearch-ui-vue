@@ -8,12 +8,26 @@
  * pour une fonctionnalité opérationnelle — ne pas le retirer tant que
  * l'endpoint /ask n'existe pas.
  */
-import { nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { findResponse, SUGGESTIONS, type CannedResponse } from './cannedResponses'
 import { useUiConfigStore } from '@/stores/uiConfig'
 
-// Chargée pour la marque seulement (voir HelpPage).
+// Chargée pour la marque et pour le menu du compte, qui a besoin de
+// savoir qui est connecté et s'il est administrateur.
 const uiConfig = useUiConfigStore()
+
+/**
+ * Mêmes entrées que dans le menu du compte des autres pages. Aucune n'est
+ * marquée `current` : cette page n'est ni l'une ni l'autre.
+ */
+const adminLinks = computed(() =>
+  uiConfig.showAdminLinks
+    ? [
+        { label: 'Statistiques', href: '/stats.html', icon: 'fr-icon-bar-chart-line' },
+        { label: 'Administration', href: '/admin.html', icon: 'fr-icon-settings-5-line' },
+      ]
+    : [],
+)
 
 type Message = {
   role: 'user' | 'ai'
@@ -59,6 +73,10 @@ function send() {
 
 onMounted(() => {
   uiConfig.loadUiConfig()
+  // Le menu du compte n'existe que pour un utilisateur authentifié, et
+  // ses deux liens d'administration que pour un administrateur : les deux
+  // viennent de /is-admin, que cette page ne demandait pas jusqu'ici.
+  uiConfig.loadIsAdmin()
   messages.value.push({
     role: 'ai',
     answer: [
@@ -87,7 +105,19 @@ onMounted(() => {
         class: 'fr-link--icon-left fr-icon-arrow-left-line',
       },
     ]"
-  />
+  >
+    <!-- Ce lien est conservé ICI, et non versé dans le menu du compte
+         comme sur les autres pages, pour deux raisons qui n'en font
+         qu'une : vue-dsfr ne rend `.fr-header__tools-links` — donc ce
+         slot — que si `quick-links` n'est pas vide, et le bouton du menu
+         mobile n'apparaît que s'il y a des liens rapides, une navigation
+         ou une barre de recherche. Cette page n'a rien de tout cela : le
+         vider laissait l'en-tête sans aucun outil sous 62em, menu du
+         compte compris. -->
+    <template #after-quick-links>
+      <HeaderUserMenu family="search" :links="adminLinks" />
+    </template>
+  </DsfrHeader>
 
   <main id="main-content" class="fr-container fr-my-4w ds-chat">
     <DsfrAlert

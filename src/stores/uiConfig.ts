@@ -211,41 +211,6 @@ export const useUiConfigStore = defineStore('uiConfig', () => {
   const currentUserLabelAdmin = computed(() => userLabel('admin'))
 
   /**
-   * Badge « Connecté : … » sous forme d'entrée de `quickLinks`, la seule
-   * façon de le placer dans .fr-header__tools — DsfrHeader n'y expose
-   * aucun slot. Sans `to`, vue-dsfr rend un <a> sans href : non
-   * cliquable, ce qui convient à une information.
-   *
-   * Renvoie un tableau (vide ou d'un élément) pour se déverser
-   * directement dans la liste de liens de chaque page.
-   */
-  function userQuickLinks(family: 'search' | 'admin') {
-    const label = family === 'admin' ? currentUserLabelAdmin.value : currentUserLabel.value
-    const liens: { label: string; class: string; to?: string }[] = label
-      ? [{ label, class: 'fr-link--icon-left fr-icon-account-line ds-header__user' }]
-      : []
-
-    // « Se déconnecter » n'est proposé qu'à qui est effectivement
-    // connecté — `currentUser` n'est renseigné que par /is-admin, qui
-    // rend `null` pour un visiteur anonyme.
-    //
-    // Un lien plein page vers /connexion?deconnexion=1 plutôt qu'un
-    // gestionnaire de clic : la déconnexion doit AUSSI poser le marqueur
-    // anti-boucle du SSO (sans quoi le rechargement suivant reconnecte
-    // aussitôt), et la page de connexion est le seul endroit qui en sait
-    // quelque chose. Un bouton dans chaque en-tête aurait dupliqué cette
-    // subtilité en quatre exemplaires.
-    if (currentUser.value.user) {
-      liens.push({
-        label: 'Se déconnecter',
-        to: '/connexion?deconnexion=1',
-        class: 'fr-link--icon-left fr-icon-logout-box-r-line',
-      })
-    }
-    return liens
-  }
-
-  /**
    * Lignes du bloc-marque. DsfrLogo rend chaque élément du tableau sur
    * sa propre ligne : on découpe donc le réglage sur les retours à la
    * ligne, l'administrateur saisissant « République⏎Française » pour
@@ -437,7 +402,6 @@ export const useUiConfigStore = defineStore('uiConfig', () => {
     showAdminLinks,
     currentUserLabel,
     currentUserLabelAdmin,
-    userQuickLinks,
     logoText,
     headerTitle,
     headerSubtitle,

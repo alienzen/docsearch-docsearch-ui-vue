@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { VIcon } from '@gouvminint/vue-dsfr'
-import AdminHelpPage from './AdminHelpPage.vue'
+import StatsHelpPage from './StatsHelpPage.vue'
 import RouterLinkShim from '@/components/RouterLinkShim.vue'
-import { ADMIN_SHORTCUTS } from '@/constants'
+import { STATS_SHORTCUTS } from '@/constants'
 import { idsDupliques } from '@/test/ids'
 
 const RESPONSES: Record<string, unknown> = {
@@ -25,7 +25,7 @@ function respondWith() {
 
 async function monter() {
   vi.stubGlobal('fetch', respondWith())
-  const wrapper = mount(AdminHelpPage, {
+  const wrapper = mount(StatsHelpPage, {
     global: { plugins: [createPinia()], components: { VIcon, RouterLink: RouterLinkShim } },
   })
   // flushPromises et non un nombre fixe de nextTick : le menu du compte
@@ -35,7 +35,7 @@ async function monter() {
   return wrapper
 }
 
-describe('AdminHelpPage', () => {
+describe('StatsHelpPage', () => {
   beforeEach(() => {
     localStorage.clear()
     vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }))
@@ -45,16 +45,21 @@ describe('AdminHelpPage', () => {
     expect((await monter()).html()).toBeTruthy()
   })
 
-  it('ancre chaque section de l’aide administrateur', async () => {
+  it('ancre chaque section de l’aide des statistiques', async () => {
     const wrapper = await monter()
     for (const id of [
-      'aide-admin-titre',
-      'aide-admin-raccourcis',
-      'aide-admin-raccourcis-tableau',
-      'aide-admin-sources',
-      'aide-admin-etat',
-      'aide-admin-apparence',
-      'aide-admin-contact',
+      'aide-stats-titre',
+      'aide-stats-raccourcis',
+      'aide-stats-raccourcis-tableau',
+      'aide-stats-panneaux',
+      'aide-stats-vue-ensemble',
+      'aide-stats-nps',
+      'aide-stats-suggestions',
+      'aide-stats-zero',
+      'aide-stats-historique',
+      'aide-stats-audit',
+      'aide-stats-groupes',
+      'aide-stats-contact',
     ]) {
       expect(wrapper.find(`#${id}`).exists(), id).toBe(true)
     }
@@ -62,28 +67,31 @@ describe('AdminHelpPage', () => {
 
   it('marque chaque ligne de raccourci d’un data-testid', async () => {
     const wrapper = await monter()
-    expect(wrapper.findAll('[data-testid="aide-admin-raccourci"]')).toHaveLength(
-      ADMIN_SHORTCUTS.length,
+    expect(wrapper.findAll('[data-testid="aide-stats-raccourci"]')).toHaveLength(
+      STATS_SHORTCUTS.length,
     )
   })
 
-  // Les liens de navigation vivent dans le menu du compte, pas dans les
-  // outils de l'en-tête : c'est ce qui aligne cette page sur
-  // l'administration et les statistiques.
-  it('range les liens de navigation dans le menu du compte', async () => {
+  // La page de statistiques ne branche PAS « r » (pas de rechargement
+  // global) : l'aide ne doit donc pas la publier, sous peine de décrire
+  // une touche inopérante.
+  it('ne publie pas le rechargement global', async () => {
+    const wrapper = await monter()
+    const touches = wrapper
+      .findAll('[data-testid="aide-stats-raccourci"] kbd')
+      .map((k) => k.text())
+    expect(touches).not.toContain('r')
+    expect(touches).toContain('t')
+  })
+
+  it('renvoie vers la page de statistiques depuis le menu du compte', async () => {
     const wrapper = await monter()
     const hrefs = wrapper.findAll('.fr-menu__list a').map((a) => a.attributes('href'))
     expect(hrefs).toContain('/stats.html')
     expect(hrefs).toContain('/admin.html')
-  })
-
-  // Le menu du compte ne se rend que s'il reste au moins un lien rapide :
-  // DsfrHeader conditionne tout le bloc d'outils à `quickLinks.length`.
-  // Sans ce garde-fou, vider la liste ferait disparaître la déconnexion
-  // sans aucun symptôme visible en test.
-  it('conserve la déconnexion dans le menu du compte', async () => {
-    const wrapper = await monter()
-    const hrefs = wrapper.findAll('.fr-menu__list a').map((a) => a.attributes('href'))
+    // Le menu du compte ne se rend que s'il reste au moins un lien
+    // rapide : DsfrHeader conditionne tout le bloc d'outils à
+    // `quickLinks.length`. La déconnexion disparaîtrait avec lui.
     expect(hrefs).toContain('/connexion?deconnexion=1')
   })
 

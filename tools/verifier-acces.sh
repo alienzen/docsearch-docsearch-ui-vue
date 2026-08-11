@@ -42,6 +42,7 @@ ATTENDU="
 /admin|200|401|401
 /admin.html|200|401|401
 /admin-help|200|200|401
+/stats-help|200|200|401
 /stats.html|200|200|401
 /assets/|404|404|401
 "

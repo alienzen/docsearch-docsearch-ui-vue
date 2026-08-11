@@ -124,7 +124,6 @@ onMounted(() => {
     operator-img-alt="DocSearch"
     operator-img-style="max-width: 2.5rem"
     :quick-links="[
-      { label: 'Statistiques', to: '/stats.html', class: 'fr-link--icon-left fr-icon-bar-chart-line' },
       {
         label: 'Raccourcis',
         button: true,
@@ -134,16 +133,32 @@ onMounted(() => {
         onClick: () => (shortcutsOpen = !shortcutsOpen),
       },
       { label: 'Aide', to: '/admin-help', class: 'fr-link--icon-left fr-icon-question-line' },
-      {
-        label: 'Retour à la recherche',
-        to: '/',
-        class: 'fr-link--icon-left fr-icon-arrow-left-line',
-      },
-      // En dernier : le badge se place ainsi tout à droite des outils
-      // d'en-tête, à l'écart des liens d'action.
-      ...uiConfig.userQuickLinks('admin'),
     ]"
-  />
+  >
+    <!-- Après les liens rapides : le menu du compte se place ainsi tout à
+         droite des outils d'en-tête, à l'écart des liens d'action. Il
+         porte aussi les deux liens d'administration, comme sur la page de
+         recherche — mêmes entrées dans le même ordre d'une page à
+         l'autre, celle où l'on se trouve étant marquée `current`.
+
+         « Retour à la recherche » a été retiré : le bloc-marque et le
+         logo pointent déjà vers `/`, c'est la sortie que le DSFR prévoit
+         et elle est présente sur toutes les pages. -->
+    <template #after-quick-links>
+      <HeaderUserMenu
+        family="admin"
+        :links="[
+          { label: 'Statistiques', href: '/stats.html', icon: 'fr-icon-bar-chart-line' },
+          {
+            label: 'Administration',
+            href: '/admin.html',
+            icon: 'fr-icon-settings-5-line',
+            current: false,
+          },
+        ]"
+      />
+    </template>
+  </DsfrHeader>
 
   <main id="main-content" class="fr-container fr-my-4w">
     <DsfrAlert
@@ -234,6 +249,7 @@ onMounted(() => {
     :opened="shortcutsOpen"
     :shortcuts="ADMIN_SHORTCUTS"
     :help-href="'/admin-help'"
+    help-label="Aide administrateur"
     @close="shortcutsOpen = false"
   />
   <AppDialogs />

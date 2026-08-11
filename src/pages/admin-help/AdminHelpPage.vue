@@ -32,15 +32,34 @@ onMounted(async () => {
     operator-img-style="max-width: 2.5rem"
     :quick-links="[
       {
-        label: 'Administration',
-        to: '/admin.html',
-        class: 'fr-link--icon-left fr-icon-settings-5-line',
+        label: 'Aide des statistiques',
+        to: '/stats-help',
+        class: 'fr-link--icon-left fr-icon-question-line',
       },
-      // En dernier : le badge se place ainsi tout à droite des outils
-      // d'en-tête, à l'écart des liens d'action.
-      ...uiConfig.userQuickLinks('admin'),
     ]"
-  />
+  >
+    <!-- Les liens de navigation sont dans le menu du compte, et non
+         déployés dans les outils de l'en-tête : mêmes entrées, dans le
+         même ordre, que sur les pages d'administration et de
+         statistiques. Ils s'adressent aux mêmes personnes que la
+         déconnexion — celles qui sont connectées — et le menu est déjà
+         l'endroit où l'on va chercher ce qui dépend de qui l'on est.
+
+         ⚠️  Le lien rapide ci-dessus n'est PAS décoratif : DsfrHeader ne
+         rend le bloc `.fr-header__tools-links` — et donc ce slot — que
+         si `quickLinks` contient au moins une entrée. Vider la liste
+         ferait disparaître le menu du compte, déconnexion comprise,
+         sans la moindre erreur. -->
+    <template #after-quick-links>
+      <HeaderUserMenu
+        family="admin"
+        :links="[
+          { label: 'Statistiques', href: '/stats.html', icon: 'fr-icon-bar-chart-line' },
+          { label: 'Administration', href: '/admin.html', icon: 'fr-icon-settings-5-line' },
+        ]"
+      />
+    </template>
+  </DsfrHeader>
 
   <main id="main-content" class="fr-container ds-prose fr-my-4w">
     <h1 id="aide-admin-titre" class="fr-h3">Aide administrateur</h1>
