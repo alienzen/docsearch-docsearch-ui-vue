@@ -60,6 +60,23 @@ function estBooleen(valeur: unknown): boolean {
 
 /** Ce qu'un champ ne dit pas de lui-même. */
 const AIDES: Record<string, string> = {
+  retention_search_logs_days:
+    'Durée de conservation du journal des recherches, en jours. Au-delà, ' +
+    'les entrées sont supprimées une fois par jour. 0 = conservation ' +
+    'illimitée. Les statistiques ne portent que sur la fenêtre conservée.',
+  retention_login_events_days:
+    'Durée de conservation du journal des connexions, en jours (succès, ' +
+    'refus, blocages). 0 = conservation illimitée.',
+  retention_audit_log_days:
+    'Durée de conservation du journal d’audit des actions ' +
+    'd’administration, en jours. C’est la trace qui protège ' +
+    'l’administrateur : elle se garde plus longtemps que ce qu’elle trace. ' +
+    '0 = conservation illimitée.',
+  retention_nps_days:
+    'Durée de conservation des réponses NPS, en jours. 0 = conservation illimitée.',
+  retention_suggestions_days:
+    'Durée de conservation des suggestions déposées par les utilisateurs, ' +
+    'en jours. 0 = conservation illimitée.',
   sso_kerberos_enabled:
     'Connexion automatique par ticket Kerberos. Exige un FQDN, un SPN ' +
     'HTTP/<fqdn>, un keytab monté et une stratégie de parc autorisant les ' +

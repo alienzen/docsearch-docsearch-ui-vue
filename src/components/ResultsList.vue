@@ -76,9 +76,10 @@ const paginationPages = computed(() =>
     <!-- Rien avant la première recherche : l'invitation à en lancer une
          est portée par EmptySearchState, au-dessus. Deux messages
          disaient la même chose à quelques lignes d'écart. -->
-    <p v-else-if="store.hasSearched && !store.results.length" id="resultats-vides" class="fr-text--sm">
-      Aucun résultat ne correspond à ces critères.
-    </p>
+    <!-- Le message seul ne servait à rien : EmptyResultsHelp y ajoute ce
+         que l'API sait proposer (correction, filtre à retirer, autre
+         source), et le garde tel quel quand elle n'a rien. -->
+    <EmptyResultsHelp v-else-if="store.hasSearched && !store.results.length" />
 
     <template v-else>
       <ResultCard

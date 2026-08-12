@@ -194,6 +194,20 @@ onMounted(async () => {
       doit jamais devenir une seconde fuite du secret que le registre chiffré protège.
     </p>
 
+    <h2 id="aide-stats-conservation" class="fr-h5">Sur quelle période portent ces chiffres</h2>
+    <p>
+      Les journaux qui alimentent cette page ne sont plus conservés indéfiniment : au-delà d'une
+      durée réglable par journal (paramètres <code>retention_*_days</code> du panneau
+      d'administration), les entrées les plus anciennes sont supprimées une fois par jour. Une
+      volumétrie qui baisse d'un mois sur l'autre peut donc traduire une purge et non une baisse
+      d'usage.
+    </p>
+    <p>
+      La valeur <code>0</code> signifie <strong>conservation illimitée</strong>. Le panneau
+      d'administration indique, journal par journal, combien d'entrées la purge emporterait avec
+      le réglage courant — à consulter avant de raccourcir une durée.
+    </p>
+
     <h2 id="aide-stats-groupes" class="fr-h5">Lire les répartitions par groupe</h2>
     <p>
       Trois précautions valent pour tous les tableaux « par groupe » de cette page :

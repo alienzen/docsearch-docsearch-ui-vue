@@ -67,6 +67,34 @@ export type SearchResponse = {
   facets: SearchFacets
   /** Optionnel : une API antérieure à la mesure des temps n'en renvoie pas. */
   timing?: SearchTiming
+  /**
+   * Présent UNIQUEMENT quand la recherche n'a rien donné et qu'il y a
+   * quelque chose à proposer — l'API omet la clé dans tous les autres
+   * cas (voir _aide_zero_resultat côté search_api.py).
+   */
+  zero_result?: ZeroResult
+}
+
+/**
+ * De quoi rattraper une recherche infructueuse : la correction
+ * orthographique, ce que donnerait le retrait d'un filtre, et les
+ * sources non sélectionnées où il y a quelque chose.
+ *
+ * ⚠️ Chaque compte annoncé ici est déjà passé par l'ACL de l'utilisateur
+ * côté API : cliquer sur une proposition donne bien ce nombre de
+ * résultats, jamais une liste vide.
+ */
+export type ZeroResult = {
+  /** Requête corrigée, ou null s'il n'y a rien de crédible à proposer. */
+  suggestion: string | null
+  /**
+   * `field` est le nom interne du filtre à retirer : une dimension de
+   * facette (`extension`, `author`, `keywords`, `folder`, `source`),
+   * `custom:<champ>`, `date`, `has_attachments`, ou `__all__` pour
+   * « tous les filtres ».
+   */
+  relaxations: { field: string; count: number }[]
+  sources: { key: string; doc_count: number }[]
 }
 
 /** Champ unique auquel restreindre la recherche (défaut : tout). */

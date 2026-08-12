@@ -46,6 +46,7 @@ declare module 'vue' {
     DsfrPagination: typeof import('@gouvminint/vue-dsfr')['DsfrPagination']
     DsfrSelect: typeof import('@gouvminint/vue-dsfr')['DsfrSelect']
     DsfrSkipLinks: typeof import('@gouvminint/vue-dsfr')['DsfrSkipLinks']
+    EmptyResultsHelp: typeof import('./components/EmptyResultsHelp.vue')['default']
     EmptySearchState: typeof import('./components/EmptySearchState.vue')['default']
     FacetGroup: typeof import('./components/FacetGroup.vue')['default']
     FacetSection: typeof import('./components/FacetSection.vue')['default']

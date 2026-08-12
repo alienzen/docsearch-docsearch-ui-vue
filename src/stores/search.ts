@@ -8,7 +8,13 @@ import {
   search as searchApi,
   type FixedDimension,
 } from '@/api/search'
-import type { ExportFormat, SearchFacets, SearchResult, SearchTiming } from '@/api/types'
+import type {
+  ExportFormat,
+  SearchFacets,
+  SearchResult,
+  SearchTiming,
+  ZeroResult,
+} from '@/api/types'
 import { extList, toArray, type SavedSearch } from '@/api/savedSearches'
 import { downloadBlob, extLabel } from '@/utils/format'
 import { ecrireUrl, type CriteresPermalien, type ModeHistorique } from '@/utils/permalien'
@@ -71,6 +77,13 @@ export const useSearchStore = defineStore('search', () => {
    * l'erreur se lirait comme celle du message affiché.
    */
   const timing = ref<SearchTiming | null>(null)
+  /**
+   * De quoi rattraper une recherche infructueuse. Renseigné par l'API
+   * seulement quand il n'y a aucun résultat ET qu'elle a quelque chose à
+   * proposer — vidé à chaque recherche, sinon l'aide d'une recherche
+   * ratée survivrait à la suivante.
+   */
+  const zeroResult = ref<ZeroResult | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
   /** Faux tant qu'aucune recherche n'a été lancée (état initial). */
@@ -255,6 +268,7 @@ export const useSearchStore = defineStore('search', () => {
       searchId.value = data.search_id || null
       resultIds.value = data.results.map((r) => r.id)
       timing.value = data.timing || null
+      zeroResult.value = data.zero_result || null
       // Libellés des facettes personnalisées de CETTE recherche : ils
       // alimentent les puces sans redemander le libellé au serveur.
       for (const [field, def] of Object.entries(data.facets.custom || {})) {
@@ -267,6 +281,7 @@ export const useSearchStore = defineStore('search', () => {
       facets.value = null
       total.value = 0
       timing.value = null
+      zeroResult.value = null
       hasSearched.value = true
     } finally {
       loading.value = false
@@ -363,6 +378,7 @@ export const useSearchStore = defineStore('search', () => {
     searchId.value = null
     resultIds.value = []
     timing.value = null
+    zeroResult.value = null
     error.value = null
     hasSearched.value = false
     uiConfig.customFacetLabels = {}
@@ -434,6 +450,7 @@ export const useSearchStore = defineStore('search', () => {
     searchId,
     resultIds,
     timing,
+    zeroResult,
     loading,
     error,
     hasSearched,
