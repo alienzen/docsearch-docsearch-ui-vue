@@ -227,4 +227,126 @@ describe('useSearchStore', () => {
     expect(store.resultIds).toEqual(['a', 'b'])
     expect(store.totalPages).toBe(1)
   })
+
+  // ── Permaliens ────────────────────────────────────────────
+  //
+  // L'aller-retour de sérialisation est couvert par
+  // utils/permalien.spec.ts. Ce qui se vérifie ici est l'autre moitié :
+  // que le store écrit bien l'URL au bon moment, et avec le bon effet
+  // sur l'historique du navigateur.
+  describe('permalien', () => {
+    beforeEach(() => {
+      window.history.replaceState(null, '', '/')
+    })
+
+    it('écrit les critères dans l’URL à chaque recherche', async () => {
+      const store = useSearchStore()
+      store.query = 'budget'
+      store.ext = ['.pdf']
+      await store.doSearch()
+
+      expect(window.location.search).toBe('?q=budget&type=.pdf')
+    })
+
+    // Le cœur du choix de conception : l'URL porte l'état APRÈS
+    // extraction des opérateurs, donc la même que si l'utilisateur avait
+    // coché la facette.
+    it('écrit les critères canoniques, pas le texte tapé', async () => {
+      const store = useSearchStore()
+      store.query = 'type:pdf rapport'
+      await store.doSearch()
+
+      expect(window.location.search).toBe('?q=rapport&type=.pdf')
+    })
+
+    it('n’écrit rien quand la recherche ne part pas', async () => {
+      const store = useSearchStore()
+      store.query = '   '
+      await store.doSearch()
+      expect(window.location.search).toBe('')
+    })
+
+    it('empile une entrée pour une soumission et pour un changement de page', async () => {
+      const store = useSearchStore()
+      store.query = 'budget'
+
+      const avant = window.history.length
+      await store.searchFromFirstPage('empiler')
+      await store.goToPage(2)
+
+      expect(window.location.search).toBe('?q=budget&page=2')
+      expect(window.history.length).toBe(avant + 2)
+    })
+
+    // Cocher une facette affine une recherche déjà à l'écran : empiler
+    // obligerait à cliquer quinze fois sur Précédent pour en sortir.
+    it('n’empile pas quand on affine', async () => {
+      const store = useSearchStore()
+      store.query = 'budget'
+      await store.doSearch()
+
+      const avant = window.history.length
+      await store.toggleFacet('author', 'Dupont')
+      await store.setSort('date_modified')
+
+      expect(window.location.search).toBe('?q=budget&auteur=Dupont&tri=date_modified')
+      expect(window.history.length).toBe(avant)
+    })
+
+    it('vide l’URL à la réinitialisation', async () => {
+      const store = useSearchStore()
+      store.query = 'budget'
+      await store.doSearch()
+      store.resetSearch()
+
+      expect(window.location.search).toBe('')
+    })
+
+    // Le mode `aucun` sert au retour arrière : le navigateur a déjà
+    // changé l'URL, la réécrire empilerait une entrée par retour.
+    it('laisse l’URL intacte en mode aucun', async () => {
+      const store = useSearchStore()
+      window.history.replaceState(null, '', '/?q=budget')
+      store.appliquerCriteres({
+        query: 'budget',
+        ext: [],
+        author: [],
+        keywords: [],
+        folder: [],
+        source: [],
+        custom: {},
+        dateFrom: null,
+        dateTo: null,
+        sort: '_score',
+        page: 1,
+      })
+      store.query = 'autre chose'
+      await store.doSearch('aucun')
+
+      expect(window.location.search).toBe('?q=budget')
+    })
+
+    it('restaure des critères venus de l’URL sans chercher', () => {
+      const store = useSearchStore()
+      store.appliquerCriteres({
+        query: 'budget',
+        ext: ['.pdf'],
+        author: ['Dupont'],
+        keywords: [],
+        folder: [],
+        source: [],
+        custom: { bureau: ['Paris'] },
+        dateFrom: '2025-01-01',
+        dateTo: null,
+        sort: 'date_modified',
+        page: 4,
+      })
+
+      expect(fetchMock).not.toHaveBeenCalled()
+      expect(store.ext).toEqual(['.pdf'])
+      expect(store.custom).toEqual({ bureau: ['Paris'] })
+      expect(store.page).toBe(4)
+      expect(store.criteresPermalien().sort).toBe('date_modified')
+    })
+  })
 })

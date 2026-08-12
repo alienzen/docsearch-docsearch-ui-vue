@@ -117,6 +117,14 @@ coûté une séance de débogage.
   ne doit sa visibilité qu'à son animation disparaît complètement sous
   `prefers-reduced-motion: reduce`, que l'interface respecte sans
   échappatoire.
+- **Nouvelle dimension de recherche** : elle doit être ajoutée à
+  `utils/permalien.ts` en même temps qu'au store, sinon elle disparaît
+  silencieusement d'un lien partagé — le destinataire obtient une recherche
+  voisine, sans que rien ne le signale. L'URL porte les critères
+  **canoniques** (l'état d'après `parseAdvancedQuery`), jamais le texte tapé :
+  `type:pdf` saisi à la main et la facette cochée sont le même état, et doivent
+  donner le même lien. `stores/search.ts` est le seul à écrire l'URL (via
+  `ecrireUrl`), `usePermalien` le seul à la lire.
 - **Nouvelle clé de configuration** : une clé n'est persistée que si elle
   est déclarée aux **trois** endroits de `docsearch-api`
   (`DEFAULT_UI_CONFIG`, le modèle `UiConfigUpdate`, la chaîne

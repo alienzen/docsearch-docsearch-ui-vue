@@ -59,7 +59,9 @@ const rotating = variant === 'suggestions' && !reducedMotion
 
 function runExample(example: string) {
   store.query = example
-  store.searchFromFirstPage()
+  // `empiler` comme une soumission au clavier : le Précédent doit
+  // ramener à l'écran d'accueil, d'où l'exemple a été lancé.
+  store.searchFromFirstPage('empiler')
 }
 
 onMounted(() => {

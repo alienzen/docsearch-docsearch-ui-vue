@@ -10,6 +10,8 @@ import { usePreferencesStore } from '@/stores/preferences'
 import { useUiConfigStore } from '@/stores/uiConfig'
 import { SORT_OPTIONS, TOTAL_HITS_CAP } from '@/constants'
 import { fmtDuration } from '@/utils/format'
+import { copyText } from '@/utils/paths'
+import { lienPermanent } from '@/utils/permalien'
 import type { ExportFormat } from '@/api/types'
 
 const store = useSearchStore()
@@ -66,6 +68,21 @@ const timeDetail = computed(() => {
     store.timing.duration_ms,
   )}. Temps de transmission réseau non compté.`
 })
+
+/**
+ * Copie le permalien de la recherche affichée. On repasse par
+ * `lienPermanent()` plutôt que de lire `window.location.href` : les deux
+ * disent la même chose, mais le premier reste juste même si l'URL n'a pas
+ * encore été réécrite, et il ne recopie pas d'éventuels paramètres
+ * étrangers à la recherche.
+ */
+const lienCopie = ref(false)
+
+async function copierLien() {
+  await copyText(lienPermanent(store.criteresPermalien()))
+  lienCopie.value = true
+  setTimeout(() => (lienCopie.value = false), 1200)
+}
 
 const exportError = ref<string | null>(null)
 
@@ -149,6 +166,19 @@ async function exportAs(format: ExportFormat) {
         secondary
         :label="preferences.showSearchTime ? 'Masquer le temps' : 'Afficher le temps'"
         @click="preferences.showSearchTime = !preferences.showSearchTime"
+      />
+
+      <!-- Le lien porte la recherche, jamais les droits : le destinataire
+           la rejoue avec SES ACL et peut en voir moins. Dit dans
+           l'infobulle plutôt que nulle part — c'est la question que pose
+           tout le monde la première fois qu'on partage un lien. -->
+      <DsfrButton
+        id="resultats-copier-lien"
+        size="sm"
+        secondary
+        :label="lienCopie ? 'Lien copié' : 'Copier le lien'"
+        title="Copier le lien de cette recherche. Le lien partage la recherche, pas les droits d'accès : chacun la rejoue avec les siens."
+        @click="copierLien"
       />
 
       <template v-if="uiConfig.config.export_enabled">

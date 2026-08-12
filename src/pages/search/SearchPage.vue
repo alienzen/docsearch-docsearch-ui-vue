@@ -17,6 +17,7 @@ import { useSearchShortcuts } from '@/composables/useSearchShortcuts'
 import { useNps } from '@/composables/useNps'
 import { useHeaderHeight } from '@/composables/useHeaderHeight'
 import { useDialogs } from '@/composables/useDialogs'
+import { usePermalien } from '@/composables/usePermalien'
 
 const store = useSearchStore()
 const uiConfig = useUiConfigStore()
@@ -195,6 +196,10 @@ async function saveCurrentSearch() {
 useSearchShortcuts({ saveCurrentSearch, toggleShortcuts })
 // L'en-tête est collant : sa hauteur décale la colonne de facettes.
 useHeaderHeight()
+// Ouverture depuis un lien partagé, un signet ou un rechargement, et
+// retour arrière du navigateur. L'écriture de l'URL, elle, se fait dans
+// le store à chaque recherche.
+usePermalien()
 
 onMounted(() => {
   headerSearch.value = document.querySelector('.fr-header__search')
@@ -222,7 +227,7 @@ onMounted(() => {
     searchbar-id="recherche"
     search-label="Rechercher un document"
     :placeholder="uiConfig.headerSubtitle"
-    @search="store.searchFromFirstPage()"
+    @search="store.searchFromFirstPage('empiler')"
   >
     <!-- Après les liens rapides : le menu du compte se place ainsi tout à
          droite des outils d'en-tête, à l'écart des liens d'action. -->

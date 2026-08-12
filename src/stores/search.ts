@@ -11,6 +11,7 @@ import {
 import type { ExportFormat, SearchFacets, SearchResult, SearchTiming } from '@/api/types'
 import { extList, toArray, type SavedSearch } from '@/api/savedSearches'
 import { downloadBlob, extLabel } from '@/utils/format'
+import { ecrireUrl, type CriteresPermalien, type ModeHistorique } from '@/utils/permalien'
 import { PER_PAGE } from '@/constants'
 import { useUiConfigStore } from './uiConfig'
 
@@ -92,6 +93,47 @@ export const useSearchStore = defineStore('search', () => {
   }
 
   /**
+   * L'état de recherche tel que le permalien le porte — critères
+   * canoniques, page comprise, sans rien de l'affichage. Voir
+   * utils/permalien.ts pour ce qui n'y figure PAS, et pourquoi.
+   */
+  function criteresPermalien(): CriteresPermalien {
+    return {
+      query: query.value,
+      ext: ext.value,
+      author: author.value,
+      keywords: keywords.value,
+      folder: folder.value,
+      source: source.value,
+      custom: custom.value,
+      dateFrom: dateFrom.value,
+      dateTo: dateTo.value,
+      sort: sort.value,
+      page: page.value,
+    }
+  }
+
+  /**
+   * Restaure des critères venus de l'URL, SANS lancer la recherche —
+   * l'appelant décide s'il la lance et avec quel effet sur l'historique
+   * (au montage, il la lance ; sur un retour arrière aussi, mais sans
+   * réécrire l'URL que le navigateur vient de changer).
+   */
+  function appliquerCriteres(c: CriteresPermalien) {
+    query.value = c.query
+    ext.value = [...c.ext]
+    author.value = [...c.author]
+    keywords.value = [...c.keywords]
+    folder.value = [...c.folder]
+    source.value = [...c.source]
+    custom.value = { ...c.custom }
+    dateFrom.value = c.dateFrom
+    dateTo.value = c.dateTo
+    sort.value = c.sort
+    page.value = c.page
+  }
+
+  /**
    * Une puce PAR valeur sélectionnée (sélection cumulative) : la retirer
    * ne désélectionne que cette valeur-là, pas la facette entière.
    */
@@ -162,8 +204,12 @@ export const useSearchStore = defineStore('search', () => {
    * libre, et ces opérateurs deviennent des puces retirables — seule
    * source de vérité ensuite, pour que les retirer via leur ✕ ne les
    * fasse pas réapparaître au prochain Entrée.
+   *
+   * `historique` décide de ce que devient l'URL — voir ModeHistorique.
+   * Le défaut est `remplacer` : la plupart des appels affinent une
+   * recherche déjà à l'écran.
    */
-  async function doSearch() {
+  async function doSearch(historique: ModeHistorique = 'remplacer') {
     const raw = query.value.trim()
     const { remaining, extracted } = parseAdvancedQuery(raw, uiConfig.customFacetOperators)
 
@@ -194,6 +240,11 @@ export const useSearchStore = defineStore('search', () => {
     const criteria = currentCriteria()
     if (!hasActiveCriteria(criteria)) return
 
+    // Avant l'appel, pas après : l'URL doit décrire ce qui est en train
+    // d'être cherché, y compris si la requête échoue — recharger la page
+    // rejoue alors la même recherche, ce qui est le geste attendu.
+    ecrireUrl(criteresPermalien(), historique)
+
     loading.value = true
     error.value = null
     try {
@@ -222,10 +273,16 @@ export const useSearchStore = defineStore('search', () => {
     }
   }
 
-  /** Toute modification de filtre ramène à la première page. */
-  function searchFromFirstPage() {
+  /**
+   * Toute modification de filtre ramène à la première page.
+   *
+   * `historique` est passé à `empiler` par la barre de recherche et par
+   * les exemples de la page d'accueil : soumettre une recherche est une
+   * navigation, contrairement au fait de cocher une facette.
+   */
+  function searchFromFirstPage(historique: ModeHistorique = 'remplacer') {
     page.value = 1
-    return doSearch()
+    return doSearch(historique)
   }
 
   function toggleFacet(type: FixedDimension, value: string) {
@@ -247,9 +304,10 @@ export const useSearchStore = defineStore('search', () => {
     return searchFromFirstPage()
   }
 
+  /** Changer de page empile : Précédent doit revenir à la page 1. */
   function goToPage(newPage: number) {
     page.value = newPage
-    return doSearch()
+    return doSearch('empiler')
   }
 
   function setSort(value: string) {
@@ -282,8 +340,12 @@ export const useSearchStore = defineStore('search', () => {
    * initial (aucune recherche lancée). Ne touche PAS aux préférences
    * d'affichage (vue compacte, facettes repliées), qui vivent dans
    * usePreferencesStore.
+   *
+   * Vide aussi l'URL de ses critères — une remise à zéro qui laisserait
+   * le permalien précédent en place ferait réapparaître la recherche au
+   * premier rechargement de page.
    */
-  function resetSearch() {
+  function resetSearch(historique: ModeHistorique = 'remplacer') {
     query.value = ''
     ext.value = []
     author.value = []
@@ -304,6 +366,7 @@ export const useSearchStore = defineStore('search', () => {
     error.value = null
     hasSearched.value = false
     uiConfig.customFacetLabels = {}
+    ecrireUrl(criteresPermalien(), historique)
   }
 
   /** Corps attendu par POST /saved-searches — l'état de l'écran tel quel. */
@@ -340,7 +403,9 @@ export const useSearchStore = defineStore('search', () => {
     dateTo.value = saved.date_to || null
     sort.value = saved.sort || '_score'
     page.value = 1
-    return doSearch()
+    // Restaurer une recherche enregistrée est une navigation : Précédent
+    // doit ramener à ce qui était affiché avant.
+    return doSearch('empiler')
   }
 
   async function exportResults(format: ExportFormat) {
@@ -374,6 +439,8 @@ export const useSearchStore = defineStore('search', () => {
     hasSearched,
     activeFilters,
     currentCriteria,
+    criteresPermalien,
+    appliquerCriteres,
     doSearch,
     searchFromFirstPage,
     toggleFacet,
