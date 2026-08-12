@@ -3,7 +3,7 @@
  * Pouce haut/bas sous les résultats. Portage de renderFeedbackBar() /
  * submitFeedback() (docsearch-ui/public/js/feedback.js).
  */
-import { computed, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { submitFeedback } from '@/api/engagement'
 import { useSearchStore } from '@/stores/search'
 import { useUiConfigStore } from '@/stores/uiConfig'
@@ -11,20 +11,41 @@ import { useUiConfigStore } from '@/stores/uiConfig'
 const store = useSearchStore()
 const uiConfig = useUiConfigStore()
 
+/** Durée d'affichage du remerciement avant effacement de la barre. */
+const DELAI_MERCI_MS = 3000
+
+/** Avis enregistré : interdit d'en émettre un second sur la même recherche. */
 const sent = ref(false)
+/** Remerciement encore à l'écran — retombe à `false` tout seul. */
+const merci = ref(false)
 const busy = ref(false)
 const error = ref<string | null>(null)
+let minuteur: ReturnType<typeof setTimeout> | undefined
 
-const visible = computed(() => uiConfig.engagement.feedback_enabled && !!store.searchId)
+// La barre s'efface avec le remerciement : une fois l'avis donné, il n'y
+// a plus rien à proposer sur cette recherche. Remettre la question et ses
+// boutons inviterait au contraire à voter une deuxième fois.
+const visible = computed(
+  () => uiConfig.engagement.feedback_enabled && !!store.searchId && (!sent.value || merci.value),
+)
+
+function annuleMinuteur() {
+  clearTimeout(minuteur)
+  minuteur = undefined
+}
 
 // Une nouvelle recherche redonne droit à un avis.
 watch(
   () => store.searchId,
   () => {
+    annuleMinuteur()
     sent.value = false
+    merci.value = false
     error.value = null
   },
 )
+
+onUnmounted(annuleMinuteur)
 
 async function send(rating: 'up' | 'down') {
   // Fige l'identifiant : une recherche lancée entre-temps ne doit pas
@@ -36,6 +57,11 @@ async function send(rating: 'up' | 'down') {
   try {
     await submitFeedback(searchId, rating)
     sent.value = true
+    merci.value = true
+    minuteur = setTimeout(() => {
+      merci.value = false
+      minuteur = undefined
+    }, DELAI_MERCI_MS)
   } catch (e) {
     error.value = e instanceof Error ? e.message : String(e)
   } finally {
@@ -46,8 +72,11 @@ async function send(rating: 'up' | 'down') {
 
 <template>
   <div v-if="visible" id="avis" class="ds-feedback fr-mt-2w">
-    <template v-if="sent">
-      <p id="avis-merci" class="fr-mb-0">Merci pour votre retour !</p>
+    <template v-if="merci">
+      <!-- role="status" : le message ne reste plus à l'écran, un lecteur
+           d'écran doit donc l'annoncer au moment où il apparaît, faute de
+           quoi il n'existe pas pour lui. -->
+      <p id="avis-merci" class="fr-mb-0" role="status">Merci pour votre retour&nbsp;!</p>
     </template>
     <template v-else>
       <p class="fr-mb-0">Cette recherche vous a-t-elle été utile&nbsp;?</p>
