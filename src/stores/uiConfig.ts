@@ -22,6 +22,14 @@ export type UiConfig = {
   collections_enabled: boolean
   custom_keywords_enabled: boolean
   alerts_enabled: boolean
+  /**
+   * Entrée « Mes recherches récentes » : ses propres recherches, lues
+   * dans le journal déjà écrit par l'API. Comme `search_time_enabled`,
+   * démarre à `false` — elle ajoute un élément à l'écran.
+   */
+  search_history_enabled: boolean
+  /** Suggestions sous la barre de recherche. Démarre à `false`, idem. */
+  autocomplete_enabled: boolean
   sort_enabled: boolean
   /**
    * Temps de recherche affiché à côté du décompte de résultats, et
@@ -124,6 +132,11 @@ const DEFAULT_UI_CONFIG: UiConfig = {
   collections_enabled: true,
   custom_keywords_enabled: true,
   alerts_enabled: true,
+  // Comme search_time_enabled : le repli vaut le défaut de l'API, sinon
+  // la fonctionnalité apparaîtrait précisément quand /ui-config n'a pas
+  // pu être lu.
+  search_history_enabled: false,
+  autocomplete_enabled: false,
   sort_enabled: true,
   search_time_enabled: false,
   acl_visible_enabled: true,

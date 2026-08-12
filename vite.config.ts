@@ -37,7 +37,12 @@ const VERSION = readFileSync(fileURLToPath(new URL('./VERSION', import.meta.url)
 const API_ROUTES =
   '^/(' +
   [
-    'search', // couvre /search et /search/export
+    'search', // couvre /search, /search/export et /search/suggest
+    // Routes personnelles (/me/searches…). La barre oblique compte, comme
+    // pour 'admin/' : sans elle, ce préfixe de deux lettres avalerait
+    // toute page à venir commençant par « me » — /mentions-legales, par
+    // exemple. Même forme que le `location /me/` des deux nginx.
+    'me/',
     'searchable-sources',
     'custom-facets',
     'document',

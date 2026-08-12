@@ -37,6 +37,15 @@ const TOGGLES: { key: keyof UiConfig; label: string }[] = [
   { key: 'collections_enabled', label: '« Mes collections »' },
   { key: 'custom_keywords_enabled', label: 'Mots-clés personnalisés sur les documents' },
   { key: 'alerts_enabled', label: 'Alertes sur les recherches enregistrées' },
+  {
+    key: 'search_history_enabled',
+    label: '« Mes recherches récentes » (chacun ne voit que les siennes)',
+  },
+  {
+    key: 'autocomplete_enabled',
+    label:
+      'Suggestions sous la barre de recherche (ses recherches passées, puis les auteurs et mots-clés qu’il a le droit de voir)',
+  },
   { key: 'sort_enabled', label: 'Sélecteur de tri des résultats' },
   {
     key: 'search_time_enabled',

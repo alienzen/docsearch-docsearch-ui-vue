@@ -751,6 +751,61 @@ body.ds-resizing {
   gap: 0.5rem;
 }
 
+/* Suggestions de saisie (SearchSuggestions.vue). La liste s'ancre sur
+   le conteneur de la barre de recherche, que DsfrHeader rend lui-même :
+   le DSFR ne lui pose aucune règle `position` (vérifié dans dsfr.css),
+   une seule classe suffit donc — pas de bataille de spécificité. */
+.fr-header__search {
+  position: relative;
+}
+
+.ds-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background-color: var(--background-overlap-grey);
+  box-shadow: var(--overlap-shadow, 0 2px 6px rgb(0 0 18 / 16%));
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.ds-suggestions__option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+}
+
+/* Le survol et la sélection au clavier partagent le même rendu : deux
+   états visuels différents pour « l'élément qui part si je valide »
+   feraient hésiter. */
+.ds-suggestions__option--actif {
+  background-color: var(--background-open-blue-france);
+}
+
+.ds-suggestions__icone {
+  flex: 0 0 auto;
+  color: var(--text-mention-grey);
+}
+
+.ds-suggestions__texte {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ds-suggestions__nature {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+}
+
 /* Panneau déroulant de présélection des sources — <details> natif : la
    fermeture au clavier est gérée par le navigateur, là où docsearch-ui
    devait l'écrire à la main (voir init.js). */

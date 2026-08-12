@@ -259,6 +259,12 @@ onMounted(() => {
             </button>
           </li>
           <SavedSearchesPanel ref="savedSearchesPanel" />
+          <!-- Juste après les recherches enregistrées : les deux entrées
+               se ressemblent (« Mes recherches » / « Mes recherches
+               récentes ») et gagnent à être voisines plutôt que
+               dispersées. L'une est un enregistrement explicite, l'autre
+               une trace automatique. -->
+          <HistoriquePanel />
           <CollectionsPanel
             v-if="uiConfig.config.collections_enabled"
             ref="collectionsPanel"
@@ -286,6 +292,11 @@ onMounted(() => {
         @click="store.resetSearch()"
       />
     </div>
+
+    <!-- Dans le même téléport que les outils : la liste doit se poser
+         sous la barre de recherche, dont le conteneur est son ancrage
+         (voir .ds-suggestions dans app.css). -->
+    <SearchSuggestions v-if="uiConfig.config.autocomplete_enabled" />
   </Teleport>
 
   <div class="fr-container fr-my-4w">
