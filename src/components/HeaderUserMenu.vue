@@ -88,7 +88,7 @@ useOutsideClose(
     <div class="fr-nav__item">
       <button
         ref="button"
-        class="fr-btn fr-btn--tertiary fr-btn--icon-left fr-icon-account-line"
+        class="fr-btn fr-btn--sm fr-btn--tertiary fr-btn--icon-left fr-icon-account-line"
         type="button"
         :aria-expanded="open"
         :aria-controls="menuId"
