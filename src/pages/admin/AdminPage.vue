@@ -206,6 +206,9 @@ onMounted(() => {
         <AdminPathFiltersPanel :sources="fileSources" />
         <AdminScanPanel :sources="fileSources" />
         <AdminSourceTreePanel :sources="fileSources" />
+        <!-- Avec les sources fichiers : l'empreinte de contenu n'existe
+             que pour elles (une ligne SQL n'a pas de fichier). -->
+        <AdminDuplicatesPanel :sources="fileSources" />
       </AdminGroup>
 
       <AdminGroup id="group-sql-sources" title="Sources SQL">
@@ -214,6 +217,10 @@ onMounted(() => {
 
       <AdminGroup id="group-web-sources" title="Sources web">
         <AdminWebSourcesPanel />
+      </AdminGroup>
+
+      <AdminGroup id="group-recherche" title="Recherche">
+        <AdminSynonymsPanel />
       </AdminGroup>
 
       <AdminGroup id="group-interface" title="Interface et engagement">

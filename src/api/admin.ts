@@ -129,6 +129,65 @@ export function resetConfig(): Promise<unknown> {
   return api('/admin/config/reset', { method: 'POST' })
 }
 
+// ── Doublons ──────────────────────────────────────────────────
+export type GroupeDoublons = {
+  empreinte: string
+  copies: number
+  /** Octets qui seraient rendus en ne gardant qu'un exemplaire. */
+  gaspille: number
+  exemples: { filepath?: string; filename?: string; size?: number; source?: string }[]
+}
+
+export type RapportDoublons = {
+  calcule_le: string
+  /** Documents PORTANT une empreinte — les documents SQL et web n'en ont pas. */
+  documents: number
+  distincts: number
+  copies_en_trop: number
+  groupes: GroupeDoublons[]
+  depuis_cache: boolean
+}
+
+/**
+ * `rafraichir` relance l'agrégation au lieu de servir le cache
+ * quotidien : à ne proposer qu'explicitement, elle parcourt l'index
+ * pendant que les utilisateurs cherchent.
+ */
+export function getDuplicates(source: string, rafraichir = false): Promise<RapportDoublons> {
+  const params = new URLSearchParams({ source })
+  if (rafraichir) params.set('rafraichir', 'true')
+  return api(`/admin/duplicates?${params}`)
+}
+
+// ── Thésaurus ─────────────────────────────────────────────────
+export type RegleSynonyme = { id: string; regle: string }
+
+export type EcritureSynonymes = {
+  regles: RegleSynonyme[]
+  /** Preuve que la modification est en vigueur : ES recharge lui-même. */
+  shards_recharges: number
+  shards_en_echec: number
+}
+
+export function getSynonyms(): Promise<{ regles: RegleSynonyme[]; jeu: string }> {
+  return api('/admin/synonyms')
+}
+
+export function addSynonym(regle: string): Promise<EcritureSynonymes> {
+  return api('/admin/synonyms', { method: 'POST', body: JSON.stringify({ regle }) })
+}
+
+export function removeSynonym(id: string): Promise<EcritureSynonymes> {
+  return api(`/admin/synonyms/${encodeURIComponent(id)}`, { method: 'DELETE' })
+}
+
+export function testSynonyms(texte: string, source: string): Promise<{ jetons: string[] }> {
+  return api('/admin/synonyms/test', {
+    method: 'POST',
+    body: JSON.stringify({ texte, source }),
+  })
+}
+
 // ── Bascules d'interface et de satisfaction (écriture) ────────
 export function saveEngagementConfig(patch: Record<string, boolean>): Promise<unknown> {
   return api('/admin/engagement-config', { method: 'POST', body: JSON.stringify(patch) })
