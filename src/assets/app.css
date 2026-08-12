@@ -52,6 +52,22 @@
   mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path d="M17 2v2h3.007c.548 0 .993.445.993.993v16.014a.994.994 0 0 1-.993.993H3.993A.994.994 0 0 1 3 21.007V4.993C3 4.445 3.445 4 3.993 4H7V2h10ZM7 6H5v14h14V6h-2v2H7V6Zm8-2H9v2h6V4Z"/></svg>');
 }
 
+/* Remplissage vertical des boutons ramené de 0.5rem à 0.4rem. Le DSFR
+   pose `padding: 0.5rem 1rem` sur `.fr-btn` (dist/dsfr.css) ; la règle
+   est redéclarée ici plutôt que corrigée sur place, `node_modules`
+   étant réécrit à chaque `npm ci`. Les variantes de taille sont
+   exclues : `.fr-btn--sm` a le même poids de sélecteur et perdrait son
+   propre remplissage du seul fait que app.css est importé après le
+   DSFR (voir src/dsfr.ts).
+
+   `min-height` suit : le DSFR le fixe à 2.5rem, ce qui aurait annulé
+   visuellement le gain de remplissage (0.4rem × 2 + 1.5rem de
+   `line-height` = 2.3rem, sous le plancher). */
+.fr-btn:not(.fr-btn--sm):not(.fr-btn--lg) {
+  min-height: 2.3rem;
+  padding: 0.4rem 1rem;
+}
+
 /* Mention de bas de page éditable : DsfrFooter accole toujours un lien
    de licence au texte, que les pages neutralisent en vidant
    `licence-name`. On masque ce lien devenu vide pour n'afficher que la
