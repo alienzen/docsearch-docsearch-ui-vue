@@ -43,7 +43,23 @@ npm install
 npm run dev      # serveur Vite (proxy vers l'API)
 npm run build    # vue-tsc -b && vite build — le typage doit passer
 npm run test     # vitest run
+npm run lint     # eslint — vert sur l'état actuel du dépôt
+npm run lint:fix # corrige ce qui est sûr
 ```
+
+Le linter est installé depuis le 2026-08-12 (`eslint.config.js`, configuration
+« plate »). Il porte **des règles non typées** : `npm run build` lance déjà
+`vue-tsc -b`, qui fait l'analyse de types pour de bon — la doubler dans ESLint
+le ralentirait beaucoup pour redire la même chose. `eslint-plugin-vue` est au
+niveau `flat/essential` : le niveau au-dessus ajoute `vue/html-indent` et
+consorts, soit un reformatage complet des gabarits comme prix d'entrée, pour
+zéro défaut corrigé. Le choix des règles est argumenté dans le fichier même.
+
+Une règle a été ajoutée hors socle recommandé : **`no-script-url`**.
+`src/pages/connexion/ConnexionPage.spec.ts` portait déjà un
+`eslint-disable-next-line no-script-url`, écrit en prévision d'un linter, sur le
+test qui vérifie justement qu'une URL `javascript:` est REFUSÉE. Activer la
+règle rend cette annotation vraie.
 
 ## Vérifier la migration soi-même
 
