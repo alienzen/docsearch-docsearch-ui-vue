@@ -1,10 +1,12 @@
 <script setup lang="ts">
 /**
  * État des composants (Elasticsearch, Redis, Kafka, Tika, workers,
- * watcher, file d'indexation). Seul panneau rafraîchi périodiquement.
+ * watcher, file d'indexation), plus les écritures que le statut de
+ * cluster ne couvre pas : journalisation des recherches, recueil des
+ * suggestions et réponses NPS. Seul panneau rafraîchi périodiquement.
  */
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { getStatus, type AdminStatus } from '@/api/admin'
+import { getStatus, type AdminStatus, type WriteProbe } from '@/api/admin'
 import { useStatsPanel } from '@/composables/useStatsPanel'
 import { BUILD_DATE, COMMIT, VERSION } from '@/version'
 
@@ -41,6 +43,29 @@ async function silentRefresh() {
 
 type Card = { name: string; value: string; up: boolean | null; hint?: string }
 
+/**
+ * Carte d'une sonde d'écriture — les deux canaux (suggestions, NPS) ont
+ * exactement la même forme, seul l'index sondé change.
+ *
+ * `reason` en repli plutôt qu'une phrase rassurante par défaut : une API
+ * antérieure à ces cartes n'envoie pas du tout la clé, et afficher
+ * « l'index accepte les écritures » reviendrait alors à affirmer ce
+ * qu'on n'a pas vérifié.
+ */
+function carteSonde(name: string, sonde: WriteProbe): Card {
+  return {
+    name,
+    value: sonde.ok == null ? 'inconnu' : sonde.ok ? 'actives' : 'bloquées',
+    up: sonde.ok ?? null,
+    hint:
+      sonde.ok == null
+        ? sonde.reason
+        : sonde.ok
+          ? "l'index accepte les écritures"
+          : (sonde.error ?? undefined),
+  }
+}
+
 const cards = computed<Card[]>(() => {
   const s = data.value
   if (!s) return []
@@ -48,6 +73,8 @@ const cards = computed<Card[]>(() => {
   const workers = s.workers || {}
   const watcher = s.watcher || {}
   const journal = s.search_log || {}
+  const suggestions = s.suggestions || {}
+  const nps = s.nps || {}
   return [
     {
       name: 'Elasticsearch',
@@ -96,6 +123,14 @@ const cards = computed<Card[]>(() => {
           ? journal.reason
           : `dernière tentative il y a ${journal.last_attempt_seconds_ago ?? '?'}s`,
     },
+    // Même blocage, autres victimes — et celles-ci ne se déduisent pas de
+    // la carte précédente : une suggestion ou une note perdue ne laisse
+    // RIEN derrière elle, pas même la disparition d'un bouton. Sondées à
+    // chaque rafraîchissement plutôt que déduites de la dernière
+    // contribution reçue, qui peut dater de trois semaines (voir
+    // cluster_status._check_write_blocks()).
+    carteSonde('Suggestions', suggestions),
+    carteSonde('Réponses NPS', nps),
   ]
 })
 
@@ -115,6 +150,55 @@ const descriptionEchecJournal = computed(
     `plus de popup de satisfaction, plus de suivi des clics, et la page Statistiques ` +
     `cesse de se remplir.`,
 )
+
+/**
+ * Alerte distincte de celle du journal, même quand les pannes n'ont
+ * qu'une seule cause (disque saturé) : la conséquence, elle, n'est pas
+ * la même. Une recherche non journalisée est une statistique perdue ;
+ * une suggestion ou une note non enregistrée est le message d'un
+ * utilisateur qui croit l'avoir envoyé.
+ *
+ * UNE seule alerte pour les deux canaux, en revanche : ils tombent
+ * toujours ensemble, et deux blocs rouges nommant le même disque saturé
+ * se liraient comme deux pannes à réparer. Le titre nomme les canaux
+ * réellement touchés.
+ */
+type CanalPerdu = { nom: string; perte: string; erreur?: string | null }
+
+const canauxBloques = computed<CanalPerdu[]>(() => {
+  const s = data.value
+  const canaux: CanalPerdu[] = []
+  if (s?.suggestions?.ok === false) {
+    canaux.push({
+      nom: 'Les suggestions',
+      perte: 'les idées envoyées depuis le blocage sont perdues',
+      erreur: s.suggestions.error,
+    })
+  }
+  if (s?.nps?.ok === false) {
+    canaux.push({
+      nom: 'Les réponses NPS',
+      perte: 'les notes de satisfaction envoyées depuis le blocage sont perdues',
+      erreur: s.nps.error,
+    })
+  }
+  return canaux
+})
+
+const titreCanauxBloques = computed(() =>
+  canauxBloques.value.length > 1
+    ? 'Les suggestions et les réponses NPS ne sont plus enregistrées'
+    : `${canauxBloques.value[0]?.nom} ne sont plus enregistrées`,
+)
+
+const descriptionCanauxBloques = computed(() => {
+  const cause = canauxBloques.value.find((c) => c.erreur)?.erreur || 'cause non rapportée'
+  const pertes = canauxBloques.value.map((c) => c.perte).join(', et ')
+  return (
+    `${cause} — l'interface remercie pourtant l'utilisateur comme si de rien n'était : ` +
+    `${pertes}, seul le journal de l'API en garde la trace.`
+  )
+})
 
 // ── Versions déployées ──────────────────────────────────────
 /**
@@ -186,6 +270,14 @@ const versionsDivergentes = computed(() => {
       type="error"
       title="Les recherches ne sont plus journalisées"
       :description="descriptionEchecJournal"
+      class="fr-mt-2w"
+    />
+    <DsfrAlert
+      v-if="canauxBloques.length"
+      id="status-suggestions-bloquees"
+      type="error"
+      :title="titreCanauxBloques"
+      :description="descriptionCanauxBloques"
       class="fr-mt-2w"
     />
     <div id="status-cartes" class="ds-stats__cards fr-mt-2w">

@@ -26,6 +26,21 @@ export type ComponentVersion = {
   source?: string
 }
 
+/**
+ * Sonde d'écriture sur un index (voir _check_write_blocks côté API).
+ * Sondée à chaque appel, et non déduite de la dernière contribution
+ * reçue, qui peut dater de plusieurs semaines : `ok` à false signifie
+ * que l'index refuse les écritures MAINTENANT, `error` disant quel
+ * blocage l'y contraint. `null` = index pas encore créé ou ES
+ * injoignable, auquel cas `reason` dit lequel des deux.
+ */
+export type WriteProbe = {
+  ok?: boolean | null
+  index?: string
+  error?: string | null
+  reason?: string
+}
+
 export type AdminStatus = {
   elasticsearch?: ClusterStatus
   redis?: { up?: boolean }
@@ -45,6 +60,12 @@ export type AdminStatus = {
     error?: string | null
     reason?: string
   }
+  /**
+   * Recueil des suggestions — voir cluster_status.check_suggestions().
+   */
+  suggestions?: WriteProbe
+  /** Réponses à la question de satisfaction — même sonde, autre index. */
+  nps?: WriteProbe
   /**
    * Clés « api » et « ingestion ». L'interface ne s'y trouve pas : sa
    * version est figée dans son propre bundle (voir src/version.ts).

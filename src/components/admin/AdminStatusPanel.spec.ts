@@ -146,3 +146,101 @@ describe('AdminStatusPanel — journalisation des recherches', () => {
     expect(wrapper.text()).toContain('aucune recherche journalisée depuis le démarrage')
   })
 })
+
+// Suggestions et NPS tombent pour la même raison que la journalisation —
+// index passé en lecture seule — mais ils sont encore plus discrets :
+// rien ne disparaît de l'écran, l'interface remercie, et la contribution
+// part à la poubelle. Les cartes doivent donc savoir contredire leurs
+// voisines au vert (BASE) sans se déclencher pour une simple absence
+// d'information.
+
+describe('AdminStatusPanel — suggestions et NPS', () => {
+  const versionsSaines = { api: { version: __DOCSEARCH_VERSION__, commit: 'a1b2c3d' } }
+
+  beforeEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('alerte, en nommant la cause, quand les suggestions ne sont plus enregistrées', async () => {
+    const wrapper = monterAvec(versionsSaines, {
+      suggestions: {
+        ok: false,
+        index: 'suggestions',
+        error: "disque saturé (flood-stage watermark) — Elasticsearch a passé l'index en lecture seule",
+      },
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Les suggestions ne sont plus enregistrées')
+    expect(wrapper.text()).toContain('flood-stage watermark')
+    // L'effet côté utilisateur, que rien d'autre ne rattache à cette
+    // panne — c'est par là que le diagnostic commence en pratique.
+    expect(wrapper.text()).toContain('remercie pourtant')
+    expect(wrapper.text()).toContain('bloquées')
+  })
+
+  it('alerte séparément de la journalisation, dont la conséquence diffère', async () => {
+    // Une seule cause, deux pannes : la carte des suggestions ne doit pas
+    // se contenter de suivre celle du journal, sans quoi l'administrateur
+    // qui répare le disque ne saura pas qu'il a aussi des idées perdues.
+    const wrapper = monterAvec(versionsSaines, {
+      search_log: { ok: false, last_attempt_seconds_ago: 3, error: 'flood-stage watermark' },
+      suggestions: { ok: false, error: 'flood-stage watermark' },
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Les recherches ne sont plus journalisées')
+    expect(wrapper.text()).toContain('Les suggestions ne sont plus enregistrées')
+  })
+
+  it('réunit les deux canaux en une seule alerte, qui les nomme', async () => {
+    // Ils tombent toujours ensemble : deux blocs rouges nommant le même
+    // disque saturé se liraient comme deux pannes à réparer.
+    const wrapper = monterAvec(versionsSaines, {
+      suggestions: { ok: false, error: 'disque saturé (flood-stage watermark)' },
+      nps: { ok: false, error: 'disque saturé (flood-stage watermark)' },
+    })
+    await flushPromises()
+
+    expect(wrapper.findAll('.fr-alert--error')).toHaveLength(1)
+    expect(wrapper.text()).toContain('Les suggestions et les réponses NPS ne sont plus enregistrées')
+    expect(wrapper.text()).toContain('les idées envoyées depuis le blocage sont perdues')
+    expect(wrapper.text()).toContain('les notes de satisfaction envoyées depuis le blocage')
+  })
+
+  it('alerte pour le NPS seul quand lui seul est bloqué', async () => {
+    // Cas d'un `index.blocks.write` posé à la main sur le seul index NPS :
+    // le titre ne doit pas accuser les suggestions au passage.
+    const wrapper = monterAvec(versionsSaines, {
+      suggestions: { ok: true, index: 'suggestions' },
+      nps: { ok: false, error: 'écritures bloquées sur l’index' },
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Les réponses NPS ne sont plus enregistrées')
+    expect(wrapper.text()).not.toContain('Les suggestions et les réponses NPS')
+  })
+
+  it("n'alerte pas quand les deux index acceptent les écritures", async () => {
+    const wrapper = monterAvec(versionsSaines, {
+      suggestions: { ok: true, index: 'suggestions' },
+      nps: { ok: true, index: 'nps_responses' },
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('ne sont plus enregistrées')
+    expect(wrapper.text()).toContain('actives')
+  })
+
+  it("reste neutre tant que les index n'ont pas encore été créés", async () => {
+    const wrapper = monterAvec(versionsSaines, {
+      suggestions: { ok: null, reason: 'aucune suggestion reçue à ce jour (index pas encore créé)' },
+      nps: { ok: null, reason: 'aucune réponse NPS reçue à ce jour (index pas encore créé)' },
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('ne sont plus enregistrées')
+    expect(wrapper.text()).toContain('aucune suggestion reçue à ce jour')
+    expect(wrapper.text()).toContain('aucune réponse NPS reçue à ce jour')
+  })
+})
