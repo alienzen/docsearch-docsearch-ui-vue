@@ -31,8 +31,11 @@ export type SearchFacets = {
  */
 export type SearchResult = {
   id: string
-  score: number
+  /** `null` sur un résultat épinglé : il n'a pas été classé, il a été désigné. */
+  score: number | null
   highlight: string[]
+  /** Vrai sur les documents mis en avant par l'administration. */
+  pinned?: boolean
   filename?: string
   title?: string
   extension?: string
@@ -73,6 +76,15 @@ export type SearchResponse = {
    * cas (voir _aide_zero_resultat côté search_api.py).
    */
   zero_result?: ZeroResult
+  /**
+   * Documents mis en avant par l'administration sur cette requête —
+   * première page uniquement, et absent s'il n'y en a aucun.
+   *
+   * Ils sont RETIRÉS de `results` quand ils s'y trouvaient déjà : un
+   * document ne s'affiche qu'une fois. `total`, lui, ne bouge pas — il
+   * compte des documents trouvés, pas des cartes affichées.
+   */
+  pinned?: SearchResult[]
 }
 
 /**

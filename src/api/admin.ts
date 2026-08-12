@@ -181,6 +181,31 @@ export function removeSynonym(id: string): Promise<EcritureSynonymes> {
   return api(`/admin/synonyms/${encodeURIComponent(id)}`, { method: 'DELETE' })
 }
 
+// ── Résultats épinglés ────────────────────────────────────────
+export type DocumentEpingle = {
+  id: string
+  /** Faux quand l'identifiant ne correspond plus à aucun document. */
+  trouve: boolean
+  filename?: string
+  title?: string
+  filepath?: string
+  source?: string
+}
+
+export type ReglePinned = { requete: string; documents: DocumentEpingle[] }
+
+export function getPinned(): Promise<{ regles: ReglePinned[] }> {
+  return api('/admin/pinned')
+}
+
+/** Une liste vide retire la règle — c'est le même geste que supprimer. */
+export function setPinned(requete: string, documents: string[]): Promise<{ regles: ReglePinned[] }> {
+  return api('/admin/pinned', {
+    method: 'POST',
+    body: JSON.stringify({ requete, documents }),
+  })
+}
+
 export function testSynonyms(texte: string, source: string): Promise<{ jetons: string[] }> {
   return api('/admin/synonyms/test', {
     method: 'POST',

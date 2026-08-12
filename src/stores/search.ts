@@ -84,6 +84,13 @@ export const useSearchStore = defineStore('search', () => {
    * ratée survivrait à la suivante.
    */
   const zeroResult = ref<ZeroResult | null>(null)
+  /**
+   * Documents mis en avant par l'administration sur cette requête
+   * (première page seulement). Ils sont affichés à part, sous une
+   * mention explicite : un classement forcé en silence est une mauvaise
+   * surprise le jour où quelqu'un s'en aperçoit.
+   */
+  const pinnedResults = ref<SearchResult[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
   /** Faux tant qu'aucune recherche n'a été lancée (état initial). */
@@ -269,6 +276,7 @@ export const useSearchStore = defineStore('search', () => {
       resultIds.value = data.results.map((r) => r.id)
       timing.value = data.timing || null
       zeroResult.value = data.zero_result || null
+      pinnedResults.value = data.pinned || []
       // Libellés des facettes personnalisées de CETTE recherche : ils
       // alimentent les puces sans redemander le libellé au serveur.
       for (const [field, def] of Object.entries(data.facets.custom || {})) {
@@ -282,6 +290,7 @@ export const useSearchStore = defineStore('search', () => {
       total.value = 0
       timing.value = null
       zeroResult.value = null
+      pinnedResults.value = []
       hasSearched.value = true
     } finally {
       loading.value = false
@@ -379,6 +388,7 @@ export const useSearchStore = defineStore('search', () => {
     resultIds.value = []
     timing.value = null
     zeroResult.value = null
+    pinnedResults.value = []
     error.value = null
     hasSearched.value = false
     uiConfig.customFacetLabels = {}
@@ -451,6 +461,7 @@ export const useSearchStore = defineStore('search', () => {
     resultIds,
     timing,
     zeroResult,
+    pinnedResults,
     loading,
     error,
     hasSearched,

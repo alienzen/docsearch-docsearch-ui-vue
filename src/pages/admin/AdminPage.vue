@@ -221,6 +221,7 @@ onMounted(() => {
 
       <AdminGroup id="group-recherche" title="Recherche">
         <AdminSynonymsPanel />
+        <AdminPinnedPanel />
       </AdminGroup>
 
       <AdminGroup id="group-interface" title="Interface et engagement">

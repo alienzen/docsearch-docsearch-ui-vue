@@ -21,6 +21,7 @@ declare module 'vue' {
     AdminGroup: typeof import('./components/admin/AdminGroup.vue')['default']
     AdminPanel: typeof import('./components/admin/AdminPanel.vue')['default']
     AdminPathFiltersPanel: typeof import('./components/admin/AdminPathFiltersPanel.vue')['default']
+    AdminPinnedPanel: typeof import('./components/admin/AdminPinnedPanel.vue')['default']
     AdminScanPanel: typeof import('./components/admin/AdminScanPanel.vue')['default']
     AdminSourceTreePanel: typeof import('./components/admin/AdminSourceTreePanel.vue')['default']
     AdminSqlSourceForm: typeof import('./components/admin/AdminSqlSourceForm.vue')['default']

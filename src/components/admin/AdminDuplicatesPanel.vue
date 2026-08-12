@@ -19,16 +19,17 @@ import { computed, ref } from 'vue'
 import { getDuplicates, type RapportDoublons } from '@/api/admin'
 import { fmtSize } from '@/utils/format'
 
-const props = defineProps<{ sources: { name: string; label?: string }[] }>()
+// Noms de sources, comme les autres panneaux de ce groupe
+// (AdminFiletypesPanel, AdminScanPanel…) : leur libellé se règle
+// ailleurs et n'apporte rien à ce choix.
+const props = defineProps<{ sources: string[] }>()
 
 const source = ref('documents')
 const data = ref<RapportDoublons | null>(null)
 const error = ref<string | null>(null)
 const chargement = ref(false)
 
-const options = computed(() =>
-  props.sources.map((s) => ({ value: s.name, text: s.label || s.name })),
-)
+const options = computed(() => props.sources.map((nom) => ({ value: nom, text: nom })))
 
 async function charger(rafraichir = false) {
   chargement.value = true

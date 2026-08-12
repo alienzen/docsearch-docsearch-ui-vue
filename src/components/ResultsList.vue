@@ -79,9 +79,31 @@ const paginationPages = computed(() =>
     <!-- Le message seul ne servait à rien : EmptyResultsHelp y ajoute ce
          que l'API sait proposer (correction, filtre à retirer, autre
          source), et le garde tel quel quand elle n'a rien. -->
-    <EmptyResultsHelp v-else-if="store.hasSearched && !store.results.length" />
+    <EmptyResultsHelp
+      v-else-if="store.hasSearched && !store.results.length && !store.pinnedResults.length"
+    />
 
     <template v-else>
+      <!-- Mis en avant par l'administration, et DIT comme tel : un
+           classement forcé en silence est une mauvaise surprise le jour
+           où quelqu'un s'en aperçoit. Ces documents restent filtrés par
+           les droits de l'utilisateur, comme tous les autres. -->
+      <section v-if="store.pinnedResults.length" id="resultats-epingles" class="fr-mb-2w">
+        <p class="fr-badge fr-badge--sm fr-badge--info fr-mb-1w">
+          Proposé par votre administration
+        </p>
+        <ResultCard
+          v-for="result in store.pinnedResults"
+          :key="`epingle-${result.id}`"
+          :result="result"
+          :selected="selection.has(result.id)"
+          class="fr-mb-2w"
+          data-testid="resultat-epingle"
+          @update:selected="selection.set(result.id, $event)"
+          @detail="emit('detail', $event)"
+        />
+      </section>
+
       <ResultCard
         v-for="result in store.results"
         :key="`${cardsKey}-${result.id}`"
