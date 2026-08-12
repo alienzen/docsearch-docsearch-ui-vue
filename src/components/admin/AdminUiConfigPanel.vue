@@ -39,6 +39,11 @@ const TOGGLES: { key: keyof UiConfig; label: string }[] = [
   { key: 'alerts_enabled', label: 'Alertes sur les recherches enregistrées' },
   { key: 'sort_enabled', label: 'Sélecteur de tri des résultats' },
   {
+    key: 'search_time_enabled',
+    label:
+      'Temps de recherche affiché à côté du décompte de résultats (chacun peut ensuite le masquer)',
+  },
+  {
     key: 'acl_visible_enabled',
     label: 'Section « Droits d’accès » de la fiche détail, visible de tous (sinon : administrateurs seuls)',
   },

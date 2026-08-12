@@ -13,6 +13,9 @@ const FACET_COLLAPSED_KEY = 'docsearch-collapsed-facets'
 // identifiant de section et le drapeau global se marcheraient dessus.
 const FACETS_HIDDEN_KEY = 'docsearch-facets-hidden'
 const FACETS_WIDTH_KEY = 'docsearch-facets-width'
+// Nouvelle clé, sans équivalent dans docsearch-ui : le temps de
+// recherche n'y était pas affiché.
+const SHOW_SEARCH_TIME_KEY = 'docsearch-show-search-time'
 
 /**
  * Largeur de la colonne de facettes, en pixels. Les bornes ne sont pas
@@ -34,6 +37,22 @@ function readCompact(): boolean {
     return localStorage.getItem(COMPACT_RESULTS_KEY) === '1'
   } catch {
     return false
+  }
+}
+
+/**
+ * Vrai par défaut, contrairement aux autres préférences booléennes de ce
+ * fichier : on ne lit cette valeur que si l'administrateur a activé
+ * `search_time_enabled`, et une activation qui n'afficherait rien tant
+ * que chaque utilisateur n'a pas trouvé le bouton passerait pour une
+ * panne. Seul un refus explicite (« 0 » écrit par le bouton) masque
+ * l'information.
+ */
+function readShowSearchTime(): boolean {
+  try {
+    return localStorage.getItem(SHOW_SEARCH_TIME_KEY) !== '0'
+  } catch {
+    return true
   }
 }
 
@@ -70,6 +89,14 @@ function readCollapsedFacets(): string[] {
 export const usePreferencesStore = defineStore('preferences', () => {
   /** Liste de résultats en vue compacte (extraits masqués). */
   const resultsCompact = ref(readCompact())
+
+  /**
+   * Temps de recherche affiché à côté du décompte de résultats. Sans
+   * effet tant que l'administrateur n'a pas activé `search_time_enabled` :
+   * les deux se combinent en ET, la bascule d'administration autorisant
+   * la fonctionnalité et celle-ci ne réglant que le choix de chacun.
+   */
+  const showSearchTime = ref(readShowSearchTime())
 
   /**
    * Identifiants des sections de facettes repliées. Un tableau plutôt
@@ -160,6 +187,14 @@ export const usePreferencesStore = defineStore('preferences', () => {
     }
   })
 
+  watch(showSearchTime, (value) => {
+    try {
+      localStorage.setItem(SHOW_SEARCH_TIME_KEY, value ? '1' : '0')
+    } catch {
+      /* idem */
+    }
+  })
+
   watch(facetsHidden, (value) => {
     try {
       localStorage.setItem(FACETS_HIDDEN_KEY, value ? '1' : '0')
@@ -186,6 +221,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
 
   return {
     resultsCompact,
+    showSearchTime,
     facetsHidden,
     facetsWidth,
     setFacetsWidth,

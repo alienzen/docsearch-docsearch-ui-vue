@@ -79,6 +79,23 @@ describe('largeur de la colonne de facettes', () => {
     expect(usePreferencesStore().allFacetsCollapsed).toBe(false)
   })
 
+  // La seule préférence booléenne du store qui démarre à `true` : elle
+  // n'est lue que si l'administrateur a activé l'affichage du temps, et
+  // une activation qui n'afficherait rien passerait pour une panne.
+  it('affiche le temps de recherche tant qu’on ne l’a pas refusé', () => {
+    expect(usePreferencesStore().showSearchTime).toBe(true)
+  })
+
+  it('retient le refus d’afficher le temps de recherche', async () => {
+    const preferences = usePreferencesStore()
+    preferences.showSearchTime = false
+    await nextTick()
+
+    expect(localStorage.getItem('docsearch-show-search-time')).toBe('0')
+    setActivePinia(createPinia())
+    expect(usePreferencesStore().showSearchTime).toBe(false)
+  })
+
   it('sépare le pli global du pli des sections', async () => {
     const preferences = usePreferencesStore()
     preferences.facetsHidden = true

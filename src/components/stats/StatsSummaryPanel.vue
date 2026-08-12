@@ -3,6 +3,7 @@
 import { computed } from 'vue'
 import { getSummary, groupLabel } from '@/api/stats'
 import { useStatsPanel } from '@/composables/useStatsPanel'
+import { fmtDuration } from '@/utils/format'
 
 const { data, error } = useStatsPanel(getSummary)
 
@@ -30,6 +31,18 @@ const feedbackPct = computed(() =>
 )
 /** Hauteur des barres, en % de la journée la plus chargée. */
 const maxCount = computed(() => Math.max(1, ...(data.value?.by_day || []).map((b) => b.count)))
+
+const timing = computed(() => data.value?.timing || null)
+
+/**
+ * Vrai quand les moyennes ne portent pas sur tout l'historique — cas
+ * normal et durable, les recherches d'avant la mesure n'ayant pas de
+ * durée. Tant que c'est vrai, la part mesurée est écrite sous la carte :
+ * une moyenne dont on ignore l'assiette n'est pas une information.
+ */
+const timingPartiel = computed(
+  () => !!data.value && !!timing.value && timing.value.measured < data.value.total_searches,
+)
 </script>
 
 <template>
@@ -62,7 +75,32 @@ const maxCount = computed(() => Math.max(1, ...(data.value?.by_day || []).map((b
             {{ data.feedback_down }} négatifs)
           </p>
         </div>
+        <div v-if="timing" class="ds-stats__card">
+          <p class="fr-hint-text fr-mb-0">Temps de recherche moyen</p>
+          <p id="summary-duree-moyenne" class="ds-stats__value">
+            {{ fmtDuration(timing.avg_ms) }}
+          </p>
+          <p class="fr-hint-text fr-mb-0">
+            Médiane {{ fmtDuration(timing.p50_ms) }} · 95<sup>e</sup> centile
+            {{ fmtDuration(timing.p95_ms) }}
+          </p>
+          <p class="fr-hint-text fr-mb-0">
+            dont moteur {{ fmtDuration(timing.took_avg_ms) }} en moyenne
+          </p>
+          <p v-if="timing.slow_threshold_ms" class="fr-hint-text fr-mb-0">
+            {{ timing.slow_count.toLocaleString('fr-FR') }} recherche{{
+              timing.slow_count > 1 ? 's' : ''
+            }}
+            au-delà de {{ fmtDuration(timing.slow_threshold_ms) }}
+          </p>
+        </div>
       </div>
+
+      <p v-if="timingPartiel" id="summary-duree-assiette" class="fr-hint-text fr-mt-1w">
+        Temps calculés sur {{ timing?.measured.toLocaleString('fr-FR') }} recherches
+        mesurées, sur {{ data.total_searches.toLocaleString('fr-FR') }} enregistrées :
+        celles effectuées avant la mise en place de la mesure n'ont pas de durée.
+      </p>
 
       <template v-if="data.by_day.length">
         <p class="fr-hint-text fr-mt-2w fr-mb-1v">Recherches par jour (14 derniers jours)</p>

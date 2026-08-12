@@ -124,6 +124,13 @@ coûté une séance de débogage.
   une clé suppose en outre de la **purger de Redis** : `get_config()`
   fusionne le JSON stocké par-dessus les défauts, une clé disparue du
   code y survivrait.
+- **Repli de `DEFAULT_UI_CONFIG` (`stores/uiConfig.ts`)** : « tout
+  activé », à une exception près, `search_time_enabled`, qui suit le
+  défaut de l'API (`false`). La règle réelle n'est pas « tout à `true` »
+  mais « le repli doit valoir le défaut de l'API » : sans quoi une
+  fonctionnalité apparaîtrait précisément quand `/ui-config` n'a pas pu
+  être lu. Une bascule qui ajoute un élément à l'écran démarre
+  désactivée ; celles qui en masquent un préexistant démarrent activées.
 
 ## Identifiants des éléments d'interface
 

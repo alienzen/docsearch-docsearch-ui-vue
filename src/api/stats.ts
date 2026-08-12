@@ -20,6 +20,24 @@ export type FeedbackByGroup = {
   feedback_down: number
 }
 
+/**
+ * Temps de recherche agrégés. `measured` est le nombre de recherches
+ * portant effectivement une mesure : il est TOUJOURS à afficher à côté
+ * des moyennes, car les recherches enregistrées avant l'introduction de
+ * la mesure n'ont pas le champ et sont ignorées par les agrégations —
+ * une moyenne calculée sur douze lignes ne dit rien d'un historique qui
+ * en compte quatre cent mille. `null` quand rien n'a encore été mesuré.
+ */
+export type TimingSummary = {
+  avg_ms: number | null
+  p50_ms: number | null
+  p95_ms: number | null
+  took_avg_ms: number | null
+  slow_count: number
+  slow_threshold_ms: number
+  measured: number
+}
+
 export type SearchLogsSummary = {
   total_searches: number
   unique_users: number
@@ -34,6 +52,7 @@ export type SearchLogsSummary = {
    * sans jamais se prononcer a sa place ici.
    */
   searches_by_group: CountByGroup[]
+  timing: TimingSummary
 }
 
 export type NpsByGroup = {
@@ -96,6 +115,9 @@ export type SearchLogEntry = {
   date_to?: string
   feedback?: 'up' | 'down'
   clicks?: unknown[]
+  // Absents des recherches antérieures à la mesure des temps.
+  duration_ms?: number
+  took_ms?: number
 }
 
 export type AuditLogEntry = {

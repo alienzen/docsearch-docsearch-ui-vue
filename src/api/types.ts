@@ -46,12 +46,27 @@ export type SearchResult = {
   [key: string]: unknown
 }
 
+/**
+ * Temps de la recherche, en millisecondes. `took_ms` est celui rapporté
+ * par Elasticsearch (le moteur seul), `duration_ms` le temps total du
+ * endpoint côté API — leur écart dit si une lenteur vient du moteur ou
+ * de ce qui l'entoure. Ni l'un ni l'autre ne comptent l'aller-retour
+ * réseau : ce qui s'affiche est donc toujours inférieur à ce que
+ * l'utilisateur a attendu.
+ */
+export type SearchTiming = {
+  took_ms: number | null
+  duration_ms: number
+}
+
 export type SearchResponse = {
   total: number
   username: string
   search_id: string | null
   results: SearchResult[]
   facets: SearchFacets
+  /** Optionnel : une API antérieure à la mesure des temps n'en renvoie pas. */
+  timing?: SearchTiming
 }
 
 /** Champ unique auquel restreindre la recherche (défaut : tout). */

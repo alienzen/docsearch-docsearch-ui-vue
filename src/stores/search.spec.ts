@@ -25,6 +25,7 @@ function mockSearchResponse(overrides: Partial<SearchResponse> = {}) {
     search_id: 'sid-1',
     results: [],
     facets: EMPTY_FACETS,
+    timing: { took_ms: 4, duration_ms: 12.5 },
     ...overrides,
   }
   return vi.fn().mockResolvedValue({
@@ -160,6 +161,26 @@ describe('useSearchStore', () => {
     expect(store.ext).toEqual([])
     expect(store.hasSearched).toBe(false)
     expect(store.results).toEqual([])
+    expect(store.timing).toBeNull()
+  })
+
+  it('retient le temps de la recherche affichée', async () => {
+    const store = useSearchStore()
+    store.query = 'rapport'
+    await store.doSearch()
+
+    expect(store.timing).toEqual({ took_ms: 4, duration_ms: 12.5 })
+  })
+
+  // Une API antérieure à la mesure ne renvoie pas de `timing` : l'écran
+  // doit s'en passer, pas afficher « NaN ms ».
+  it('se passe du temps quand l’API n’en renvoie pas', async () => {
+    vi.stubGlobal('fetch', mockSearchResponse({ timing: undefined }))
+    const store = useSearchStore()
+    store.query = 'rapport'
+    await store.doSearch()
+
+    expect(store.timing).toBeNull()
   })
 
   it('expose une erreur lisible quand l’API est injoignable', async () => {
@@ -177,6 +198,9 @@ describe('useSearchStore', () => {
 
     expect(store.error).toBe('Service indisponible')
     expect(store.results).toEqual([])
+    // Une durée qui survivrait à l'échec se lirait comme celle du
+    // message d'erreur affiché.
+    expect(store.timing).toBeNull()
     // hasSearched reste vrai : l'écran doit montrer l'erreur, pas
     // l'invitation initiale « Lancez une recherche ».
     expect(store.hasSearched).toBe(true)

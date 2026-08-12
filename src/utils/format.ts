@@ -8,6 +8,23 @@ export function fmtSize(bytes: number | null | undefined): string {
   return (bytes / 1048576).toFixed(1) + ' Mo'
 }
 
+/**
+ * Durée lisible à partir de millisecondes (« 87 ms », « 1,24 s »). Le
+ * seuil est la seconde : en dessous, les millisecondes se lisent d'un
+ * coup d'œil et « 0,087 s » ne dit rien de plus ; au-dessus, personne ne
+ * compte en milliers de millisecondes. Deux décimales à la seconde, pas
+ * trois : la mesure ne prétend pas à la milliseconde près, l'aller-retour
+ * réseau n'y étant même pas compté.
+ */
+export function fmtDuration(ms: number | null | undefined): string {
+  if (ms === null || ms === undefined || !Number.isFinite(ms)) return '—'
+  if (ms < 1000) return `${Math.round(ms).toLocaleString('fr-FR')} ms`
+  return `${(ms / 1000).toLocaleString('fr-FR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} s`
+}
+
 /** « .pdf » → « PDF ». */
 export function extLabel(ext: string | null | undefined): string {
   return (ext || '').replace('.', '').toUpperCase() || '—'

@@ -8,7 +8,7 @@ import {
   search as searchApi,
   type FixedDimension,
 } from '@/api/search'
-import type { ExportFormat, SearchFacets, SearchResult } from '@/api/types'
+import type { ExportFormat, SearchFacets, SearchResult, SearchTiming } from '@/api/types'
 import { extList, toArray, type SavedSearch } from '@/api/savedSearches'
 import { downloadBlob, extLabel } from '@/utils/format'
 import { PER_PAGE } from '@/constants'
@@ -64,6 +64,12 @@ export const useSearchStore = defineStore('search', () => {
    */
   const searchId = ref<string | null>(null)
   const resultIds = ref<string[]>([])
+  /**
+   * Temps de la recherche affichée, ou null si l'API n'en a pas renvoyé.
+   * Vidé dès qu'une recherche échoue : une durée qui survivrait à
+   * l'erreur se lirait comme celle du message affiché.
+   */
+  const timing = ref<SearchTiming | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
   /** Faux tant qu'aucune recherche n'a été lancée (état initial). */
@@ -197,6 +203,7 @@ export const useSearchStore = defineStore('search', () => {
       facets.value = data.facets
       searchId.value = data.search_id || null
       resultIds.value = data.results.map((r) => r.id)
+      timing.value = data.timing || null
       // Libellés des facettes personnalisées de CETTE recherche : ils
       // alimentent les puces sans redemander le libellé au serveur.
       for (const [field, def] of Object.entries(data.facets.custom || {})) {
@@ -208,6 +215,7 @@ export const useSearchStore = defineStore('search', () => {
       results.value = []
       facets.value = null
       total.value = 0
+      timing.value = null
       hasSearched.value = true
     } finally {
       loading.value = false
@@ -292,6 +300,7 @@ export const useSearchStore = defineStore('search', () => {
     total.value = 0
     searchId.value = null
     resultIds.value = []
+    timing.value = null
     error.value = null
     hasSearched.value = false
     uiConfig.customFacetLabels = {}
@@ -359,6 +368,7 @@ export const useSearchStore = defineStore('search', () => {
     totalPages,
     searchId,
     resultIds,
+    timing,
     loading,
     error,
     hasSearched,

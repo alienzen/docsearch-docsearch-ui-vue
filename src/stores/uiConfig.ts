@@ -24,6 +24,14 @@ export type UiConfig = {
   alerts_enabled: boolean
   sort_enabled: boolean
   /**
+   * Temps de recherche affiché à côté du décompte de résultats, et
+   * bouton qui permet à chacun de le masquer (voir
+   * usePreferencesStore.showSearchTime, combiné en ET). N'influe que sur
+   * l'affichage : la mesure et sa journalisation ont lieu côté API quoi
+   * qu'il arrive.
+   */
+  search_time_enabled: boolean
+  /**
    * Section « Droits d'accès » de la fiche détail, visible des
    * utilisateurs non administrateurs. Désactivée, elle reste visible des
    * seuls administrateurs.
@@ -100,7 +108,13 @@ export function normalizeScheme(value: string | undefined): Scheme {
 /** Clé de cache, la même que celle lue par le script anti-flash des pages. */
 const SCHEME_CACHE_KEY = 'vue-dsfr-scheme'
 
-/** Repli si /ui-config échoue : tout activé, comme en vanilla. */
+/**
+ * Repli si /ui-config échoue : tout activé, comme en vanilla —
+ * `search_time_enabled` excepté, qui suit le défaut de l'API (voir
+ * ui_config.py, qui explique pourquoi lui seul démarre désactivé). Un
+ * repli à `true` ferait apparaître le temps de recherche précisément
+ * quand la configuration n'a pas pu être lue.
+ */
 const DEFAULT_UI_CONFIG: UiConfig = {
   chat_enabled: true,
   footer_enabled: true,
@@ -111,6 +125,7 @@ const DEFAULT_UI_CONFIG: UiConfig = {
   custom_keywords_enabled: true,
   alerts_enabled: true,
   sort_enabled: true,
+  search_time_enabled: false,
   acl_visible_enabled: true,
   shortcuts_link_enabled: true,
   empty_state_animation_enabled: true,

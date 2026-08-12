@@ -3,7 +3,7 @@
 import { ref, watch } from 'vue'
 import { getSearchLogs, searchLogsExportUrl, type SearchLogEntry } from '@/api/stats'
 import { useStatsPanel } from '@/composables/useStatsPanel'
-import { extLabel, fmtDateTime } from '@/utils/format'
+import { extLabel, fmtDateTime, fmtDuration } from '@/utils/format'
 
 const PAGE_SIZE = 50
 
@@ -115,6 +115,7 @@ const FEEDBACK_LABELS: Record<string, { icone: string; texte: string }> = {
             <th scope="col">Source</th>
             <th scope="col">Critères</th>
             <th scope="col">Résultats</th>
+            <th scope="col">Durée</th>
             <th scope="col">Documents retournés</th>
             <th scope="col">Avis</th>
             <th scope="col">Clics</th>
@@ -122,7 +123,7 @@ const FEEDBACK_LABELS: Record<string, { icone: string; texte: string }> = {
         </thead>
         <tbody>
           <tr v-if="!data?.results.length">
-            <td colspan="8" class="fr-hint-text">Aucune recherche ne correspond à ces critères.</td>
+            <td colspan="9" class="fr-hint-text">Aucune recherche ne correspond à ces critères.</td>
           </tr>
           <tr v-for="entry in data?.results || []" :key="entry.id" data-testid="log-ligne">
             <td>{{ fmtDateTime(entry.timestamp) }}</td>
@@ -130,6 +131,13 @@ const FEEDBACK_LABELS: Record<string, { icone: string; texte: string }> = {
             <td>{{ asList(entry.source).join(', ') || 'toutes' }}</td>
             <td>{{ criteria(entry) }}</td>
             <td>{{ entry.total_results ?? 0 }}</td>
+            <!-- « — » pour les recherches antérieures à la mesure : elles
+                 n'ont pas de durée, ce n'est pas une durée nulle. Le
+                 détail moteur/traitement va au survol plutôt qu'en
+                 colonne, le tableau étant déjà large. -->
+            <td :title="entry.took_ms !== undefined ? `dont moteur ${fmtDuration(entry.took_ms)}` : ''">
+              {{ fmtDuration(entry.duration_ms) }}
+            </td>
             <td>{{ resultFiles(entry.result_files) }}</td>
             <td>
               <template v-if="FEEDBACK_LABELS[entry.feedback || '']">

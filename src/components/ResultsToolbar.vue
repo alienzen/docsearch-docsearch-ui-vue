@@ -9,6 +9,7 @@ import { useSearchStore } from '@/stores/search'
 import { usePreferencesStore } from '@/stores/preferences'
 import { useUiConfigStore } from '@/stores/uiConfig'
 import { SORT_OPTIONS, TOTAL_HITS_CAP } from '@/constants'
+import { fmtDuration } from '@/utils/format'
 import type { ExportFormat } from '@/api/types'
 
 const store = useSearchStore()
@@ -38,6 +39,34 @@ const pageLabel = computed(() =>
   store.totalPages > 1 ? `Page ${store.page} sur ${store.totalPages}` : '',
 )
 
+/**
+ * Le temps ne s'affiche que si l'administration l'a autorisé ET que
+ * l'utilisateur ne l'a pas masqué. Le bouton, lui, ne dépend que de
+ * l'autorisation : c'est ce qui permet de le rallumer après l'avoir
+ * masqué.
+ */
+const timeAvailable = computed(
+  () => uiConfig.config.search_time_enabled && store.timing !== null,
+)
+const showTime = computed(() => timeAvailable.value && preferences.showSearchTime)
+
+const timeLabel = computed(() =>
+  store.timing ? `en ${fmtDuration(store.timing.duration_ms)}` : '',
+)
+
+/**
+ * Détail au survol : sans lui, une durée nue laisse croire que tout le
+ * temps est passé dans le moteur, alors que l'écart entre les deux
+ * mesures est justement ce qui oriente un diagnostic.
+ */
+const timeDetail = computed(() => {
+  if (!store.timing) return ''
+  const moteur = fmtDuration(store.timing.took_ms)
+  return `Moteur de recherche : ${moteur} · traitement complet : ${fmtDuration(
+    store.timing.duration_ms,
+  )}. Temps de transmission réseau non compté.`
+})
+
 const exportError = ref<string | null>(null)
 
 async function exportAs(format: ExportFormat) {
@@ -55,6 +84,13 @@ async function exportAs(format: ExportFormat) {
     <p id="resultats-decompte" class="fr-mb-0">
       <strong>{{ countLabel }}</strong>
       <span v-if="pageLabel" class="fr-hint-text fr-ml-1w">{{ pageLabel }}</span>
+      <span
+        v-if="showTime"
+        id="resultats-duree"
+        class="fr-hint-text fr-ml-1w"
+        :title="timeDetail"
+        >{{ timeLabel }}</span
+      >
       <!-- Réaffinage sur des résultats déjà affichés : le seul signe
            d'attente, la liste restant en place. `aria-hidden` car
            l'annonce vocale est déjà portée par ResultsList — la répéter
@@ -100,6 +136,19 @@ async function exportAs(format: ExportFormat) {
         title="Basculer la vue compacte (c)"
         aria-keyshortcuts="c"
         @click="preferences.resultsCompact = !preferences.resultsCompact"
+      />
+
+      <!-- Conditionné à la disponibilité d'une mesure et non au seul
+           flag : un bouton « Afficher le temps » qui n'afficherait rien
+           parce que l'API n'en renvoie pas encore serait pire que pas de
+           bouton du tout. -->
+      <DsfrButton
+        v-if="timeAvailable"
+        id="resultats-duree-bascule"
+        size="sm"
+        secondary
+        :label="preferences.showSearchTime ? 'Masquer le temps' : 'Afficher le temps'"
+        @click="preferences.showSearchTime = !preferences.showSearchTime"
       />
 
       <template v-if="uiConfig.config.export_enabled">

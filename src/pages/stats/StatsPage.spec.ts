@@ -36,6 +36,18 @@ const RESPONSES: Record<string, unknown> = {
       { group: 'docsearch-users', count: 2000 },
       { group: '__sans_groupe__', count: 736 },
     ],
+    // `measured` volontairement inférieur à `total_searches` : c'est le
+    // cas durable (les recherches d'avant la mesure n'ont pas de durée),
+    // et celui qui doit faire apparaître la mention de l'assiette.
+    timing: {
+      avg_ms: 143.2,
+      p50_ms: 96,
+      p95_ms: 812,
+      took_avg_ms: 41.7,
+      slow_count: 12,
+      slow_threshold_ms: 2000,
+      measured: 1490,
+    },
   },
   '/admin/nps-summary': {
     total_responses: 2,
