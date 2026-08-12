@@ -627,6 +627,41 @@ body.ds-resizing {
   gap: 0.5rem 1rem;
 }
 
+/* Dépli des `.fr-collapse` : ouverture IMMÉDIATE (2026-08-12 — constaté
+   sur le menu « compte » de l'en-tête, appliqué à tous).
+
+   Le DSFR anime le dépli d'un `.fr-collapse` en faisant remonter son
+   contenu par la marge haute de son `::before`, dont la valeur repliée
+   est la sentinelle `--collapse: -99999px` : c'est SON JavaScript qui la
+   remplace, à l'ouverture, par la hauteur réellement mesurée du bloc.
+   L'interface ne charge que les feuilles de styles du DSFR (voir
+   dsfr.ts) — la marge parcourt donc les 99999px en 0,3 s, et un bloc de
+   quelques centaines de pixels ne rentre dans le cadre qu'au dernier
+   millième du trajet. D'où un temps mort d'un tiers de seconde à chaque
+   ouverture, suivi d'une apparition sèche ; il est d'autant plus visible
+   que le menu est court.
+
+   Tous les `.fr-collapse` de l'interface sont dépliés par une bascule de
+   classe côté Vue (HeaderUserMenu et NavMenuItem) : aucun n'est piloté
+   par le script absent, la règle vaut donc pour tous. Sentinelle à zéro
+   et transition coupée, puisque sans la mesure qu'aurait faite ce
+   JavaScript il n'y a rien à animer. Le repli lui-même n'est pas
+   concerné : il reste assuré par `max-height: 0` et `visibility:
+   hidden`, que le DSFR pose indépendamment. C'est d'ailleurs ce que le
+   DSFR fait lui-même sous `prefers-reduced-motion: reduce`.
+
+   Les accordéons ne sont pas visés : ici ce sont des <details> natifs
+   (CollapsiblePanel, FacetSection), sans `.fr-collapse` — contrairement
+   à charlie, dont la règle jumelle doit en plus neutraliser
+   `.fr-accordion .fr-collapse`. */
+.fr-collapse,
+.fr-collapse::before {
+  transition: none;
+}
+.fr-collapse {
+  --collapse: 0;
+}
+
 /* Contenu des menus déroulants de la navigation (recherches
    enregistrées, collections, alertes). La structure — fr-nav__item,
    fr-nav__btn, fr-collapse fr-menu, fr-menu__list — et son
