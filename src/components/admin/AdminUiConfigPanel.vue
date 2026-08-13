@@ -46,6 +46,15 @@ const TOGGLES: { key: keyof UiConfig; label: string }[] = [
     label:
       'Suggestions sous la barre de recherche (ses recherches passées, puis les auteurs et mots-clés qu’il a le droit de voir)',
   },
+  {
+    key: 'recent_documents_enabled',
+    label: '« Vos derniers documents consultés » sur l’écran d’accueil (relus selon les droits de chacun)',
+  },
+  {
+    key: 'collections_shared_enabled',
+    label:
+      'Partage d’une collection avec ses groupes (partage la référence, jamais le droit de lecture)',
+  },
   { key: 'sort_enabled', label: 'Sélecteur de tri des résultats' },
   {
     key: 'search_time_enabled',

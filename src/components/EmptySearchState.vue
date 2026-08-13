@@ -15,10 +15,45 @@
  * sombre en thème nuit. Un SVG en ligne peut, lui, consommer les jetons
  * DSFR et suivre le thème.
  */
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useSearchStore } from '@/stores/search'
+import { useUiConfigStore } from '@/stores/uiConfig'
+import { listerDocumentsRecents } from '@/api/historique'
+import type { SearchResult } from '@/api/types'
+
+const emit = defineEmits<{ detail: [string] }>()
 
 const store = useSearchStore()
+const uiConfig = useUiConfigStore()
+
+/**
+ * Les derniers documents ouverts par l'utilisateur, sur l'espace vide
+ * de cet écran d'accueil.
+ *
+ * Aucune collecte nouvelle : les clics sont journalisés depuis toujours.
+ * Et aucun raccourci sur les droits — l'API relit chaque document à
+ * travers l'ACL, si bien qu'un document dont l'accès a été retiré depuis
+ * la consultation n'apparaît plus ici.
+ */
+const recents = ref<SearchResult[]>([])
+
+async function chargerRecents() {
+  if (!uiConfig.config.recent_documents_enabled) {
+    recents.value = []
+    return
+  }
+  try {
+    recents.value = (await listerDocumentsRecents(6)).documents
+  } catch {
+    // Muet : c'est un bonus sur un écran d'accueil, pas une
+    // fonctionnalité dont l'absence mérite un message d'erreur.
+    recents.value = []
+  }
+}
+
+// Chargé quand la configuration arrive : /ui-config est encore en vol au
+// montage, et la bascule y vaut `false` par défaut.
+watch(() => uiConfig.config.recent_documents_enabled, chargerRecents, { immediate: true })
 
 /**
  * Les trois dernières illustrent la devise « Explorez, trouvez,
@@ -222,6 +257,26 @@ onBeforeUnmount(() => clearInterval(timer))
         <li v-for="(example, i) in EXAMPLES" :key="example" v-show="!rotating || i === current">
           <button class="fr-tag fr-tag--sm" type="button" @click="runExample(example)">
             {{ example }}
+          </button>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Les derniers documents ouverts, sur l'espace que cet écran
+         laissait vide. Relus par l'API à travers l'ACL : ce qui n'est
+         plus accessible n'apparaît plus, sans mention ni trou. -->
+    <div v-if="recents.length" class="ds-empty__recents fr-mt-4w">
+      <p class="fr-text--sm fr-mb-1w">Vos derniers documents consultés</p>
+      <ul class="fr-tags-group">
+        <li v-for="document in recents" :key="document.id">
+          <button
+            class="fr-tag fr-tag--sm"
+            type="button"
+            data-testid="document-recent"
+            :data-id="document.id"
+            @click="emit('detail', document.id)"
+          >
+            {{ document.title || document.filename || document.id }}
           </button>
         </li>
       </ul>

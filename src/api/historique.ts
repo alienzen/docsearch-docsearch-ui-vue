@@ -1,4 +1,5 @@
 import { api } from './client'
+import type { SearchResult } from './types'
 
 /**
  * Historique de recherche personnel et suggestions de saisie.
@@ -48,4 +49,16 @@ export function suggerer(saisie: string, signal?: AbortSignal): Promise<{ sugges
     `/search/suggest?q=${encodeURIComponent(saisie)}`,
     { signal },
   )
+}
+
+/**
+ * Les derniers documents ouverts par l'utilisateur courant.
+ *
+ * Les identifiants viennent des clics déjà journalisés, mais les
+ * DOCUMENTS sont relus par l'API à travers l'ACL : un document dont les
+ * droits ont changé depuis la consultation, ou supprimé de l'index, n'est
+ * pas rendu. Un historique ne rouvre pas une porte qui s'est fermée.
+ */
+export function listerDocumentsRecents(limite = 6): Promise<{ documents: SearchResult[] }> {
+  return api<{ documents: SearchResult[] }>(`/me/recent-documents?limit=${limite}`)
 }

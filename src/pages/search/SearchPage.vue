@@ -346,7 +346,10 @@ onMounted(() => {
              recherche part sans que l'utilisateur ait rien saisi. Elle
              cohabiterait de surcroît avec le spinner. -->
         <template v-if="!store.hasSearched && !store.loading">
-          <EmptySearchState v-if="uiConfig.config.empty_state_animation_enabled" />
+          <EmptySearchState
+            v-if="uiConfig.config.empty_state_animation_enabled"
+            @detail="detailId = $event"
+          />
           <p v-else id="invite-recherche-texte" class="fr-text--sm">Lancez une recherche pour voir les résultats.</p>
         </template>
 

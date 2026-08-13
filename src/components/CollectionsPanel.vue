@@ -7,7 +7,7 @@
  * (consulter une collection / y ajouter la sélection). Ici, deux modes
  * explicites : `mode` vaut 'view' ou 'add'.
  */
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import {
   addDocuments,
   createCollection,
@@ -17,13 +17,16 @@ import {
   type Collection,
 } from '@/api/collections'
 import { getDocument } from '@/api/documents'
+import { duplicateCollection, shareCollection } from '@/api/collections'
 import { useSelectionStore } from '@/stores/selection'
+import { useUiConfigStore } from '@/stores/uiConfig'
 import { useDialogs } from '@/composables/useDialogs'
 
 const emit = defineEmits<{ detail: [string] }>()
 
 const selection = useSelectionStore()
-const { confirm } = useDialogs()
+const uiConfig = useUiConfigStore()
+const { confirm, prompt } = useDialogs()
 
 const collections = ref<Collection[]>([])
 const loading = ref(false)
@@ -33,6 +36,16 @@ const mode = ref<'view' | 'add' | null>(null)
 const current = ref<Collection | null>(null)
 /** Documents de la collection consultée, ou null si inaccessible. */
 const documents = ref<{ id: string; title: string | null }[]>([])
+
+/**
+ * Documents de la collection que CE lecteur n'a pas le droit de voir (ou
+ * qui ont été supprimés depuis). Partager une collection donne la
+ * référence, pas le droit : deux personnes n'y voient donc pas forcément
+ * le même nombre de documents. On le DIT — masquer l'écart ferait croire
+ * au propriétaire qu'il a partagé dix documents quand le destinataire en
+ * voit sept, sans que personne s'en aperçoive.
+ */
+const inaccessibles = computed(() => documents.value.filter((d) => d.title === null).length)
 const newName = ref('')
 const busy = ref(false)
 
@@ -87,6 +100,45 @@ async function view(collection: Collection) {
     title: r.status === 'fulfilled' ? r.value.title || r.value.filename || '(sans nom)' : null,
   }))
   busy.value = false
+}
+
+/**
+ * On ne propose que les groupes DONT L'UTILISATEUR EST MEMBRE : l'API
+ * refuse les autres, et lui laisser désigner un groupe quelconque de
+ * l'annuaire reviendrait à lui offrir de s'adresser à toute
+ * l'organisation.
+ */
+async function partager(collection: Collection) {
+  const mes = uiConfig.currentUser.groups
+  if (!mes.length) {
+    error.value = "Vous n'appartenez à aucun groupe : il n'y a personne avec qui partager."
+    return
+  }
+  const saisie = await prompt(
+    `Partager « ${collection.name} » avec (séparés par une virgule) — vos groupes : ${mes.join(', ')}`,
+    collection.shared_with.join(', '),
+    { title: 'Partager la collection' },
+  )
+  if (saisie === null) return
+  error.value = null
+  try {
+    collections.value = await shareCollection(
+      collection.id,
+      saisie.split(',').map((g) => g.trim()).filter(Boolean),
+    )
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e)
+  }
+}
+
+/** Porte de sortie du destinataire : il ne modifie pas, il recopie. */
+async function dupliquer(collection: Collection) {
+  error.value = null
+  try {
+    collections.value = await duplicateCollection(collection.id)
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e)
+  }
 }
 
 async function removeDoc(docId: string) {
@@ -189,17 +241,46 @@ defineExpose({ openAdd })
         <span class="ds-menu__name">{{ collection.name }}</span>
         <span class="fr-hint-text fr-mb-0">
           {{ collection.doc_ids.length }} document{{ collection.doc_ids.length > 1 ? 's' : '' }}
+          <!-- D'où vient cette collection : sans ça, une collection
+               reçue surgit de nulle part dans le menu. -->
+          <template v-if="!collection.owned"> · partagée par {{ collection.owner }}</template>
+          <template v-else-if="collection.shared_with.length">
+            · partagée avec {{ collection.shared_with.join(', ') }}
+          </template>
         </span>
       </button>
       <div class="fr-px-2w">
+        <!-- Écrire reste au propriétaire : le destinataire duplique. -->
+        <template v-if="collection.owned">
+          <DsfrButton
+            v-if="uiConfig.config.collections_shared_enabled"
+            size="sm"
+            tertiary
+            no-outline
+            label="Partager"
+            data-testid="collection-partager"
+            :title="`Partager la collection ${collection.name} avec un groupe`"
+            @click="partager(collection)"
+          />
+          <DsfrButton
+            size="sm"
+            tertiary
+            no-outline
+            label="Supprimer"
+            data-testid="collection-supprimer"
+            :title="`Supprimer la collection ${collection.name}`"
+            @click="remove(collection)"
+          />
+        </template>
         <DsfrButton
+          v-else
           size="sm"
           tertiary
           no-outline
-          label="Supprimer"
-          data-testid="collection-supprimer"
-          :title="`Supprimer la collection ${collection.name}`"
-          @click="remove(collection)"
+          label="Dupliquer"
+          data-testid="collection-dupliquer"
+          :title="`Recopier ${collection.name} dans mes collections`"
+          @click="dupliquer(collection)"
         />
       </div>
     </li>
@@ -218,6 +299,17 @@ defineExpose({ openAdd })
     >
       <p v-if="busy">Chargement…</p>
       <p v-else-if="!documents.length" class="fr-hint-text">Collection vide.</p>
+      <!-- Dit plutôt que masqué : partager donne la référence, pas le
+           droit, et l'écart entre ce que chacun voit est une information,
+           pas un détail à cacher. -->
+      <DsfrAlert
+        v-if="!busy && inaccessibles"
+        id="collection-inaccessibles"
+        type="info"
+        small
+        :description="`${inaccessibles} document${inaccessibles > 1 ? 's ne vous sont pas accessibles' : ' ne vous est pas accessible'} (droits insuffisants ou document supprimé).`"
+        class="fr-mb-2w"
+      />
       <ul v-else class="ds-collection__docs">
         <li v-for="entry in documents" :key="entry.id" data-testid="collection-document" :data-id="entry.id">
           <button v-if="entry.title" class="fr-link" @click="openDetail(entry.id)">
@@ -225,6 +317,7 @@ defineExpose({ openAdd })
           </button>
           <span v-else class="fr-hint-text">Document indisponible</span>
           <DsfrButton
+            v-if="current?.owned"
             size="sm"
             tertiary
             no-outline

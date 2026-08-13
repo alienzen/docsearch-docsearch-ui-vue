@@ -30,6 +30,10 @@ export type UiConfig = {
   search_history_enabled: boolean
   /** Suggestions sous la barre de recherche. Démarre à `false`, idem. */
   autocomplete_enabled: boolean
+  /** « Vos derniers documents consultés » sur l'écran d'accueil. `false` par défaut. */
+  recent_documents_enabled: boolean
+  /** Partage d'une collection avec des groupes. `false` par défaut. */
+  collections_shared_enabled: boolean
   sort_enabled: boolean
   /**
    * Temps de recherche affiché à côté du décompte de résultats, et
@@ -137,6 +141,8 @@ const DEFAULT_UI_CONFIG: UiConfig = {
   // pu être lu.
   search_history_enabled: false,
   autocomplete_enabled: false,
+  recent_documents_enabled: false,
+  collections_shared_enabled: false,
   sort_enabled: true,
   search_time_enabled: false,
   acl_visible_enabled: true,
