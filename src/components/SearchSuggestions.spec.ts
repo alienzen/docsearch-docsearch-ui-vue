@@ -175,4 +175,84 @@ describe('SearchSuggestions', () => {
     expect(w.findAll('[data-testid="suggestion"]')).toHaveLength(0)
     expect(w.text()).toBe('')
   })
+
+  // ── Facettes personnalisées ───────────────────────────────────────
+  //
+  // Même exigence que pour un auteur — une puce, pas du texte — mais sur
+  // une dimension que le code ne connaît pas à la compilation : c'est
+  // `field` qui dit laquelle, et rien d'autre ne le dit.
+
+  const FACETTE = {
+    suggestions: [{ text: 'Paris', kind: 'custom', field: 'bureau', label: 'Bureau', count: 3 }],
+  }
+
+  it('transforme une facette personnalisée en puce sur SON champ', async () => {
+    stubFetch(FACETTE)
+    const w = monter()
+    const store = useSearchStore()
+    store.query = 'par'
+    await apresRebond()
+
+    await w.findAll('[data-testid="suggestion"]')[0].trigger('mousedown')
+    await flushPromises()
+
+    expect(store.custom).toEqual({ bureau: ['Paris'] })
+    expect(store.query).toBe('')
+    // Et surtout pas ailleurs : une valeur de bureau posée en mot-clé
+    // filtrerait sur une dimension qui n'a pas été cliquée.
+    expect(store.keywords).toEqual([])
+    expect(store.author).toEqual([])
+  })
+
+  it('affiche le libellé de la facette, pas un intitulé générique', async () => {
+    stubFetch(FACETTE)
+    const w = monter()
+    useSearchStore().query = 'par'
+    await apresRebond()
+
+    expect(w.find('[data-testid="suggestion"]').text()).toContain('Bureau')
+  })
+
+  it('retombe sur le libellé connu du store quand l’API n’en donne pas', async () => {
+    stubFetch({ suggestions: [{ text: 'Paris', kind: 'custom', field: 'bureau' }] })
+    const uiConfig = useUiConfigStore()
+    uiConfig.customFacetLabels = { bureau: 'Bureau' }
+    const w = monter()
+    useSearchStore().query = 'par'
+    await apresRebond()
+
+    expect(w.find('[data-testid="suggestion"]').text()).toContain('Bureau')
+  })
+
+  // Sans `field`, l'interface saurait qu'il faut cocher une facette mais
+  // pas laquelle : mieux vaut ne rien faire que filtrer au hasard.
+  it('ignore une facette personnalisée sans champ', async () => {
+    const fetchMock = stubFetch({ suggestions: [{ text: 'Paris', kind: 'custom' }] })
+    const w = monter()
+    const store = useSearchStore()
+    store.query = 'par'
+    await apresRebond()
+
+    await w.findAll('[data-testid="suggestion"]')[0].trigger('mousedown')
+    await flushPromises()
+
+    expect(store.custom).toEqual({})
+    expect(store.query).toBe('par')
+    // Aucune recherche relancée : le dernier appel reste /suggest.
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain('/search/suggest')
+  })
+
+  it('cumule deux valeurs de la même facette', async () => {
+    stubFetch(FACETTE)
+    const w = monter()
+    const store = useSearchStore()
+    store.custom = { bureau: ['Lyon'] }
+    store.query = 'par'
+    await apresRebond()
+
+    await w.findAll('[data-testid="suggestion"]')[0].trigger('mousedown')
+    await flushPromises()
+
+    expect(store.custom).toEqual({ bureau: ['Lyon', 'Paris'] })
+  })
 })

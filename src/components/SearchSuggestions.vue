@@ -2,10 +2,11 @@
 /**
  * Suggestions sous la barre de recherche.
  *
- * Deux natures, dans cet ordre : ce que l'utilisateur a DÉJÀ cherché
- * lui-même, puis les auteurs et mots-clés du corpus qu'il a le droit de
- * voir (voir user_history.py côté API — les requêtes des autres
- * utilisateurs ne sont volontairement jamais proposées).
+ * Deux gisements, dans cet ordre : ce que l'utilisateur a DÉJÀ cherché
+ * lui-même, puis le corpus qu'il a le droit de voir — auteurs, mots-clés
+ * et valeurs des facettes personnalisées des sources SQL (voir
+ * user_history.py côté API — les requêtes des autres utilisateurs ne sont
+ * volontairement jamais proposées).
  *
  * ── Pourquoi ce composant manipule le DOM directement ────────────────
  *
@@ -58,6 +59,23 @@ const LIBELLES: Record<Suggestion['kind'], string> = {
   history: 'Votre recherche',
   author: 'Auteur',
   keyword: 'Mot-clé',
+  // Remplacé par le libellé de la facette elle-même (voir nature()) : ce
+  // repli ne sert qu'à une source configurée sans libellé de facette.
+  custom: 'Filtre',
+}
+
+/**
+ * Le libellé de section affiché à droite de la ligne. Pour une facette
+ * personnalisée, c'est le sien — « Bureau », « Fonction » — sans quoi
+ * toutes se ressembleraient et rien ne dirait ce qu'un clic va cocher.
+ * L'API le renvoie avec la suggestion ; `customFacetLabels` prend le
+ * relais si elle ne l'a pas fait, puisque le store le connaît déjà par
+ * `/custom-facets`.
+ */
+function nature(proposition: Suggestion): string {
+  if (proposition.kind !== 'custom') return LIBELLES[proposition.kind]
+  const champ = proposition.field || ''
+  return proposition.label || uiConfig.customFacetLabels[champ] || champ || LIBELLES.custom
 }
 
 /**
@@ -69,9 +87,10 @@ const LIBELLES: Record<Suggestion['kind'], string> = {
  * livrée ici — d'où `fr-icon-hashtag`, inlinée dans app.css.
  */
 const ICONES: Record<Suggestion['kind'], string> = {
-  history: 'fr-icon-time-line',   // icons-system, importée
-  author: 'fr-icon-user-line',    // icons-user, importée
-  keyword: 'fr-icon-hashtag',     // inlinée dans app.css
+  history: 'fr-icon-time-line',    // icons-system, importée
+  author: 'fr-icon-user-line',     // icons-user, importée
+  keyword: 'fr-icon-hashtag',      // inlinée dans app.css
+  custom: 'fr-icon-filter-line',   // icons-system, importée
 }
 
 /**
@@ -133,13 +152,25 @@ function fermer() {
  * proposer autre chose ferait diverger ce qui a été cherché de ce qui
  * est appliqué.
  *
- * Un auteur ou un mot-clé devient une PUCE de filtre, pas du texte
- * libre : c'est le même état que si la facette avait été cochée, donc le
- * même permalien (voir utils/permalien.ts).
+ * Un auteur, un mot-clé ou une valeur de facette personnalisée devient
+ * une PUCE de filtre, pas du texte libre : c'est le même état que si la
+ * facette avait été cochée, donc le même permalien (voir
+ * utils/permalien.ts).
+ *
+ * Une facette personnalisée sans `field` est ignorée plutôt que traitée
+ * comme un mot-clé : elle produirait un filtre sur la mauvaise dimension,
+ * donc une recherche qui ne correspond pas à ce qui a été cliqué.
  */
 function choisir(proposition: Suggestion) {
   if (proposition.kind === 'history') {
     store.query = proposition.text
+  } else if (proposition.kind === 'custom') {
+    if (!proposition.field) return
+    store.query = ''
+    const valeurs = store.custom[proposition.field] || []
+    if (!valeurs.includes(proposition.text)) {
+      store.custom[proposition.field] = [...valeurs, proposition.text]
+    }
   } else {
     store.query = ''
     const cible = proposition.kind === 'author' ? store.author : store.keywords
@@ -220,7 +251,7 @@ defineExpose({ propositions, choisir, surTouche })
     <li
       v-for="(proposition, index) in propositions"
       :id="identifiantOption(index)"
-      :key="`${proposition.kind}-${proposition.text}`"
+      :key="`${proposition.kind}-${proposition.field || ''}-${proposition.text}`"
       class="ds-suggestions__option"
       :class="{ 'ds-suggestions__option--actif': index === actif }"
       role="option"
@@ -231,7 +262,7 @@ defineExpose({ propositions, choisir, surTouche })
     >
       <span class="ds-suggestions__icone" :class="ICONES[proposition.kind]" aria-hidden="true" />
       <span class="ds-suggestions__texte">{{ proposition.text }}</span>
-      <span class="fr-hint-text ds-suggestions__nature">{{ LIBELLES[proposition.kind] }}</span>
+      <span class="fr-hint-text ds-suggestions__nature">{{ nature(proposition) }}</span>
     </li>
   </ul>
 </template>

@@ -23,13 +23,26 @@ export type RechercheRecente = {
  * Nature d'une suggestion — elle décide de l'icône et du libellé de
  * section, et distingue « ce que j'ai déjà cherché » de « ce qui existe
  * dans le corpus », qui ne se valent pas.
+ *
+ * `custom` couvre TOUTES les facettes personnalisées des sources SQL
+ * (« Bureau », « Fonction »…) plutôt qu'une valeur par facette : leur
+ * liste est configurée, pas connue à la compilation. C'est `field` qui
+ * dit de laquelle il s'agit.
  */
-export type NatureSuggestion = 'history' | 'author' | 'keyword'
+export type NatureSuggestion = 'history' | 'author' | 'keyword' | 'custom'
 
 export type Suggestion = {
   text: string
   kind: NatureSuggestion
   count?: number
+  /**
+   * Champ ES de la facette — présent pour `custom` seulement, et
+   * indispensable : sans lui, l'interface saurait qu'il faut cocher une
+   * facette mais pas laquelle.
+   */
+  field?: string
+  /** Libellé de cette facette (« Bureau »), tel que l'API le connaît. */
+  label?: string
 }
 
 export function listerRecherchesRecentes(limite = 10): Promise<{ searches: RechercheRecente[] }> {
