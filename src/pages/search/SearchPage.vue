@@ -293,7 +293,10 @@ onMounted(() => {
         size="sm"
         secondary
         label="Réinitialiser la recherche"
+        icon="fr-icon-refresh-line"
+        icon-only
         title="Réinitialiser la recherche — requête, filtres et tri (n)"
+        aria-label="Réinitialiser la recherche — requête, filtres et tri"
         aria-keyshortcuts="n"
         @click="store.resetSearch()"
       />
