@@ -122,6 +122,15 @@ onMounted(async () => {
       sont le meilleur endroit où trouver quoi déclarer.
     </p>
     <p class="fr-hint-text">
+      Une règle <strong>ajoute</strong> des résultats, elle n'en retire jamais&nbsp;: si vous
+      constatez l'inverse, c'est un défaut, pas votre règle. Ça a été le cas jusqu'à cette
+      version — déclarer <code>DRH, congés</code> faisait chuter les résultats de
+      <code>congés</code>, le moteur troquant en silence la tolérance aux fautes contre
+      l'élargissement. Le champ « Essayer une requête » ne pouvait pas le montrer&nbsp;: les
+      termes qu'il affichait étaient corrects, c'est la requête construite autour qui ne
+      l'était pas.
+    </p>
+    <p class="fr-hint-text">
       L'élargissement ne s'applique pas aux recherches entre guillemets, qui restent
       littérales. Sur une installation mise à jour depuis une version antérieure, la commande
       <code>./manage.sh migrer-synonymes</code> doit avoir été passée une fois&nbsp;: sans elle,

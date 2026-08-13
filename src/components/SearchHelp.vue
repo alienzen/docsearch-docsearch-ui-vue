@@ -110,9 +110,13 @@ const operators: [string, string, string][] = [
 
     <h2 id="aide-recherche-exacte" class="fr-h5">Recherche exacte et synonymes</h2>
     <p>
-      Par défaut, la recherche tolère les fautes de frappe et les variantes d'un mot&nbsp;:
-      chercher <code>délégation</code> ramène aussi <code>délégations</code>. Deux moyens de
-      la resserrer, qui répondent à deux questions différentes et se combinent&nbsp;:
+      Par défaut, la recherche tolère les variantes d'un mot&nbsp;: chercher
+      <code>délégation</code> ramène aussi <code>délégations</code>. Elle rattrape également
+      une lettre fausse, manquante ou en trop, mais seulement <strong>à partir de cinq
+      lettres</strong>&nbsp;: en dessous, une lettre d'écart fait déjà un autre mot
+      (<code>loi</code> et <code>roi</code>), et le rattrapage ramènerait plus de bruit que
+      de documents. Deux moyens de resserrer la recherche, qui répondent à deux questions
+      différentes et se combinent&nbsp;:
     </p>
     <ul>
       <li>
