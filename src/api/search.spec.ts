@@ -111,6 +111,38 @@ describe('parseAdvancedQuery', () => {
     expect(remaining).toBe('"budget 2024"')
     expect(extracted.keywords).toEqual([])
   })
+
+  // ── Opérateur `exact:` ────────────────────────────────────────
+  //
+  // Il ne ressemble à aucun autre : il ne remplit pas une facette, il
+  // bascule un mode ET laisse son argument dans le texte libre. C'est ce
+  // qui lui permet d'être le strict équivalent de la case à cocher.
+
+  it('bascule le mode exact et garde le terme dans le texte libre', () => {
+    const { remaining, extracted } = parseAdvancedQuery('exact:congres')
+    expect(extracted.exact).toBe(true)
+    expect(remaining).toBe('congres')
+  })
+
+  it("repose les guillemets quand la valeur de exact: porte une espace", () => {
+    // Sans eux, `exact:"délégation de service"` deviendrait trois mots
+    // indépendants : l'adjacence demandée par l'utilisateur en les
+    // écrivant entre guillemets serait perdue au passage.
+    const { remaining, extracted } = parseAdvancedQuery('exact:"délégation de service"')
+    expect(extracted.exact).toBe(true)
+    expect(remaining).toBe('"délégation de service"')
+  })
+
+  it('cohabite avec les autres opérateurs et le texte libre', () => {
+    const { remaining, extracted } = parseAdvancedQuery('exact:congres type:pdf rapport')
+    expect(extracted.exact).toBe(true)
+    expect(extracted.ext).toEqual(['.pdf'])
+    expect(remaining).toBe('congres rapport')
+  })
+
+  it('laisse le mode exact à faux quand rien ne le demande', () => {
+    expect(parseAdvancedQuery('rapport annuel').extracted.exact).toBe(false)
+  })
 })
 
 describe('buildSearchCriteria', () => {
@@ -140,6 +172,14 @@ describe('buildSearchCriteria', () => {
   it("n'ajoute search_in que s'il est précisé", () => {
     expect('search_in' in buildSearchCriteria('a', filters)).toBe(false)
     expect(buildSearchCriteria('a', { ...filters, searchIn: 'title' }).search_in).toBe('title')
+  })
+
+  it("n'ajoute exact que lorsqu'il est vrai", () => {
+    // Même règle que search_in : `false` est la valeur par défaut côté
+    // API, une recherche ordinaire n'a pas à la transporter.
+    expect('exact' in buildSearchCriteria('a', filters)).toBe(false)
+    expect('exact' in buildSearchCriteria('a', { ...filters, exact: false })).toBe(false)
+    expect(buildSearchCriteria('a', { ...filters, exact: true }).exact).toBe(true)
   })
 })
 

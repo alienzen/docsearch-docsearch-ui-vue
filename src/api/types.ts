@@ -129,6 +129,15 @@ export type SearchCriteria = {
   date_from: string | null
   date_to: string | null
   search_in?: SearchIn
+  /**
+   * Recherche exacte : les mots sont cherchés tels qu'écrits, sans
+   * racinisation, sans synonymes et sans tolérance aux fautes — mais aux
+   * accents et à la casse près (« Congrès » trouve « CONGRES »).
+   *
+   * Indépendant des guillemets, qui disent « ces mots dans cet ordre » :
+   * les deux se combinent. Omis quand il est faux, comme `search_in`.
+   */
+  exact?: boolean
 }
 
 export type ExportFormat = 'xlsx' | 'docx'

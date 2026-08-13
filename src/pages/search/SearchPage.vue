@@ -281,6 +281,7 @@ onMounted(() => {
 
   <Teleport v-if="headerSearch" :to="headerSearch">
     <div id="outils-entete" class="ds-header__controls">
+      <ExactSearchToggle />
       <SourcesSelect />
       <DsfrButton
         id="recherche-reinitialiser"

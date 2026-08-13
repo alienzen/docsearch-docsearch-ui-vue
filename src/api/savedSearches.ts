@@ -24,6 +24,8 @@ export type SavedSearch = {
   date_from?: string | null
   date_to?: string | null
   sort?: string
+  /** Absent des enregistrements créés avant la recherche exacte. */
+  exact?: boolean
   alert_enabled?: boolean
   alert_frequency?: string
 }

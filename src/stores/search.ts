@@ -60,6 +60,13 @@ export const useSearchStore = defineStore('search', () => {
   const dateTo = ref<string | null>(null)
   const sort = ref('_score')
   const page = ref(1)
+  /**
+   * Recherche exacte — case à cocher de la barre, ou opérateur `exact:`.
+   * Un critère de recherche à part entière (il change les résultats), pas
+   * une préférence d'affichage : il vit donc ici et dans le permalien, et
+   * non dans usePreferencesStore.
+   */
+  const exact = ref(false)
 
   // ── Résultats ───────────────────────────────────────────────
   const results = ref<SearchResult[]>([])
@@ -109,6 +116,7 @@ export const useSearchStore = defineStore('search', () => {
       custom: custom.value,
       dateFrom: dateFrom.value,
       dateTo: dateTo.value,
+      exact: exact.value,
     })
   }
 
@@ -130,6 +138,7 @@ export const useSearchStore = defineStore('search', () => {
       dateTo: dateTo.value,
       sort: sort.value,
       page: page.value,
+      exact: exact.value,
     }
   }
 
@@ -151,6 +160,7 @@ export const useSearchStore = defineStore('search', () => {
     dateTo.value = c.dateTo
     sort.value = c.sort
     page.value = c.page
+    exact.value = c.exact
   }
 
   /**
@@ -240,13 +250,13 @@ export const useSearchStore = defineStore('search', () => {
       folder,
       source,
     }
-    for (const [dim, values] of Object.entries(extracted) as [
-      FixedDimension | 'custom',
-      string[] | Record<string, string[]>,
-    ][]) {
-      if (dim === 'custom') continue
+    // Parcours des DIMENSIONS et non des clés d'`extracted` : ce dernier
+    // porte aussi des entrées qui ne sont pas des listes de valeurs
+    // (`custom`, `exact`), et les énumérer toutes obligeait à les écarter
+    // une à une derrière un `as` qui masquait justement l'erreur de type.
+    for (const dim of Object.keys(dimensions) as FixedDimension[]) {
       const target = dimensions[dim]
-      for (const value of values as string[]) {
+      for (const value of extracted[dim]) {
         if (!target.value.includes(value)) target.value = [...target.value, value]
       }
     }
@@ -254,6 +264,14 @@ export const useSearchStore = defineStore('search', () => {
       const current = custom.value[field] || []
       custom.value[field] = [...current, ...values.filter((v) => !current.includes(v))]
     }
+
+    // L'opérateur `exact:` COCHE la case, il ne la décoche jamais : comme
+    // les autres opérateurs, il ajoute au lieu de remplacer. Le décochage
+    // reste au seul geste qui l'exprime sans ambiguïté — la case
+    // elle-même. Sans ça, une recherche exacte lancée une première fois
+    // à l'opérateur redeviendrait ordinaire au deuxième Entrée, une fois
+    // l'opérateur consommé.
+    if (extracted.exact) exact.value = true
 
     query.value = remaining
 
@@ -381,6 +399,7 @@ export const useSearchStore = defineStore('search', () => {
     dateTo.value = null
     sort.value = '_score'
     page.value = 1
+    exact.value = false
     results.value = []
     facets.value = null
     total.value = 0
@@ -409,6 +428,7 @@ export const useSearchStore = defineStore('search', () => {
       date_from: dateFrom.value,
       date_to: dateTo.value,
       sort: sort.value,
+      exact: exact.value,
     }
   }
 
@@ -429,6 +449,9 @@ export const useSearchStore = defineStore('search', () => {
     dateTo.value = saved.date_to || null
     sort.value = saved.sort || '_score'
     page.value = 1
+    // Absent des enregistrements antérieurs à la recherche exacte : ils
+    // redeviennent des recherches ordinaires, ce qu'ils étaient.
+    exact.value = saved.exact ?? false
     // Restaurer une recherche enregistrée est une navigation : Précédent
     // doit ramener à ce qui était affiché avant.
     return doSearch('empiler')
@@ -453,6 +476,7 @@ export const useSearchStore = defineStore('search', () => {
     dateTo,
     sort,
     page,
+    exact,
     results,
     facets,
     total,

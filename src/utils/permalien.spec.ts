@@ -24,6 +24,7 @@ const VIDE: CriteresPermalien = {
   dateTo: null,
   sort: '_score',
   page: 1,
+  exact: false,
 }
 
 function criteres(partiel: Partial<CriteresPermalien>): CriteresPermalien {
@@ -44,6 +45,7 @@ describe('aller-retour', () => {
       dateTo: '2025-12-31',
       sort: 'date_modified',
       page: 3,
+      exact: false,
     })
 
     expect(depuisParametres(versParametres(attendus))).toEqual(attendus)
@@ -66,6 +68,17 @@ describe('aller-retour', () => {
     const b = versParametres(criteres({ query: 'x', custom: { agence: ['Nord'], bureau: ['Paris'] } }))
     expect(a).toBe(b)
   })
+
+  // Le mode exact change les résultats : deux liens qui n'en diffèrent
+  // que par lui ne ramènent pas les mêmes documents. Le perdre en route
+  // ferait donc voir au destinataire une recherche voisine mais
+  // différente de celle qu'on croyait lui envoyer — exactement le
+  // scénario que ce fichier surveille.
+  it('transporte le mode exact', () => {
+    const exacte = criteres({ query: 'congres', exact: true })
+    expect(versParametres(exacte)).toBe('q=congres&exact=1')
+    expect(depuisParametres(versParametres(exacte))).toEqual(exacte)
+  })
 })
 
 describe('URL sans recherche', () => {
@@ -81,6 +94,13 @@ describe('URL sans recherche', () => {
   it('ne prend pas un tri ou une page pour une recherche', () => {
     expect(depuisParametres('?tri=filename&page=4')).toBeNull()
   })
+
+  // Le mode exact dit COMMENT chercher, pas QUOI : seul, il ne décrit
+  // aucune recherche et ne doit donc pas en lancer une vide au
+  // chargement de la page.
+  it('ne prend pas le mode exact seul pour une recherche', () => {
+    expect(depuisParametres('?exact=1')).toBeNull()
+  })
 })
 
 describe('robustesse', () => {
@@ -93,6 +113,16 @@ describe('robustesse', () => {
 
   it('retombe sur la pertinence pour un tri inconnu', () => {
     expect(depuisParametres('?q=x&tri=rm-rf')?.sort).toBe('_score')
+  })
+
+  // Dans le doute, la recherche ORDINAIRE : une valeur qu'on ne comprend
+  // pas ne doit pas restreindre silencieusement les résultats d'un lien
+  // partagé — le destinataire n'aurait aucun moyen de s'en apercevoir.
+  it('n’active le mode exact que sur la valeur attendue', () => {
+    expect(depuisParametres('?q=x&exact=1')?.exact).toBe(true)
+    expect(depuisParametres('?q=x&exact=0')?.exact).toBe(false)
+    expect(depuisParametres('?q=x&exact=oui')?.exact).toBe(false)
+    expect(depuisParametres('?q=x&exact=')?.exact).toBe(false)
   })
 
   it('ramène une page absurde à la première', () => {

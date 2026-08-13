@@ -51,6 +51,7 @@ declare module 'vue' {
     DsfrSkipLinks: typeof import('@gouvminint/vue-dsfr')['DsfrSkipLinks']
     EmptyResultsHelp: typeof import('./components/EmptyResultsHelp.vue')['default']
     EmptySearchState: typeof import('./components/EmptySearchState.vue')['default']
+    ExactSearchToggle: typeof import('./components/ExactSearchToggle.vue')['default']
     FacetGroup: typeof import('./components/FacetGroup.vue')['default']
     FacetSection: typeof import('./components/FacetSection.vue')['default']
     FacetsResizer: typeof import('./components/FacetsResizer.vue')['default']

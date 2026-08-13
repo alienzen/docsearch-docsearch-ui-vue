@@ -69,6 +69,45 @@ describe('useSearchStore', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
+  // ── Recherche exacte ──────────────────────────────────────────
+  //
+  // Deux chemins vers un seul critère : la case à cocher et l'opérateur.
+  // Ce qui compte est qu'ils aboutissent au même corps de requête.
+
+  it('coche le mode exact depuis l’opérateur et garde le terme cherché', async () => {
+    const store = useSearchStore()
+    store.query = 'exact:"délégation de service"'
+    await store.doSearch()
+
+    expect(store.exact).toBe(true)
+    // Contrairement aux autres opérateurs, l'argument RESTE dans la barre :
+    // c'est ce qu'on cherche, pas un filtre.
+    expect(store.query).toBe('"délégation de service"')
+    expect(lastSearchBody(fetchMock).exact).toBe(true)
+  })
+
+  it('ne décoche jamais le mode exact au deuxième Entrée', async () => {
+    // L'opérateur est consommé dès la première recherche. Si son absence
+    // valait « décoché », une recherche lancée à l'opérateur redeviendrait
+    // ordinaire au coup suivant, sans que rien ne l'annonce.
+    const store = useSearchStore()
+    store.query = 'exact:congres'
+    await store.doSearch()
+    await store.doSearch()
+
+    expect(store.exact).toBe(true)
+    expect(lastSearchBody(fetchMock).exact).toBe(true)
+  })
+
+  it('n’envoie pas exact pour une recherche ordinaire', async () => {
+    const store = useSearchStore()
+    store.query = 'rapport'
+    await store.doSearch()
+
+    expect(store.exact).toBe(false)
+    expect('exact' in lastSearchBody(fetchMock)).toBe(false)
+  })
+
   it('cherche avec un filtre seul, sans texte libre', async () => {
     const store = useSearchStore()
     store.query = 'type:pdf'
@@ -319,6 +358,7 @@ describe('useSearchStore', () => {
         dateTo: null,
         sort: '_score',
         page: 1,
+        exact: false,
       })
       store.query = 'autre chose'
       await store.doSearch('aucun')
@@ -340,6 +380,7 @@ describe('useSearchStore', () => {
         dateTo: null,
         sort: 'date_modified',
         page: 4,
+        exact: false,
       })
 
       expect(fetchMock).not.toHaveBeenCalled()

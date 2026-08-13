@@ -48,6 +48,21 @@ export const ADVANCED_QUERY_OPERATORS: Record<string, FixedDimension> = {
 // (ex: "num_tel") que les opérateurs fixes d'origine.
 const ADVANCED_QUERY_RE = /\b([a-zA-Z0-9_-]+):(?:"([^"]*)"|(\S+))/g
 
+/**
+ * Opérateurs qui n'extraient AUCUNE valeur : ils basculent un mode et
+ * laissent leur argument dans le texte libre.
+ *
+ * `exact:"délégation de service"` équivaut donc exactement à cocher la
+ * case « Recherche exacte » et à taper `"délégation de service"` dans la
+ * barre — même état, mêmes résultats, même permalien. C'est ce qui
+ * permet à la case et à l'opérateur d'être deux chemins vers une seule
+ * et même chose, plutôt que deux fonctionnalités à tenir synchronisées.
+ */
+const ADVANCED_QUERY_MODES: Record<string, 'exact'> = {
+  exact: 'exact',
+  exacte: 'exact',
+}
+
 export type ExtractedFilters = {
   author: string[]
   keywords: string[]
@@ -55,6 +70,8 @@ export type ExtractedFilters = {
   source: string[]
   folder: string[]
   custom: Record<string, string[]>
+  /** Mode exact demandé par l'opérateur `exact:` (jamais désactivé par lui). */
+  exact: boolean
 }
 
 export type ParsedQuery = {
@@ -81,16 +98,28 @@ export function parseAdvancedQuery(
     source: [],
     folder: [],
     custom: {},
+    exact: false,
   }
   const remaining = text
     .replace(ADVANCED_QUERY_RE, (match, key: string, quoted: string, bare: string) => {
       const lowerKey = key.toLowerCase()
       const dim = ADVANCED_QUERY_OPERATORS[lowerKey]
-      const customField = dim ? null : customFacetOperators[lowerKey]
-      if (!dim && !customField) return match
+      const mode = dim ? null : ADVANCED_QUERY_MODES[lowerKey]
+      const customField = dim || mode ? null : customFacetOperators[lowerKey]
+      if (!dim && !mode && !customField) return match
       let value = (quoted !== undefined ? quoted : bare).trim()
       if (!value) return match
       if (dim === 'ext') value = (value.startsWith('.') ? value : '.' + value).toLowerCase()
+      if (mode) {
+        extracted.exact = true
+        // Seul opérateur dont l'argument RESTE dans le texte libre : ce
+        // qu'il désigne est ce qu'on cherche, pas un filtre sur une
+        // facette. Les guillemets sont reposés quand la valeur porte une
+        // espace, sans quoi `exact:"délégation de service"` deviendrait
+        // trois mots indépendants et perdrait l'adjacence que
+        // l'utilisateur avait demandée en les écrivant.
+        return /\s/.test(value) ? `"${value}"` : value
+      }
       if (dim) {
         extracted[dim].push(value)
       } else {
@@ -122,6 +151,7 @@ export function buildSearchCriteria(
     dateFrom: string | null
     dateTo: string | null
     searchIn?: SearchIn
+    exact?: boolean
   },
 ): SearchCriteria {
   return {
@@ -138,6 +168,10 @@ export function buildSearchCriteria(
     date_from: filters.dateFrom,
     date_to: filters.dateTo,
     ...(filters.searchIn ? { search_in: filters.searchIn } : {}),
+    // Omis quand il est faux, comme search_in : c'est la valeur par
+    // défaut côté API, et une recherche ordinaire n'a pas à traîner un
+    // `exact: false` dans chaque corps de requête.
+    ...(filters.exact ? { exact: true } : {}),
   }
 }
 

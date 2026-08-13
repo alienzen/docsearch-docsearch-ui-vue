@@ -820,6 +820,22 @@ body.ds-resizing {
   margin-bottom: 0;
 }
 
+/* Case « Recherche exacte » de la bande d'outils d'en-tête
+   (ExactSearchToggle.vue). Le groupe de cases du DSFR est prévu pour un
+   formulaire vertical : il porte une marge basse et laisse son libellé
+   passer à la ligne, ce qui déforme la bande d'outils, alignée sur une
+   seule ligne. On neutralise donc la marge et on fige le libellé sur une
+   ligne — sans toucher au reste du composant DSFR, dont la case garde sa
+   taille et son style de focus. */
+.ds-exact {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+}
+.ds-exact .fr-label {
+  white-space: nowrap;
+  margin-bottom: 0;
+}
+
 /* Panneau déroulant de présélection des sources — <details> natif : la
    fermeture au clavier est gérée par le navigateur, là où docsearch-ui
    devait l'écrire à la main (voir init.js). */

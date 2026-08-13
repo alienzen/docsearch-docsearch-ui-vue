@@ -30,6 +30,11 @@ const operators: [string, string, string][] = [
   ['type:', 'type:pdf', 'Facette Type de fichier'],
   ['source:', 'source:documents', 'Facette Source'],
   ['dossier:', 'dossier:Finance', 'Facette Dossier'],
+  // Le seul qui ne remplit pas une facette : il coche la case
+  // « Recherche exacte » et laisse son argument dans la barre (voir
+  // ADVANCED_QUERY_MODES dans api/search.ts). D'où la colonne
+  // « Équivaut à » qui désigne une case et non une facette.
+  ['exact:', 'exact:"délégation de service"', 'Case Recherche exacte'],
 ]
 </script>
 
@@ -62,6 +67,12 @@ const operators: [string, string, string][] = [
       (comme un clic sur la facette correspondante) — la valeur doit donc correspondre
       exactement à ce qu'affiche la facette (pas de recherche approximative sur ces
       champs-là).
+    </p>
+    <p>
+      <code>exact:</code> fait exception&nbsp;: il ne pose pas de filtre mais coche la case
+      <strong>« Recherche exacte »</strong>, et son argument <em>reste</em> dans la barre —
+      c'est ce que vous cherchez, pas un critère sur une facette. Voir
+      <a class="fr-link" href="#aide-recherche-exacte">Recherche exacte et synonymes</a>.
     </p>
     <div class="fr-table fr-table--bordered ds-stats__table">
       <table id="aide-operateurs-tableau">
@@ -99,17 +110,40 @@ const operators: [string, string, string][] = [
 
     <h2 id="aide-recherche-exacte" class="fr-h5">Recherche exacte et synonymes</h2>
     <p>
-      Par défaut, la recherche tolère les fautes de frappe et les variantes d'un mot.
-      Entourer la requête de guillemets (<code>"délégation de service"</code>) force au
-      contraire une correspondance <strong>exacte</strong>&nbsp;: mêmes mots, dans le même
-      ordre, sans tolérance.
+      Par défaut, la recherche tolère les fautes de frappe et les variantes d'un mot&nbsp;:
+      chercher <code>délégation</code> ramène aussi <code>délégations</code>. Deux moyens de
+      la resserrer, qui répondent à deux questions différentes et se combinent&nbsp;:
+    </p>
+    <ul>
+      <li>
+        <strong>Les guillemets</strong> (<code>"délégation de service"</code>) disent
+        <em>ces mots, dans cet ordre</em>. Ils portent sur l'enchaînement des mots.
+      </li>
+      <li>
+        <strong>La case « Recherche exacte »</strong>, à côté de la barre de recherche, dit
+        <em>ces mots, tels que je les écris</em>&nbsp;: ni variantes, ni synonymes, ni
+        rattrapage des fautes de frappe. Elle porte sur chaque mot pris isolément.
+      </li>
+    </ul>
+    <p>
+      La case à cocher <strong>ignore les accents et les majuscules</strong>&nbsp;:
+      <code>Congrès</code>, <code>congres</code> et <code>CONGRES</code> y sont une seule et
+      même recherche. Il s'agit d'être fidèle aux <em>mots</em>, pas à la façon dont ils ont
+      été saisis — un document scanné ou importé depuis une base ancienne perd souvent ses
+      accents, et il n'y a aucune raison de le rendre introuvable pour autant.
+    </p>
+    <p>
+      Vous pouvez aussi l'activer depuis la barre elle-même, avec l'opérateur
+      <code>exact:</code>&nbsp;— <code>exact:"délégation de service"</code> coche la case et
+      cherche cette expression. Les deux gestes produisent exactement la même recherche.
     </p>
     <p>
       Votre administration peut par ailleurs déclarer des <strong>synonymes</strong> propres
       à votre organisation — un sigle et son développé, l'ancien et le nouveau nom d'un
       service. Chercher l'un ramène alors les documents qui portent l'autre, sans que vous
-      ayez rien à faire. ⚠️ Cet élargissement ne s'applique <strong>pas</strong> à une
-      recherche entre guillemets&nbsp;: « exact » veut dire exact.
+      ayez rien à faire. ⚠️ Cet élargissement ne s'applique <strong>ni</strong> à une
+      recherche entre guillemets, <strong>ni</strong> à une recherche exacte&nbsp;: « exact »
+      veut dire exact.
     </p>
 
     <h2 id="aide-partager" class="fr-h5">Partager et retrouver une recherche</h2>

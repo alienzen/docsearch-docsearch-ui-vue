@@ -51,6 +51,7 @@ export type CriteresPermalien = {
   dateTo: string | null
   sort: string
   page: number
+  exact: boolean
 }
 
 /**
@@ -148,6 +149,10 @@ export function versParametres(criteres: CriteresPermalien): string {
   // (`?q=budget` plutôt que `?q=budget&tri=_score&page=1`).
   if (criteres.sort && criteres.sort !== TRI_DEFAUT) params.set('tri', criteres.sort)
   if (criteres.page > 1) params.set('page', String(criteres.page))
+  // Le mode exact fait partie de la recherche, pas de l'affichage : deux
+  // liens qui ne diffèrent que par lui ne ramènent pas les mêmes
+  // documents, donc il doit être partagé avec le lien.
+  if (criteres.exact) params.set('exact', '1')
 
   return params.toString()
 }
@@ -193,6 +198,11 @@ export function depuisParametres(chaine: string): CriteresPermalien | null {
     // trier sur un champ qu'il n'a pas : on retombe sur la pertinence.
     sort: tri && TRIS_CONNUS.has(tri) ? tri : TRI_DEFAUT,
     page: Number.isFinite(page) && page > 1 ? Math.min(page, MAX_PAGE) : 1,
+    // Seul `1` active — toute autre valeur (`exact=0`, `exact=oui`,
+    // `exact=` d'une URL tronquée) retombe sur la recherche ordinaire.
+    // C'est le sens du doute : on ne restreint pas silencieusement une
+    // recherche partagée sur la foi d'un paramètre qu'on ne comprend pas.
+    exact: params.get('exact') === '1',
   }
 
   return porteUneRecherche(criteres) ? criteres : null
@@ -202,6 +212,9 @@ export function depuisParametres(chaine: string): CriteresPermalien | null {
  * Vrai si ces critères décrivent quelque chose à chercher. Volontairement
  * aligné sur hasActiveCriteria() (api/search.ts) : le tri et la page
  * n'en font pas partie, `?tri=filename` seul ne décrit aucune recherche.
+ *
+ * Le mode exact non plus — il dit COMMENT chercher, pas QUOI : `?exact=1`
+ * seul ne doit pas lancer de recherche vide au chargement de la page.
  */
 function porteUneRecherche(c: CriteresPermalien): boolean {
   return !!(

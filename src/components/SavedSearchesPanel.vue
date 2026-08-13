@@ -57,6 +57,11 @@ function criteriaSummary(saved: SavedSearch): string[] {
   if (saved.search_in && saved.search_in !== 'all') {
     tags.push(`Champ : ${SEARCH_IN_LABELS[saved.search_in] || saved.search_in}`)
   }
+  // Signalé dans le résumé parce qu'il change les résultats : deux
+  // enregistrements de même requête et de mêmes filtres, l'un exact et
+  // l'autre non, seraient sinon rigoureusement indiscernables dans la
+  // liste — y compris quand l'un porte une alerte et l'autre pas.
+  if (saved.exact) tags.push('Recherche exacte')
   const dimensions: [string, string | string[] | null | undefined][] = [
     ['Auteur', saved.author],
     ['Mots-clés', saved.keywords],
