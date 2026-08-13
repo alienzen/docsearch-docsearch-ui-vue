@@ -43,8 +43,8 @@ const TECHNIQUES = new Set([
   // « Dossier » — une donnée de service, sans intérêt à l'écran.
   'folder_top',
   // Drapeau posé par l'API sur un document épinglé. Le fait est déjà dit
-  // à sa place, sous la mention « Proposé par votre administration » ;
-  // ici, il s'affichait en clair — « Pinned : true » au milieu des
+  // à sa place — mention en tête de bloc et badge « Mis en avant » sur la
+  // carte ; ici, il s'affichait en clair, « Pinned : true » au milieu des
   // métadonnées du document.
   'pinned',
 ])

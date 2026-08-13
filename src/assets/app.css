@@ -624,6 +624,16 @@ body.ds-resizing {
   border-left: 4px solid var(--ds-result-accent);
 }
 
+/* Document désigné par l'administration, pas classé par le moteur. La
+   distinction ne repose PAS sur ce liseré seul : la carte porte aussi le
+   badge « Mis en avant », qui reste lisible sans les couleurs et se lit
+   à voix haute. Le liseré ne fait que rendre le groupe évident au
+   premier coup d'œil. Une source personnalisée garde le sien : sa règle
+   est plus spécifique (sélecteur d'attribut). */
+.ds-result--epingle {
+  border-left: 4px solid var(--background-action-high-blue-france);
+}
+
 /* Les boutons de copie ne se laissent pas comprimer : c'est le chemin,
    tronqué par l'ellipse ci-dessus, qui absorbe la contrainte. */
 .ds-copy {

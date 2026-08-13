@@ -201,12 +201,17 @@ const operators: [string, string, string][] = [
       </p>
     </template>
 
-    <h2 id="aide-resultats-proposes" class="fr-h5">« Proposé par votre administration »</h2>
+    <!-- L'ancre garde son nom : elle peut avoir été copiée dans un lien
+         ou un signalement, et un titre qui change ne casse rien, un id
+         qui change casse le lien. -->
+    <h2 id="aide-resultats-proposes" class="fr-h5">« Résultats mis en avant »</h2>
     <p>
       Sur certaines recherches courantes, un ou plusieurs documents apparaissent en tête,
-      sous cette mention&nbsp;: votre administration les a désignés comme la bonne réponse à
-      cette question. Ils restent soumis à vos droits d'accès comme n'importe quel autre
-      résultat.
+      sous la mention « Résultats mis en avant pour votre recherche »&nbsp;: votre
+      administration les a désignés comme la bonne réponse à cette question. Dans la liste,
+      chacun porte le badge « Mis en avant » et un liseré bleu, pour qu'on ne les confonde
+      pas avec les résultats classés par le moteur. Ils restent soumis à vos droits d'accès
+      comme n'importe quel autre résultat.
     </p>
 
     <h2 id="aide-contact" class="fr-h5">Besoin d'aide&nbsp;?</h2>

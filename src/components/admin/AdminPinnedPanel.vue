@@ -88,9 +88,10 @@ function modifier(regle: ReglePinned) {
 
     <p class="fr-hint-text">
       Les documents épinglés s'affichent en tête de la première page, sous la mention
-      « Proposé par votre administration ». Ils restent soumis aux droits de chaque
-      utilisateur : épingler met en avant, cela n'autorise pas. La requête est comparée
-      sans tenir compte de la casse ni des accents.
+      « Résultats mis en avant pour votre recherche », et chaque carte porte le badge
+      « Mis en avant ». Ils restent soumis aux droits de chaque utilisateur : épingler
+      met en avant, cela n'autorise pas. La requête est comparée sans tenir compte de
+      la casse ni des accents.
     </p>
 
     <div class="fr-mb-2w">

@@ -87,6 +87,7 @@ const selectable = computed(
        même nom sur `.result-card` dans docsearch-ui. -->
   <div
     class="fr-card fr-card--no-arrow ds-result"
+    :class="{ 'ds-result--epingle': result.pinned }"
     data-testid="carte-resultat"
     :data-id="result.id"
     :data-source="result.source || undefined"
@@ -116,6 +117,17 @@ const selectable = computed(
         <span class="fr-badge fr-badge--sm">{{ extLabel(result.extension) }}</span>
         <span v-if="custom?.badge" class="fr-badge fr-badge--sm ds-result__custom-badge">
           {{ custom.badge }}
+        </span>
+        <!-- La mention en tête de bloc dit que CES documents-là sont mis
+             en avant ; elle ne suit pas la carte. Sur la carte même, ce
+             badge distingue un document désigné d'un résultat classé, y
+             compris en vue compacte, où le corps est replié. -->
+        <span
+          v-if="result.pinned"
+          class="fr-badge fr-badge--sm fr-badge--info"
+          data-testid="carte-resultat-epingle"
+        >
+          Mis en avant
         </span>
         <span class="ds-result__title">{{ title }}</span>
         <span v-if="scorePct !== null" class="fr-badge fr-badge--sm fr-badge--info">

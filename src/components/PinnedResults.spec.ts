@@ -48,8 +48,33 @@ describe('ResultsList — résultats épinglés', () => {
     const w = monter()
 
     expect(w.find('#resultats-epingles').exists()).toBe(true)
-    expect(w.find('#resultats-epingles').text()).toContain('Proposé par votre administration')
+    expect(w.find('#resultats-epingles').text()).toContain(
+      'Résultats mis en avant pour votre recherche',
+    )
     expect(w.findAll('[data-testid="resultat-epingle"]')).toHaveLength(1)
+  })
+
+  // La mention en tête de bloc ne suit pas la carte : elle se perd dès
+  // qu'on fait défiler, et rien ne dirait alors qu'on regarde un
+  // document désigné plutôt qu'un résultat classé. Le badge et le liseré
+  // voyagent avec la carte — et le badge dit en toutes lettres ce que le
+  // liseré ne dit qu'en couleur.
+  it('marque chaque carte épinglée, et ne marque pas les autres', () => {
+    const store = useSearchStore()
+    store.hasSearched = true
+    store.total = 2
+    store.results = [resultat('naturel')]
+    store.pinnedResults = [resultat('epingle', true)]
+
+    const w = monter()
+
+    const epinglee = w.find('[data-testid="resultat-epingle"]')
+    expect(epinglee.find('[data-testid="carte-resultat-epingle"]').text()).toBe('Mis en avant')
+    expect(epinglee.classes()).toContain('ds-result--epingle')
+
+    const naturelle = w.find('[data-testid="carte-resultat"]')
+    expect(naturelle.find('[data-testid="carte-resultat-epingle"]').exists()).toBe(false)
+    expect(naturelle.classes()).not.toContain('ds-result--epingle')
   })
 
   it('n’affiche aucune mention quand rien n’est épinglé', () => {

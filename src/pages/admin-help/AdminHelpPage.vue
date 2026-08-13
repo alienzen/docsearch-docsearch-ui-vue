@@ -131,9 +131,10 @@ onMounted(async () => {
     <h2 id="aide-admin-epingles" class="fr-h5">Résultats épinglés</h2>
     <p>
       Associe une requête à un ou plusieurs documents, affichés en tête de la première page
-      sous la mention « Proposé par votre administration ». Utile sur les questions que tout
-      le monde pose&nbsp;: « congés », « note de frais ». La requête est comparée sans tenir
-      compte de la casse ni des accents.
+      sous la mention « Résultats mis en avant pour votre recherche », chaque carte portant
+      en plus le badge « Mis en avant ». Utile sur les questions que tout le monde
+      pose&nbsp;: « congés », « note de frais ». La requête est comparée sans tenir compte
+      de la casse ni des accents.
     </p>
     <p class="fr-hint-text">
       ⚠️ Épingler <strong>met en avant, cela n'autorise pas</strong>&nbsp;: le document reste

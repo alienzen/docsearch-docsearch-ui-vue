@@ -90,7 +90,7 @@ const paginationPages = computed(() =>
            les droits de l'utilisateur, comme tous les autres. -->
       <section v-if="store.pinnedResults.length" id="resultats-epingles" class="fr-mb-2w">
         <p class="fr-badge fr-badge--sm fr-badge--info fr-mb-1w">
-          Proposé par votre administration
+          Résultats mis en avant pour votre recherche
         </p>
         <ResultCard
           v-for="result in store.pinnedResults"
