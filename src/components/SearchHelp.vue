@@ -13,6 +13,16 @@
  */
 import { SHORTCUTS } from '@/constants'
 import { versionComplete } from '@/version'
+import { useUiConfigStore } from '@/stores/uiConfig'
+
+/**
+ * Plusieurs sections ci-dessous décrivent des fonctionnalités que
+ * l'administration peut suspendre. Elles ne s'affichent que si elle les
+ * a activées : une aide qui décrit une commande absente de l'écran est
+ * pire que pas d'aide — c'est déjà la règle appliquée aux raccourcis
+ * clavier (voir SHORTCUTS dans constants.ts).
+ */
+const uiConfig = useUiConfigStore()
 
 const operators: [string, string, string][] = [
   ['auteur:', 'auteur:"Jean Dupont"', 'Facette Auteur'],
@@ -85,6 +95,84 @@ const operators: [string, string, string][] = [
       Sur cette installation par exemple&nbsp;: <code>bureau:Paris</code> ou
       <code>fonction:"Chef de service"</code>. Mêmes règles que ci-dessus (correspondance
       exacte, guillemets si espaces).
+    </p>
+
+    <h2 id="aide-recherche-exacte" class="fr-h5">Recherche exacte et synonymes</h2>
+    <p>
+      Par défaut, la recherche tolère les fautes de frappe et les variantes d'un mot.
+      Entourer la requête de guillemets (<code>"délégation de service"</code>) force au
+      contraire une correspondance <strong>exacte</strong>&nbsp;: mêmes mots, dans le même
+      ordre, sans tolérance.
+    </p>
+    <p>
+      Votre administration peut par ailleurs déclarer des <strong>synonymes</strong> propres
+      à votre organisation — un sigle et son développé, l'ancien et le nouveau nom d'un
+      service. Chercher l'un ramène alors les documents qui portent l'autre, sans que vous
+      ayez rien à faire. ⚠️ Cet élargissement ne s'applique <strong>pas</strong> à une
+      recherche entre guillemets&nbsp;: « exact » veut dire exact.
+    </p>
+
+    <h2 id="aide-partager" class="fr-h5">Partager et retrouver une recherche</h2>
+    <p>
+      L'adresse de la page suit votre recherche&nbsp;: filtres, période, tri et numéro de
+      page y figurent. Vous pouvez donc la mettre en signet, la recharger (F5) sans rien
+      perdre, revenir à la recherche précédente avec le bouton Précédent du navigateur, ou
+      l'envoyer à un collègue — le bouton <strong>« Copier le lien »</strong>, au-dessus des
+      résultats, la copie telle quelle.
+    </p>
+    <p class="fr-hint-text">
+      ⚠️ Un lien partage la <strong>recherche</strong>, pas les droits d'accès&nbsp;: votre
+      correspondant la rejoue avec les siens et peut donc voir moins de résultats que vous —
+      ou davantage.
+    </p>
+
+    <template v-if="uiConfig.config.autocomplete_enabled || uiConfig.config.search_history_enabled || uiConfig.config.recent_documents_enabled">
+      <h2 id="aide-mon-activite" class="fr-h5">Retrouver ce que vous avez déjà fait</h2>
+      <ul>
+        <li v-if="uiConfig.config.autocomplete_enabled">
+          <strong>Suggestions de saisie</strong>&nbsp;: dès deux caractères, une liste
+          s'ouvre sous la barre de recherche — d'abord vos propres recherches passées, puis
+          les auteurs et mots-clés présents dans les documents auxquels vous avez accès.
+          Se parcourt aux flèches ↑&nbsp;↓, se valide à Entrée, se ferme à Échap. Retenir un
+          auteur ou un mot-clé pose la puce de filtre correspondante.
+        </li>
+        <li v-if="uiConfig.config.search_history_enabled">
+          <strong>« Mes recherches récentes »</strong> (barre de navigation)&nbsp;: vos
+          dernières recherches, dédoublonnées, relançables d'un clic.
+        </li>
+        <li v-if="uiConfig.config.recent_documents_enabled">
+          <strong>« Vos derniers documents consultés »</strong>, sur l'écran d'accueil, tant
+          qu'aucune recherche n'est lancée.
+        </li>
+      </ul>
+      <p class="fr-hint-text">
+        Ces trois listes ne montrent que <strong>votre</strong> activité&nbsp;: personne
+        d'autre ne voit vos recherches, et vous ne voyez pas celles des autres.
+      </p>
+    </template>
+
+    <template v-if="uiConfig.config.collections_enabled">
+      <h2 id="aide-collections" class="fr-h5">Collections</h2>
+      <p>
+        Une collection regroupe des documents choisis, indépendamment d'une recherche —
+        « Dossier client X », « À lire ». Elle ne contient que des références&nbsp;: les
+        documents eux-mêmes ne sont ni copiés, ni déplacés.
+      </p>
+      <p v-if="uiConfig.config.collections_shared_enabled">
+        Vous pouvez partager une collection avec l'un de vos groupes. ⚠️ Partager donne la
+        <strong>référence</strong>, pas le droit de lecture&nbsp;: chacun n'y voit que les
+        documents auxquels il a accès, et l'écran indique le nombre de documents qui lui
+        restent inaccessibles. Seul le propriétaire modifie une collection&nbsp;; les autres
+        peuvent la <strong>dupliquer</strong> pour en obtenir leur propre version.
+      </p>
+    </template>
+
+    <h2 id="aide-resultats-proposes" class="fr-h5">« Proposé par votre administration »</h2>
+    <p>
+      Sur certaines recherches courantes, un ou plusieurs documents apparaissent en tête,
+      sous cette mention&nbsp;: votre administration les a désignés comme la bonne réponse à
+      cette question. Ils restent soumis à vos droits d'accès comme n'importe quel autre
+      résultat.
     </p>
 
     <h2 id="aide-contact" class="fr-h5">Besoin d'aide&nbsp;?</h2>

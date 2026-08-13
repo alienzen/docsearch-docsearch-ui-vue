@@ -102,6 +102,87 @@ onMounted(async () => {
       conserve les dernières valeurs connues et le signale plutôt que d'afficher une erreur.
     </p>
 
+    <h2 id="aide-admin-thesaurus" class="fr-h5">Thésaurus</h2>
+    <p>
+      Déclare les termes qui désignent la même chose pour vos agents mais pas pour le moteur —
+      un sigle et son développé, l'ancien et le nouveau nom d'un service. Une règle par ligne,
+      termes séparés par une virgule&nbsp;: <code>DRH, direction des ressources humaines</code>.
+      Tous les termes d'une règle se trouvent mutuellement.
+    </p>
+    <p>
+      L'effet est <strong>immédiat et sans réindexation</strong>&nbsp;: Elasticsearch recharge
+      seul ses analyseurs de recherche, et le panneau affiche le nombre de shards rechargés —
+      c'est la preuve que la règle est en vigueur.
+    </p>
+    <p class="fr-hint-text">
+      ⚠️ Une règle mal écrite ne produit <strong>aucune erreur</strong>, seulement une
+      recherche qui ne trouve rien de plus qu'avant. D'où le champ « Essayer une requête »&nbsp;:
+      il montre les termes que le moteur retient réellement, synonymes appliqués. À utiliser
+      systématiquement après un ajout. Les recherches sans résultat de la page Statistiques
+      sont le meilleur endroit où trouver quoi déclarer.
+    </p>
+    <p class="fr-hint-text">
+      L'élargissement ne s'applique pas aux recherches entre guillemets, qui restent
+      littérales. Sur une installation mise à jour depuis une version antérieure, la commande
+      <code>./manage.sh migrer-synonymes</code> doit avoir été passée une fois&nbsp;: sans elle,
+      les index existants n'ont pas l'analyseur et le thésaurus reste sans effet.
+    </p>
+
+    <h2 id="aide-admin-epingles" class="fr-h5">Résultats épinglés</h2>
+    <p>
+      Associe une requête à un ou plusieurs documents, affichés en tête de la première page
+      sous la mention « Proposé par votre administration ». Utile sur les questions que tout
+      le monde pose&nbsp;: « congés », « note de frais ». La requête est comparée sans tenir
+      compte de la casse ni des accents.
+    </p>
+    <p class="fr-hint-text">
+      ⚠️ Épingler <strong>met en avant, cela n'autorise pas</strong>&nbsp;: le document reste
+      filtré par les droits de chaque utilisateur, et celui qui n'y a pas accès ne le voit
+      pas. Un document supprimé de l'index disparaît de lui-même côté recherche&nbsp;; le
+      panneau le signale alors comme <strong>introuvable</strong>, pour que la règle soit
+      nettoyée — c'est le seul endroit où cela se voit.
+    </p>
+
+    <h2 id="aide-admin-doublons" class="fr-h5">Doublons</h2>
+    <p>
+      Compte les documents indexés en plusieurs exemplaires et chiffre la place qu'occupent
+      les copies, avec les chemins où aller regarder. Le classement se fait par place occupée
+      et non par nombre de copies&nbsp;: dix copies d'une note pèsent moins que deux copies
+      d'une vidéo.
+    </p>
+    <p class="fr-hint-text">
+      Le rapport est calculé une fois par jour — l'agrégation parcourt tout l'index, elle ne
+      doit pas se relancer à chaque ouverture du panneau. « Recalculer » force la mise à jour.
+    </p>
+    <p class="fr-hint-text">
+      ⚠️ Ne pas confondre « aucun doublon » et « rien n'est encore mesuré ». Seuls les
+      documents portant une empreinte de contenu sont comptés&nbsp;: les sources SQL et web
+      n'en ont pas (elles n'ont pas de fichier), et les documents indexés avant cette
+      fonctionnalité non plus tant que <code>./manage.sh backfill-hashes --apply</code> n'a
+      pas été passé. Le panneau le dit explicitement quand c'est le cas.
+    </p>
+
+    <h2 id="aide-admin-conservation" class="fr-h5">Conservation des journaux</h2>
+    <p>
+      Fixe la durée de conservation de chaque journal — recherches, connexions, audit
+      d'administration, réponses NPS, suggestions. Une purge quotidienne supprime au-delà.
+      Deux raisons de s'en servir&nbsp;: le disque, et la durée de conservation de données
+      personnelles (identifiant, requêtes, adresse IP) qu'une installation doit pouvoir
+      justifier.
+    </p>
+    <p class="fr-hint-text">
+      <code>0</code> signifie <strong>conservation illimitée</strong>. Le bouton d'aperçu
+      montre ce que la prochaine purge emporterait, sans rien supprimer&nbsp;: à consulter
+      avant de raccourcir une durée. Chaque passage journalise le nombre de documents
+      supprimés, et la purge du journal d'audit s'inscrit elle-même dans le journal d'audit.
+      Les collections et les mots-clés personnalisés ne sont jamais purgés&nbsp;: ce sont des
+      données d'utilisateur, pas des traces.
+    </p>
+    <p class="fr-hint-text">
+      Conséquence à connaître&nbsp;: les statistiques, l'historique de recherche personnel et
+      les documents récemment consultés ne portent que sur la fenêtre conservée.
+    </p>
+
     <h2 id="aide-admin-apparence" class="fr-h5">Apparence</h2>
     <p>
       L'interface suit le Système de Design de l'État. Le panneau « Interface » ne règle plus que le
