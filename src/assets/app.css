@@ -26,6 +26,20 @@
   mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path d="M3 12H5V21H3V12ZM19 8H21V21H19V8ZM11 2H13V21H11V2Z"/></svg>');
 }
 
+/* Icône « mot-clé » des suggestions de saisie (SearchSuggestions.vue).
+   `fr-icon-price-tag-line` — le nom auquel on pense d'abord — N'EXISTE
+   PAS dans cette version du DSFR : la classe s'appliquait sans rien
+   afficher, en silence, aucune règle ne lui correspondant. Le plus
+   proche disponible est `fr-icon-hashtag`, dont la famille `icons-editor`
+   n'est pas importée ; même raison que pour les deux icônes ci-dessus,
+   on inline sa règle plutôt que d'embarquer la famille entière. SVG
+   repris tel quel du paquet DSFR (dist/icons/editor/hashtag.svg). */
+.fr-icon-hashtag::before,
+.fr-icon-hashtag::after {
+  -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path d="m10.951 3-.525 5h3.989l.525-5h2.011l-.525 5H20v2h-3.784l-.42 4H20v2h-4.415l-.525 5h-2.011l.525-5H9.585l-.525 5H7.049l.525-5H4v-2h3.784l.42-4H4V8h4.415l.525-5h2.011Zm3.254 7h-3.99l-.42 4h3.99l.42-4Z"/></svg>');
+  mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path d="m10.951 3-.525 5h3.989l.525-5h2.011l-.525 5H20v2h-3.784l-.42 4H20v2h-4.415l-.525 5h-2.011l.525-5H9.585l-.525 5H7.049l.525-5H4v-2h3.784l.42-4H4V8h4.415l.525-5h2.011Zm3.254 7h-3.99l-.42 4h3.99l.42-4Z"/></svg>');
+}
+
 /* Icône « Raccourcis clavier » (fr-icon-keyboard-line). Même raison que
    ci-dessus : sa famille `icons-device` n'est pas importée, et l'importer
    entière pour une seule icône alourdirait la feuille de plusieurs

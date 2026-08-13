@@ -60,10 +60,18 @@ const LIBELLES: Record<Suggestion['kind'], string> = {
   keyword: 'Mot-clé',
 }
 
+/**
+ * ⚠️ Toute icône ajoutée ici doit exister DANS UNE FAMILLE IMPORTÉE
+ * (`src/dsfr.ts`) ou avoir sa règle inlinée dans `app.css`. Une classe
+ * `fr-icon-*` inconnue ne produit ni erreur ni avertissement : elle
+ * n'affiche simplement rien. C'est ce qui est arrivé à
+ * `fr-icon-price-tag-line`, qui n'existe dans aucune version du DSFR
+ * livrée ici — d'où `fr-icon-hashtag`, inlinée dans app.css.
+ */
 const ICONES: Record<Suggestion['kind'], string> = {
-  history: 'fr-icon-time-line',
-  author: 'fr-icon-user-line',
-  keyword: 'fr-icon-price-tag-line',
+  history: 'fr-icon-time-line',   // icons-system, importée
+  author: 'fr-icon-user-line',    // icons-user, importée
+  keyword: 'fr-icon-hashtag',     // inlinée dans app.css
 }
 
 /**

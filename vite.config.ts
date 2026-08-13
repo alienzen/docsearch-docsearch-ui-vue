@@ -156,5 +156,43 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     include: ['src/**/*.spec.ts'],
+
+    // ── Couverture ────────────────────────────────────────────
+    //   npm run test:couverture
+    //
+    // Les seuils ci-dessous sont la mesure du 2026-08-13 arrondie vers le
+    // BAS de deux points : ils ne sont pas un objectif, ils sont un
+    // cliquet. Un test supprimé ou un écran ajouté sans test fait
+    // échouer la CI ; rien n'oblige à écrire des tests ailleurs. Quand la
+    // couverture réelle monte durablement, on relève les seuils — jamais
+    // l'inverse sans le dire.
+    //
+    // Mesure du 2026-08-13 : 63,1 % instructions / 61,26 % branches /
+    // 52,4 % fonctions / 64,01 % lignes.
+    coverage: {
+      provider: 'v8',
+      // 'text' pour la lecture dans le journal de CI, 'lcov' parce que
+      // c'est le format que lisent les outils de rapport ; aucun n'est
+      // envoyé nulle part, la production est hors ligne et le dépôt
+      // n'a pas de service de couverture externe.
+      reporter: ['text-summary', 'lcov'],
+      // Sans `include`, v8 ne rapporte QUE les fichiers effectivement
+      // importés par un test — un module sans aucun test n'apparaîtrait
+      // pas, et sa couverture nulle serait invisible.
+      include: ['src/**/*.{ts,vue}'],
+      exclude: [
+        '**/*.spec.ts',
+        // Utilitaires de test, pas du code applicatif.
+        'src/test/**',
+        // Généré par unplugin-vue-components à chaque démarrage de Vite.
+        'src/components.d.ts',
+      ],
+      thresholds: {
+        statements: 61,
+        branches: 59,
+        functions: 50,
+        lines: 62,
+      },
+    },
   },
 })

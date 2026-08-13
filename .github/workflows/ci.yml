@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push: { branches: [main, develop] }
+  pull_request: { branches: [main] }
+
+# Ce dépôt était le seul des quatre sans aucun workflow : 18 600 lignes de
+# TypeScript et de Vue, 31 fichiers de tests vitest, ESLint et vue-tsc
+# configurés — et rien qui les lançait ailleurs que sur le poste du
+# développeur. C'est l'interface qui porte le contrôle d'accès page par
+# page (nginx.conf) et la logique de recherche ; elle n'avait pourtant
+# aucun garde-fou automatique.
+#
+# Node 22 partout : c'est la version LTS de la VM de dev ET la base du
+# Containerfile (node:22-alpine). Une CI qui construirait sur une autre
+# version validerait autre chose que ce qui est livré.
+#
+# `npm ci` et jamais `npm install` : le premier installe EXACTEMENT le
+# package-lock.json, le second a le droit de le réécrire.
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      # Les seuils de couverture sont dans vite.config.ts (bloc
+      # test.coverage), avec l'explication du cliquet. vitest sort en
+      # échec tout seul s'ils ne sont pas tenus — pas d'étape de
+      # vérification supplémentaire à écrire ici.
+      - run: npm run test:couverture
+
+      # Conservé même quand le job échoue : quand un seuil saute, ce
+      # rapport est ce qui dit QUEL fichier a perdu sa couverture.
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: couverture-ui
+          path: coverage/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    steps:
+      - uses: actions/checkout@v4
+      # Le Containerfile lance `npm run build`, donc `vue-tsc -b` :
+      # l'analyse de types complète est faite ici, et une seule fois.
+      # C'est aussi pour cela qu'ESLint tourne SANS les règles typées
+      # (voir l'en-tête d'eslint.config.js) — doubler ce travail ne
+      # dirait rien de neuf.
+      - run: docker build -t docsearch-ui-vue:ci .
