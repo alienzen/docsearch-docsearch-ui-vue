@@ -10,6 +10,11 @@
 # docsearch-api/Dockerfile pour la raison (podman + machines isolées).
 FROM docker.io/library/node:22-alpine AS build
 WORKDIR /app
+# Le contrôle de version de npm interroge registry.npmjs.org à chaque
+# commande. Inutile ici (la version de npm est celle de l'image de base,
+# figée avec elle) et à proscrire sur une chaîne destinée à une prod
+# hors ligne : un appel sortant de moins pendant le build.
+ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 # package*.json d'abord : cette couche (l'installation, la plus longue)
 # n'est refaite que si les dépendances changent, pas à chaque édition
 # de source.
