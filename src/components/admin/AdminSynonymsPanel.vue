@@ -94,7 +94,8 @@ async function tester() {
       Une règle par ligne, termes séparés par une virgule — par exemple
       <code>DRH, direction des ressources humaines</code>. Tous les termes d'une règle
       se trouvent mutuellement : chercher l'un ramène les documents qui portent les
-      autres. La recherche entre guillemets, elle, reste littérale.
+      autres. Un même terme peut figurer dans plusieurs règles, dont les expansions
+      s'ajoutent. La recherche entre guillemets, elle, reste littérale.
     </p>
 
     <div class="fr-mb-2w">
