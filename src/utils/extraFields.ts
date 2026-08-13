@@ -42,6 +42,11 @@ const TECHNIQUES = new Set([
   // Dérivé du chemin par l'ingestion pour alimenter la facette
   // « Dossier » — une donnée de service, sans intérêt à l'écran.
   'folder_top',
+  // Drapeau posé par l'API sur un document épinglé. Le fait est déjà dit
+  // à sa place, sous la mention « Proposé par votre administration » ;
+  // ici, il s'affichait en clair — « Pinned : true » au milieu des
+  // métadonnées du document.
+  'pinned',
 ])
 
 export type ExtraField = { key: string; label: string; value: string }

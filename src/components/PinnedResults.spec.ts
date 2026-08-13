@@ -21,6 +21,9 @@ function resultat(id: string, pinned = false): SearchResult {
     highlight: [],
     filename: `${id}.pdf`,
     filepath: `/documents/${id}.pdf`,
+    // Le drapeau que l'API pose sur un document épinglé — il voyage dans
+    // le résultat, il ne doit pas se retrouver à l'écran.
+    ...(pinned ? { pinned: true } : {}),
   }
 }
 
@@ -56,6 +59,22 @@ describe('ResultsList — résultats épinglés', () => {
     store.results = [resultat('naturel')]
 
     expect(monter().find('#resultats-epingles').exists()).toBe(false)
+  })
+
+  // Un épinglé n'a pas été classé, il a été désigné : l'API lui met
+  // `score: null` et `pinned: true`. La carte affichait l'un comme un
+  // score de 0 % — le pire de la page, sur le document mis en avant — et
+  // l'autre comme une métadonnée de source, « Pinned : true ».
+  it('n’affiche ni score ni drapeau technique sur un épinglé', () => {
+    const store = useSearchStore()
+    store.hasSearched = true
+    store.total = 0
+    store.pinnedResults = [resultat('epingle', true)]
+
+    const carte = monter().find('[data-testid="resultat-epingle"]')
+
+    expect(carte.text()).not.toContain('%')
+    expect(carte.text()).not.toContain('Pinned')
   })
 
   // Cas réel : la requête ne ramène rien par elle-même, mais

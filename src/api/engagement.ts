@@ -14,9 +14,14 @@ export function submitFeedback(searchId: string, rating: 'up' | 'down'): Promise
  *
  * Volontairement « fire-and-forget » : ne doit jamais retarder ni
  * bloquer l'ouverture de la fiche du document, ni remonter d'erreur.
+ *
+ * Une position négative signifie que l'appelant n'a pas retrouvé le
+ * document dans la liste affichée : mieux vaut ne rien journaliser qu'un
+ * rang qui n'existe pas — l'API attend un index 0-indexé, et un -1
+ * s'agrégerait comme une position réelle.
  */
 export function trackClick(searchId: string | null, docId: string, position: number): void {
-  if (!searchId) return
+  if (!searchId || position < 0) return
   api('/click', {
     method: 'POST',
     body: JSON.stringify({ search_id: searchId, doc_id: docId, position }),

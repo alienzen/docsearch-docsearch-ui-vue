@@ -51,8 +51,18 @@ const title = computed(
     (props.result.title || props.result.filename || '(sans nom)'),
 )
 const snippets = computed(() => parseHighlights(props.result.highlight || []))
-/** Score ES ramené en pourcentage, comme en vanilla. */
-const scorePct = computed(() => Math.min(100, Math.round((props.result.score || 0) * 20)))
+/**
+ * Score ES ramené en pourcentage, comme en vanilla — ou `null` quand il
+ * n'y a pas de score du tout.
+ *
+ * Un document épinglé n'a pas été classé, il a été DÉSIGNÉ : l'API lui
+ * met `score: null` (voir SearchResult). Le compter pour zéro affichait
+ * « 0 % » sur un document mis en avant par l'administration, soit le
+ * pire score possible sur la carte la plus en vue de la page.
+ */
+const scorePct = computed(() =>
+  props.result.score == null ? null : Math.min(100, Math.round(props.result.score * 20)),
+)
 /** Un membre d'archive a un chemin de la forme "archive.zip::interne". */
 const isArchiveMember = computed(() => (props.result.filepath || '').includes('::'))
 
@@ -108,7 +118,9 @@ const selectable = computed(
           {{ custom.badge }}
         </span>
         <span class="ds-result__title">{{ title }}</span>
-        <span class="fr-badge fr-badge--sm fr-badge--info">{{ scorePct }} %</span>
+        <span v-if="scorePct !== null" class="fr-badge fr-badge--sm fr-badge--info">
+          {{ scorePct }} %
+        </span>
       </button>
     </div>
 

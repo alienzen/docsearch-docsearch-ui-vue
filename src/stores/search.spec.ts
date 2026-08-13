@@ -267,6 +267,29 @@ describe('useSearchStore', () => {
     expect(store.totalPages).toBe(1)
   })
 
+  // La position envoyée au suivi de clic est l'index dans cette liste :
+  // elle doit décrire l'écran, où les épinglés passent DEVANT les
+  // résultats naturels. Les en exclure donnait -1 à tout clic sur un
+  // document mis en avant — un rang qui n'existe pas.
+  it('place les épinglés en tête des identifiants de résultats', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockSearchResponse({
+        total: 2,
+        results: [
+          { id: 'a', score: 1, highlight: [] },
+          { id: 'b', score: 0.5, highlight: [] },
+        ],
+        pinned: [{ id: 'epingle', score: null, highlight: [] }],
+      }),
+    )
+    const store = useSearchStore()
+    store.query = 'congés'
+    await store.doSearch()
+
+    expect(store.resultIds).toEqual(['epingle', 'a', 'b'])
+  })
+
   // ── Permaliens ────────────────────────────────────────────
   //
   // L'aller-retour de sérialisation est couvert par

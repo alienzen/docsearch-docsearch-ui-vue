@@ -291,7 +291,11 @@ export const useSearchStore = defineStore('search', () => {
       results.value = data.results
       facets.value = data.facets
       searchId.value = data.search_id || null
-      resultIds.value = data.results.map((r) => r.id)
+      // Les épinglés EN TÊTE, comme à l'écran (voir ResultsList) : c'est
+      // de cette liste que sort la position envoyée au suivi de clic, et
+      // elle doit décrire ce que l'utilisateur a vu. Les ignorer donnait
+      // une position -1 à tout clic sur un document mis en avant.
+      resultIds.value = [...(data.pinned || []), ...data.results].map((r) => r.id)
       timing.value = data.timing || null
       zeroResult.value = data.zero_result || null
       pinnedResults.value = data.pinned || []
