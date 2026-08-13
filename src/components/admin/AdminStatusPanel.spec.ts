@@ -90,6 +90,32 @@ describe('AdminStatusPanel — versions déployées', () => {
   })
 })
 
+// Le bouton « Recharger » de la page remonte les autres panneaux pour
+// les recharger ; celui-ci reçoit un compteur et se rafraîchit sur
+// place. Ce qui se vérifie ici est ce qu'un remontage cassait : qu'aucune
+// image de la transition ne montre l'écran de supervision vide.
+
+describe('AdminStatusPanel — rechargement demandé par la page', () => {
+  beforeEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('garde ses cartes affichées pendant que la nouvelle requête est en vol', async () => {
+    const wrapper = monterAvec({ api: { version: __DOCSEARCH_VERSION__, commit: 'a1b2c3d' } })
+    await flushPromises()
+    const cartes = wrapper.findAll('[data-testid="status-carte"]').length
+    expect(cartes).toBeGreaterThan(0)
+
+    await wrapper.setProps({ rechargement: 1 })
+    expect(wrapper.findAll('[data-testid="status-carte"]')).toHaveLength(cartes)
+
+    await flushPromises()
+    expect(wrapper.findAll('[data-testid="status-carte"]')).toHaveLength(cartes)
+    // Rafraîchi pour de bon, et pas seulement laissé en place.
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2)
+  })
+})
+
 // La carte « Journalisation » existe pour un cas précis : ES refuse les
 // écritures alors que TOUT LE RESTE est au vert (BASE ci-dessus décrit
 // exactement cette situation — cluster « green », Redis, Kafka, workers

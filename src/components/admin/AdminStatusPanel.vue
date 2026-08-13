@@ -5,14 +5,28 @@
  * cluster ne couvre pas : journalisation des recherches, recueil des
  * suggestions et réponses NPS. Seul panneau rafraîchi périodiquement.
  */
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { getStatus, type AdminStatus, type WriteProbe } from '@/api/admin'
 import { useStatsPanel } from '@/composables/useStatsPanel'
 import { BUILD_DATE, COMMIT, VERSION } from '@/version'
 
 const REFRESH_MS = 5000
 
+const props = defineProps<{
+  /**
+   * Compteur de rechargement de la page : chaque incrément demande un
+   * rafraîchissement immédiat. Les autres panneaux sont remontés par la
+   * page pour se recharger ; celui-ci ne l'est pas, sinon ses cartes
+   * disparaîtraient le temps de la requête alors qu'il n'a que des
+   * valeurs à remplacer sur place — c'est déjà ce qu'il fait toutes les
+   * 5s. Voir AdminPage.
+   */
+  rechargement?: number
+}>()
+
 const { data, error, refresh } = useStatsPanel<AdminStatus>(getStatus)
+
+watch(() => props.rechargement, silentRefresh)
 
 let timer: ReturnType<typeof setInterval> | undefined
 

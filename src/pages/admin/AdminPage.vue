@@ -82,6 +82,11 @@ function toggleAll() {
  * Recharge tous les panneaux. Chacun charge ses données au montage :
  * changer cette clé les remonte, ce qui les recharge tous sans avoir à
  * exposer une méthode `refresh` sur chacun d'eux.
+ *
+ * Sauf le panneau d'état, qui la reçoit en prop : le remonter vidait ses
+ * cartes le temps de la requête, alors qu'il sait déjà se rafraîchir en
+ * place (il le fait toutes les 5s) et qu'un composant clignotant est
+ * précisément ce qu'on ne veut pas d'un écran de supervision.
  */
 const reloadKey = ref(0)
 
@@ -193,12 +198,14 @@ onMounted(() => {
         />
       </div>
 
-      <div :key="reloadKey">
-
+      <!-- Ce groupe reste hors du conteneur remonté, pour le seul panneau
+           d'état : sa voisine est donc remontée individuellement. -->
       <AdminGroup id="group-overview" title="Vue d'ensemble">
-        <AdminStatusPanel />
-        <AdminAllSourcesPanel />
+        <AdminStatusPanel :rechargement="reloadKey" />
+        <AdminAllSourcesPanel :key="reloadKey" />
       </AdminGroup>
+
+      <div :key="reloadKey">
 
       <AdminGroup id="group-file-sources" title="Sources fichiers">
         <AdminFileSourcesPanel @changed="loadFileSources" />

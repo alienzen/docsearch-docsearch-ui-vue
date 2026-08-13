@@ -284,6 +284,28 @@ describe('AdminPage', () => {
     wrapper.unmount()
   })
 
+  it('garde les cartes d’état affichées pendant un rechargement', async () => {
+    // « Recharger » remonte les panneaux pour les recharger, ce qui vidait
+    // aussi l'état des composants : sur un écran de supervision, des
+    // voyants qui s'éteignent puis se rallument se lisent comme une panne.
+    // Le panneau d'état est donc hors du conteneur remonté et se
+    // rafraîchit sur place — d'où l'absence de `flush` avant le contrôle,
+    // qui vise justement l'instant où la requête est en vol.
+    document.body.innerHTML = ''
+    vi.stubGlobal('fetch', respondWith())
+    const wrapper = mountPage()
+    await flush()
+    const cartes = wrapper.findAll('[data-testid="status-carte"]').length
+    expect(cartes).toBeGreaterThan(0)
+
+    await wrapper.find('#admin-recharger').trigger('click')
+    expect(wrapper.findAll('[data-testid="status-carte"]')).toHaveLength(cartes)
+
+    await flush()
+    expect(wrapper.findAll('[data-testid="status-carte"]')).toHaveLength(cartes)
+    wrapper.unmount()
+  })
+
   it('remplace la page par un bandeau unique en cas de refus d’accès', async () => {
     // Un 403 vaut pour les douze panneaux : un seul message vaut mieux
     // que douze « Accès refusé » empilés.
