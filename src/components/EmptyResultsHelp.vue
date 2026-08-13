@@ -181,7 +181,18 @@ function chercherDans(source: string) {
     <!-- Toujours affiché, aide de l'API ou non : quand elle n'a rien à
          proposer, c'est justement là que la syntaxe avancée sert. -->
     <p v-if="uiConfig.config.help_enabled" class="fr-text--sm fr-mb-0">
-      <a class="fr-link fr-link--sm" href="/help">Voir l'aide à la recherche</a>
+      <!-- Nouvel onglet, comme le lien de la modale des raccourcis : la
+           recherche infructueuse reste à l'écran pendant qu'on lit la
+           syntaxe, sinon il faut revenir en arrière pour la corriger. -->
+      <a
+        class="fr-link fr-link--sm"
+        href="/help"
+        target="_blank"
+        rel="noopener"
+        title="Voir l'aide à la recherche — nouvelle fenêtre"
+      >
+        Voir l'aide à la recherche
+      </a>
     </p>
   </div>
 </template>
