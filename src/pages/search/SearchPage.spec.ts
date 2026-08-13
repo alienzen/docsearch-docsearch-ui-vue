@@ -265,6 +265,20 @@ describe('SearchPage', () => {
     }
   })
 
+  it('coupe la saisie mémorisée du navigateur sur la barre de recherche', async () => {
+    // Attribut posé sur l'input rendu par DsfrHeader, faute de prop qui
+    // l'atteigne : c'est la liste native du navigateur qui recouvrait
+    // sinon les suggestions de SearchSuggestions.
+    //
+    // La barre du modal mobile relève du même mécanisme, mais son cas —
+    // apparition APRÈS le montage — se teste dans
+    // composables/useAutocompleteOff.spec.ts : l'ouvrir ici demanderait
+    // de déclencher le modal de vue-dsfr, dont le piège à focus refuse
+    // de s'activer sous jsdom faute d'élément « tabbable » mesurable.
+    const wrapper = await monter()
+    expect(wrapper.find('#recherche').attributes('autocomplete')).toBe('off')
+  })
+
   it('marque chaque élément répété d’un data-testid', async () => {
     const wrapper = await monter()
 

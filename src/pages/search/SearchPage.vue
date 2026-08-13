@@ -16,6 +16,7 @@ import { usePreferencesStore } from '@/stores/preferences'
 import { useSearchShortcuts } from '@/composables/useSearchShortcuts'
 import { useNps } from '@/composables/useNps'
 import { useHeaderHeight } from '@/composables/useHeaderHeight'
+import { useAutocompleteOff } from '@/composables/useAutocompleteOff'
 import { useDialogs } from '@/composables/useDialogs'
 import { usePermalien } from '@/composables/usePermalien'
 
@@ -196,6 +197,10 @@ async function saveCurrentSearch() {
 useSearchShortcuts({ saveCurrentSearch, toggleShortcuts })
 // L'en-tête est collant : sa hauteur décale la colonne de facettes.
 useHeaderHeight()
+// Les deux barres de recherche de l'en-tête — bureau et modal mobile —
+// ne doivent pas ouvrir la liste de saisies du navigateur par-dessus nos
+// suggestions.
+useAutocompleteOff()
 // Ouverture depuis un lien partagé, un signet ou un rechargement, et
 // retour arrière du navigateur. L'écriture de l'URL, elle, se fait dans
 // le store à chaque recherche.
