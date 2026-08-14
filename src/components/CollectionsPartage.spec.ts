@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import CollectionsPanel from './CollectionsPanel.vue'
+import { useSelectionStore } from '@/stores/selection'
 import { useUiConfigStore } from '@/stores/uiConfig'
 import type { Collection } from '@/api/collections'
 
@@ -37,6 +38,9 @@ describe('CollectionsPanel — partage', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     useUiConfigStore().config.collections_shared_enabled = true
+    // Les modales sont téléportées dans <body> : sans ça, celles du test
+    // précédent y traînent encore.
+    document.body.innerHTML = ''
   })
 
   it('propose le partage sur ses propres collections', async () => {
@@ -83,5 +87,106 @@ describe('CollectionsPanel — partage', () => {
     await flushPromises()
 
     expect(w.text()).toContain('partagée avec finance, direction')
+  })
+
+  // La couleur ne distingue pas le sens du partage (reçu / donné) : elle
+  // dit seulement « cette liste n'est pas qu'à moi », ce que la mention
+  // voisine précise. D'où la même classe des deux côtés.
+  it('colore le nom des collections partagées, dans les deux sens', async () => {
+    stubFetch([
+      collection({ id: 'recue', owned: false, owner: 'alice.admin' }),
+      collection({ id: 'donnee', shared_with: ['finance'] }),
+      collection({ id: 'perso' }),
+    ])
+    const w = mount(CollectionsPanel)
+    await flushPromises()
+
+    const classes = (id: string) =>
+      w.get(`[data-id="${id}"] [data-testid="collection-nom"]`).classes()
+    expect(classes('recue')).toContain('ds-collection__nom--partagee')
+    expect(classes('donnee')).toContain('ds-collection__nom--partagee')
+    expect(classes('perso')).not.toContain('ds-collection__nom--partagee')
+  })
+
+  // Ajouter un document à une collection partagée en donne la référence
+  // au groupe : le choix de la collection est le dernier moment où on
+  // peut s'en apercevoir.
+  it('signale le partage aussi au moment de choisir une collection', async () => {
+    stubFetch([
+      collection({ id: 'donnee', shared_with: ['finance'] }),
+      collection({ id: 'perso', name: 'À lire' }),
+    ])
+    useSelectionStore().set('doc-1', true)
+    const w = mount(CollectionsPanel)
+    await flushPromises()
+
+    await (w.vm as unknown as { openAdd: () => Promise<void> }).openAdd()
+    await flushPromises()
+
+    // La modale est téléportée dans <body> : elle n'est pas dans le
+    // sous-arbre du composant monté.
+    const noms = document.body.querySelectorAll('[data-testid="collection-choix-nom"]')
+    expect(noms).toHaveLength(2)
+    expect(noms[0].className).toContain('ds-collection__nom--partagee')
+    expect(noms[1].className).not.toContain('ds-collection__nom--partagee')
+    // La couleur ne suffit pas : la mention doit être lisible telle quelle.
+    expect(document.body.textContent).toContain('· partagée')
+
+    w.unmount()
+  })
+
+  // L'API refuse l'écriture dans la collection d'un autre (`_get_owned`) :
+  // la proposer au choix, c'est promettre un clic qui échoue toujours.
+  it('ne propose pas les collections reçues au moment d’ajouter des documents', async () => {
+    stubFetch([
+      collection({ id: 'recue', name: 'Revue Finance', owned: false, owner: 'alice.admin' }),
+      collection({ id: 'perso', name: 'À lire' }),
+    ])
+    useSelectionStore().set('doc-1', true)
+    const w = mount(CollectionsPanel)
+    await flushPromises()
+
+    await (w.vm as unknown as { openAdd: () => Promise<void> }).openAdd()
+    await flushPromises()
+
+    const noms = [...document.body.querySelectorAll('[data-testid="collection-choix-nom"]')]
+    expect(noms.map((n) => n.textContent)).toEqual(['À lire'])
+
+    w.unmount()
+  })
+
+  // N'avoir que des collections reçues n'est pas n'avoir aucune
+  // collection : le message doit dire lequel des deux, sinon il passe
+  // pour un bug — le menu, lui, affiche bien une collection.
+  it('distingue « aucune collection » de « aucune collection à soi »', async () => {
+    stubFetch([collection({ id: 'recue', owned: false, owner: 'alice.admin' })])
+    useSelectionStore().set('doc-1', true)
+    const w = mount(CollectionsPanel)
+    await flushPromises()
+
+    await (w.vm as unknown as { openAdd: () => Promise<void> }).openAdd()
+    await flushPromises()
+
+    const message = document.body.querySelector('[data-testid="collection-picker-vide"]')
+    expect(message?.textContent).toContain('Aucune collection à vous')
+    // La création reste la porte de sortie.
+    expect(document.body.querySelector('[aria-label="Nom de la nouvelle collection"]')).not.toBeNull()
+
+    w.unmount()
+  })
+
+  it('garde « Aucune collection pour l’instant. » quand il n’y en a réellement aucune', async () => {
+    stubFetch([])
+    useSelectionStore().set('doc-1', true)
+    const w = mount(CollectionsPanel)
+    await flushPromises()
+
+    await (w.vm as unknown as { openAdd: () => Promise<void> }).openAdd()
+    await flushPromises()
+
+    const message = document.body.querySelector('[data-testid="collection-picker-vide"]')
+    expect(message?.textContent).toContain("Aucune collection pour l'instant.")
+
+    w.unmount()
   })
 })

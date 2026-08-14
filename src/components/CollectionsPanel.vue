@@ -152,6 +152,44 @@ async function removeDoc(docId: string) {
   }
 }
 
+/**
+ * Une collection sort du périmètre personnel dans les deux sens : celle
+ * qu'on a ouverte à un groupe, et celle qu'on a reçue. Les deux sont
+ * « partagées » et portent la même couleur — ce qui se lit d'un coup
+ * d'œil, c'est « cette liste n'est pas qu'à moi ».
+ *
+ * La couleur ne dit PAS de quel côté du partage on est : c'est le texte
+ * voisin (« partagée par… » / « partagée avec… ») qui le précise. Elle ne
+ * porte donc jamais seule l'information — sans quoi elle serait perdue
+ * pour un daltonien ou un lecteur d'écran (RGAA 3.1).
+ */
+function estPartagee(collection: Collection): boolean {
+  return !collection.owned || collection.shared_with.length > 0
+}
+
+/**
+ * Collections où l'on peut effectivement ÉCRIRE. Côté API, `add_document`
+ * passe par `_get_owned` : ajouter dans la collection d'un autre lève
+ * « Collection inconnue ». Les proposer au choix revenait donc à offrir
+ * un clic qui échoue à tous les coups, avec un message qui n'explique
+ * rien. Le destinataire ne modifie pas, il duplique — c'est déjà ce que
+ * dit le menu, qui ne lui propose que « Dupliquer ».
+ */
+const collectionsProposables = computed(() => collections.value.filter((c) => c.owned))
+
+/**
+ * N'avoir aucune collection et n'en avoir que des reçues sont deux
+ * situations différentes : dans la seconde, la liste du menu n'est pas
+ * vide, et un « Aucune collection pour l'instant. » passerait pour un
+ * bug. Dans les deux cas, la création reste la sortie — le champ « Nouvelle
+ * collection… » est juste en dessous.
+ */
+const messagePickerVide = computed(() =>
+  collections.value.length
+    ? "Aucune collection à vous : celles reçues en partage ne peuvent être complétées que par leur propriétaire."
+    : "Aucune collection pour l'instant.",
+)
+
 /** Ouvre la modale de choix de collection pour la sélection courante. */
 async function openAdd() {
   if (!selection.count) return
@@ -238,7 +276,11 @@ defineExpose({ openAdd })
         data-testid="collection-ouvrir"
         @click="view(collection)"
       >
-        <span class="ds-menu__name">{{ collection.name }}</span>
+        <span
+          class="ds-menu__name"
+          :class="{ 'ds-collection__nom--partagee': estPartagee(collection) }"
+          data-testid="collection-nom"
+        >{{ collection.name }}</span>
         <span class="fr-hint-text fr-mb-0">
           {{ collection.doc_ids.length }} document{{ collection.doc_ids.length > 1 ? 's' : '' }}
           <!-- D'où vient cette collection : sans ça, une collection
@@ -336,16 +378,26 @@ defineExpose({ openAdd })
       @close="closeModal"
     >
       <DsfrAlert v-if="error" type="error" small :description="error" class="fr-mb-2w" />
-      <p v-if="!collections.length" class="fr-hint-text">Aucune collection pour l'instant.</p>
+      <p v-if="!collectionsProposables.length" class="fr-hint-text" data-testid="collection-picker-vide">
+        {{ messagePickerVide }}
+      </p>
       <ul v-else class="ds-collection__picker">
-        <li v-for="collection in collections" :key="collection.id">
+        <li v-for="collection in collectionsProposables" :key="collection.id">
           <button
             class="fr-btn fr-btn--tertiary fr-btn--sm"
             :disabled="busy"
             @click="addToCollection(collection.id)"
           >
-            {{ collection.name }}
-            <span class="fr-hint-text fr-ml-1v">{{ collection.doc_ids.length }}</span>
+            <!-- Même signal que dans le menu, et il compte davantage ici :
+                 ajouter un document à une collection partagée en donne la
+                 référence au groupe. Autant le savoir avant de cliquer. -->
+            <span
+              :class="{ 'ds-collection__nom--partagee': estPartagee(collection) }"
+              data-testid="collection-choix-nom"
+            >{{ collection.name }}</span>
+            <span class="fr-hint-text fr-ml-1v">
+              {{ collection.doc_ids.length }}<template v-if="estPartagee(collection)"> · partagée</template>
+            </span>
           </button>
         </li>
       </ul>
