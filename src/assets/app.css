@@ -135,11 +135,12 @@
   .fr-header__tools-links,
   .fr-header__service-tagline {
     interpolate-size: allow-keywords;
+    /* `allow-discrete` DANS le raccourci, jamais en déclaration séparée —
+       voir la section des accordéons natifs. */
     transition:
       block-size 0.3s,
       opacity 0.2s,
-      content-visibility 0.3s;
-    transition-behavior: allow-discrete;
+      content-visibility 0.3s allow-discrete;
   }
   /* Rognage pendant le trajet, sans quoi le contenu déborderait de sa
      boîte qui rétrécit. Posé à demeure sur ces deux blocs seulement :
@@ -764,11 +765,12 @@ body.ds-resizing {
   block-size: auto;
   overflow: hidden;
   interpolate-size: allow-keywords;
+  /* `allow-discrete` DANS le raccourci, jamais en déclaration séparée —
+     voir la section des accordéons natifs. */
   transition:
     block-size 0.3s,
     padding-block-end 0.3s,
-    content-visibility 0.3s;
-  transition-behavior: allow-discrete;
+    content-visibility 0.3s allow-discrete;
 }
 .ds-result__body--replie {
   block-size: 0;
@@ -1299,7 +1301,19 @@ body.ds-resizing {
 
    `content-visibility` en `allow-discrete` garde le contenu affiché le
    temps de la fermeture ; sans lui il disparaîtrait dès la première
-   image et la hauteur s'animerait dans le vide.
+   image, la hauteur retomberait aussitôt à zéro et il ne resterait rien
+   à animer.
+
+   Ce mot-clé est posé DANS le raccourci `transition` et surtout PAS en
+   `transition-behavior: allow-discrete` à côté : `transition` est un
+   raccourci de `transition-behavior` aussi, et le remet donc à `normal`.
+   L'ordre source protégeait la déclaration séparée, mais le minifieur de
+   la construction regroupe les propriétés par familles et la remonte
+   AVANT le raccourci, qui l'écrase. D'où un repli animé avec `npm run
+   dev` et brutal dans l'image construite — celle que voit l'utilisateur.
+   Le piège vaut pour les trois blocs de ce fichier qui animent
+   `content-visibility` (en-tête réduit, corps des cartes de résultat, et
+   ces accordéons).
 
    Amélioration progressive : un navigateur sans `::details-content`
    ignore ce bloc et retrouve le comportement actuel, le pli restant
@@ -1314,8 +1328,7 @@ body.ds-resizing {
   overflow: hidden;
   transition:
     block-size 0.3s,
-    content-visibility 0.3s;
-  transition-behavior: allow-discrete;
+    content-visibility 0.3s allow-discrete;
 }
 .ds-panel-block[open]::details-content,
 .ds-facet[open]::details-content {
