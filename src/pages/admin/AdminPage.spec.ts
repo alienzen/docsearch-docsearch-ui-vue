@@ -193,7 +193,7 @@ describe('AdminPage', () => {
       'status-versions-titre',
       'allsources-tableau',
       'filesources-tableau',
-      'filesources-ajouter',
+      'filesources-nouvelle',
       'filetypes-tableau',
       'filetypes-ajouter',
       'filetypes-defauts',
