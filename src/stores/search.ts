@@ -19,6 +19,7 @@ import { extList, toArray, type SavedSearch } from '@/api/savedSearches'
 import { downloadBlob, extLabel } from '@/utils/format'
 import { ecrireUrl, type CriteresPermalien, type ModeHistorique } from '@/utils/permalien'
 import { PER_PAGE } from '@/constants'
+import { useSelectionStore } from './selection'
 import { useUiConfigStore } from './uiConfig'
 
 // Portage de l'objet `state` de docsearch-ui/public/js/state.js et des
@@ -45,6 +46,10 @@ function toggleArrayValue(arr: string[], value: string): string[] {
 
 export const useSearchStore = defineStore('search', () => {
   const uiConfig = useUiConfigStore()
+  // La sélection de documents porte sur les résultats AFFICHÉS : dès que
+  // cette liste est remplacée, elle est vidée ici — voir doSearch() et
+  // resetSearch().
+  const selection = useSelectionStore()
 
   // ── Critères ────────────────────────────────────────────────
   /** Contenu de la barre de recherche (texte libre après analyse). */
@@ -278,6 +283,14 @@ export const useSearchStore = defineStore('search', () => {
     const criteria = currentCriteria()
     if (!hasActiveCriteria(criteria)) return
 
+    // Les résultats affichés vont être remplacés : les documents cochés
+    // ne seront plus à l'écran, et la barre de sélection annoncerait un
+    // décompte sans rapport avec ce qu'on voit. Ici plutôt que sur le
+    // seul changement de page : relancer une recherche depuis la barre,
+    // une facette ou « Mes recherches récentes » remplace la liste tout
+    // autant, sans forcément changer de numéro de page.
+    selection.clear()
+
     // Avant l'appel, pas après : l'URL doit décrire ce qui est en train
     // d'être cherché, y compris si la requête échoue — recharger la page
     // rejoue alors la même recherche, ce qui est le geste attendu.
@@ -414,6 +427,10 @@ export const useSearchStore = defineStore('search', () => {
     pinnedResults.value = []
     error.value = null
     hasSearched.value = false
+    // Sans ça, la barre de sélection restait affichée sur un écran vidé
+    // de ses résultats — plus aucune case à décocher, et un « Ajouter à
+    // une collection » portant sur des documents invisibles.
+    selection.clear()
     uiConfig.customFacetLabels = {}
     ecrireUrl(criteresPermalien(), historique)
   }

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useSearchStore } from './search'
+import { useSelectionStore } from './selection'
 import { useUiConfigStore } from './uiConfig'
 import type { SearchResponse } from '@/api/types'
 
@@ -201,6 +202,38 @@ describe('useSearchStore', () => {
     expect(store.hasSearched).toBe(false)
     expect(store.results).toEqual([])
     expect(store.timing).toBeNull()
+  })
+
+  // La barre « X documents sélectionnés » n'a aucun sens dès que les
+  // résultats cochés quittent l'écran : elle restait affichée après une
+  // réinitialisation, ou après une relance depuis « Mes recherches
+  // récentes », qui ne change pourtant pas de numéro de page.
+  it('vide la sélection dès que les résultats affichés sont remplacés', async () => {
+    const store = useSearchStore()
+    const selection = useSelectionStore()
+
+    store.query = 'rapport'
+    await store.doSearch()
+    selection.set('doc-1', true)
+    store.resetSearch()
+    expect(selection.count).toBe(0)
+
+    store.query = 'note'
+    selection.set('doc-2', true)
+    await store.doSearch()
+    expect(selection.count).toBe(0)
+  })
+
+  // Une recherche sans critère ne part pas : rien ne change à l'écran,
+  // donc les cases cochées restent cochées.
+  it('garde la sélection quand la recherche n’est pas lancée', async () => {
+    const store = useSearchStore()
+    const selection = useSelectionStore()
+    selection.set('doc-1', true)
+
+    await store.doSearch()
+
+    expect(selection.count).toBe(1)
   })
 
   it('retient le temps de la recherche affichée', async () => {

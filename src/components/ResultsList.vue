@@ -25,10 +25,6 @@ const selection = useSelectionStore()
 const cardsKey = ref(0)
 watch(() => preferences.resultsCompact, () => cardsKey.value++)
 
-// La sélection ne survit pas à un changement de page : les cases
-// affichées ne correspondraient plus aux documents cochés.
-watch(() => store.page, () => selection.clear())
-
 const pages = computed(() => store.totalPages)
 
 /**
