@@ -3,6 +3,17 @@
  * Formulaire d'une source SQL — requête et mapping colonne → champ
  * Elasticsearch. Le même formulaire sert à la création et à l'édition.
  *
+ * Présenté en MODALE : le formulaire fait plusieurs écrans de haut, et
+ * intercalé dans le panneau il repoussait le tableau des sources et les
+ * DSN hors de vue, sans qu'on sache plus où l'on en était dans la page.
+ * La modale le sort du flux, et son pied collant (`.fr-modal__footer`)
+ * garde « Enregistrer » à portée de clic quelle que soit la position
+ * dans le formulaire.
+ *
+ * Il reste monté et démonté par le panneau (`v-if` + `:key`) : c'est ce
+ * qui remet l'état à zéro entre deux ouvertures, plutôt qu'une prop
+ * `opened` qui garderait la saisie précédente.
+ *
  * En ÉDITION, le nom et l'index ES sont figés : les changer reviendrait
  * à créer une source distincte plutôt qu'à modifier celle-ci (voir
  * sql_sources_config.add_source côté API).
@@ -86,9 +97,11 @@ function onTypeChange(field: SqlField) {
 
 /**
  * Le bandeau d'erreur est en TÊTE du formulaire, le bouton
- * « Enregistrer » à son PIED, et il y a un bon écran entre les deux :
- * annoncé sans être ramené à l'écran, le refus resterait invisible —
- * exactement le silence qu'on cherche à supprimer.
+ * « Enregistrer » dans le pied collant de la modale, et il y a un bon
+ * écran de défilement entre les deux : annoncé sans être ramené à
+ * l'écran, le refus resterait invisible — exactement le silence qu'on
+ * cherche à supprimer. `scrollIntoView` fait défiler le corps de la
+ * modale, qui est le conteneur défilant ici.
  */
 async function signalerErreur(message: string) {
   error.value = message
@@ -164,234 +177,254 @@ async function save() {
 </script>
 
 <template>
-  <div id="sql-formulaire" class="ds-admin__form fr-mt-2w">
-    <h4 id="sql-formulaire-titre" class="fr-h6">
-      {{ isEdit ? `Modifier « ${name} »` : 'Nouvelle source SQL' }}
-    </h4>
-
-    <DsfrAlert
-      v-if="error"
-      id="sql-erreur"
-      type="error"
-      small
-      :description="error"
-      class="fr-mb-2w"
-    />
-
-    <div class="ds-admin__row">
-      <div class="fr-input-group fr-mb-0">
-        <label class="fr-label" for="sql-name">Nom</label>
-        <input
-          id="sql-name"
-          v-model="form.name"
-          class="fr-input fr-input--sm"
-          type="text"
-          placeholder="ex : clients_pg"
-          :disabled="isEdit"
-        />
-      </div>
-      <div class="fr-select-group fr-mb-0">
-        <label class="fr-label" for="sql-dbtype">Type de base</label>
-        <select id="sql-dbtype" v-model="form.db_type" class="fr-select fr-select--sm">
-          <option value="postgresql">postgresql</option>
-          <option value="mysql">mysql</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="ds-admin__row fr-mt-1w">
-      <div class="fr-input-group fr-mb-0">
-        <label class="fr-label" for="sql-connref">connection_ref</label>
-        <input
-          id="sql-connref"
-          v-model="form.connection_ref"
-          class="fr-input fr-input--sm"
-          type="text"
-          list="sql-dsn-names"
-          placeholder="ex : CLIENTS_PG_DSN"
-        />
-        <datalist id="sql-dsn-names">
-          <option v-for="dsn in dsns" :key="dsn.name" :value="dsn.name" />
-        </datalist>
-      </div>
-      <div class="fr-input-group fr-mb-0">
-        <label class="fr-label" for="sql-index">Index ES</label>
-        <input
-          id="sql-index"
-          v-model="form.es_index"
-          class="fr-input fr-input--sm"
-          type="text"
-          placeholder="ex : clients_pg_sql"
-          :disabled="isEdit"
-        />
-      </div>
-    </div>
-
-    <div class="ds-admin__row fr-mt-1w">
-      <div class="fr-input-group fr-mb-0">
-        <label class="fr-label" for="sql-idcol">Colonne ID</label>
-        <input id="sql-idcol" v-model="form.id_column" class="fr-input fr-input--sm" type="text" />
-      </div>
-      <div class="fr-input-group fr-mb-0 ds-admin__narrow">
-        <label class="fr-label" for="sql-interval">Intervalle (s)</label>
-        <input
-          id="sql-interval"
-          v-model="form.poll_interval_seconds"
-          class="fr-input fr-input--sm"
-          type="number"
-          min="10"
-        />
-      </div>
-    </div>
-
-    <div class="ds-admin__row fr-mt-1w">
-      <div class="fr-input-group fr-mb-0">
-        <label class="fr-label" for="sql-label">Libellé (optionnel)</label>
-        <input id="sql-label" v-model="form.label" class="fr-input fr-input--sm" type="text" />
-      </div>
-      <div class="fr-input-group fr-mb-0">
-        <label class="fr-label" for="sql-description">Description (optionnel)</label>
-        <input
-          id="sql-description"
-          v-model="form.description"
-          class="fr-input fr-input--sm"
-          type="text"
-        />
-      </div>
-    </div>
-
-    <div class="fr-input-group fr-mt-1w">
-      <label class="fr-label" for="sql-query">Requête</label>
-      <textarea
-        id="sql-query"
-        v-model="form.query"
-        class="fr-input ds-admin__query"
-        rows="3"
-        placeholder="SELECT id, nom, email FROM clients WHERE actif = true"
+  <!-- Téléportée dans <body>, comme les autres modales : le panneau qui
+       monte ce formulaire est un <details>, que les raccourcis de
+       l'administration (chiffres, « tout replier ») referment sans
+       savoir qu'une saisie est en cours. Rendue à l'intérieur, la modale
+       disparaîtrait avec lui — y compris son bouton de fermeture.
+       DsfrModal ne téléporte pas de lui-même. -->
+  <Teleport to="body">
+    <!-- `disable-outside-interaction` : sans lui, un clic à côté ferme la
+         modale, et cette saisie-là — requête et mapping compris — est
+         trop longue pour être jetée sur un clic manqué. Restent la croix,
+         Échap et « Annuler », tous les trois délibérés. -->
+    <DsfrModal
+      modal-id="modale-source-sql"
+      opened
+      size="xl"
+      disable-outside-interaction
+      :title="isEdit ? `Modifier « ${name} »` : 'Nouvelle source SQL'"
+      @close="emit('cancel')"
+    >
+      <DsfrAlert
+        v-if="error"
+        id="sql-erreur"
+        type="error"
+        small
+        :description="error"
+        class="fr-mb-2w"
       />
-    </div>
 
-    <h5 id="sql-colonnes-titre" class="fr-h6 fr-mt-2w">Mapping colonnes → champs Elasticsearch</h5>
-    <div class="fr-table fr-table--bordered ds-stats__table">
-      <table id="sql-colonnes-tableau">
-        <thead>
-          <tr>
-            <th scope="col">Colonne SQL</th>
-            <th scope="col">Champ ES</th>
-            <th scope="col">Type ES</th>
-            <th scope="col">Analyseur</th>
-            <th scope="col">Facette</th>
-            <th scope="col">Libellé facette</th>
-            <th scope="col">Libellé carte</th>
-            <th scope="col"><span class="fr-sr-only">Retirer</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(field, i) in form.fields" :key="i" data-testid="sql-colonne">
-            <td>
-              <input
-                v-model="field.column"
-                class="fr-input fr-input--sm"
-                type="text"
-                placeholder="colonne SQL"
-                :aria-label="`Colonne SQL ligne ${i + 1}`"
-              />
-            </td>
-            <td>
-              <input
-                v-model="field.es_field"
-                class="fr-input fr-input--sm"
-                type="text"
-                placeholder="champ ES"
-                :aria-label="`Champ ES ligne ${i + 1}`"
-              />
-            </td>
-            <td>
-              <select
-                v-model="field.es_type"
-                class="fr-select fr-select--sm"
-                :aria-label="`Type ES ligne ${i + 1}`"
-                @change="onTypeChange(field)"
-              >
-                <option v-for="type in SQL_ES_TYPES" :key="type" :value="type">{{ type }}</option>
-              </select>
-            </td>
-            <td>
-              <input
-                v-model="field.analyzer"
-                class="fr-input fr-input--sm"
-                type="text"
-                placeholder="ex : french"
-                :aria-label="`Analyseur ligne ${i + 1}`"
-              />
-            </td>
-            <td>
-              <div class="fr-checkbox-group fr-checkbox-group--sm">
+      <div class="ds-admin__row">
+        <div class="fr-input-group fr-mb-0">
+          <label class="fr-label" for="sql-name">Nom</label>
+          <input
+            id="sql-name"
+            v-model="form.name"
+            class="fr-input fr-input--sm"
+            type="text"
+            placeholder="ex : clients_pg"
+            :disabled="isEdit"
+          />
+        </div>
+        <div class="fr-select-group fr-mb-0">
+          <label class="fr-label" for="sql-dbtype">Type de base</label>
+          <select id="sql-dbtype" v-model="form.db_type" class="fr-select fr-select--sm">
+            <option value="postgresql">postgresql</option>
+            <option value="mysql">mysql</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="ds-admin__row fr-mt-1w">
+        <div class="fr-input-group fr-mb-0">
+          <label class="fr-label" for="sql-connref">connection_ref</label>
+          <input
+            id="sql-connref"
+            v-model="form.connection_ref"
+            class="fr-input fr-input--sm"
+            type="text"
+            list="sql-dsn-names"
+            placeholder="ex : CLIENTS_PG_DSN"
+          />
+          <datalist id="sql-dsn-names">
+            <option v-for="dsn in dsns" :key="dsn.name" :value="dsn.name" />
+          </datalist>
+        </div>
+        <div class="fr-input-group fr-mb-0">
+          <label class="fr-label" for="sql-index">Index ES</label>
+          <input
+            id="sql-index"
+            v-model="form.es_index"
+            class="fr-input fr-input--sm"
+            type="text"
+            placeholder="ex : clients_pg_sql"
+            :disabled="isEdit"
+          />
+        </div>
+      </div>
+
+      <div class="ds-admin__row fr-mt-1w">
+        <div class="fr-input-group fr-mb-0">
+          <label class="fr-label" for="sql-idcol">Colonne ID</label>
+          <input id="sql-idcol" v-model="form.id_column" class="fr-input fr-input--sm" type="text" />
+        </div>
+        <div class="fr-input-group fr-mb-0 ds-admin__narrow">
+          <label class="fr-label" for="sql-interval">Intervalle (s)</label>
+          <input
+            id="sql-interval"
+            v-model="form.poll_interval_seconds"
+            class="fr-input fr-input--sm"
+            type="number"
+            min="10"
+          />
+        </div>
+      </div>
+
+      <div class="ds-admin__row fr-mt-1w">
+        <div class="fr-input-group fr-mb-0">
+          <label class="fr-label" for="sql-label">Libellé (optionnel)</label>
+          <input id="sql-label" v-model="form.label" class="fr-input fr-input--sm" type="text" />
+        </div>
+        <div class="fr-input-group fr-mb-0">
+          <label class="fr-label" for="sql-description">Description (optionnel)</label>
+          <input
+            id="sql-description"
+            v-model="form.description"
+            class="fr-input fr-input--sm"
+            type="text"
+          />
+        </div>
+      </div>
+
+      <div class="fr-input-group fr-mt-1w">
+        <label class="fr-label" for="sql-query">Requête</label>
+        <textarea
+          id="sql-query"
+          v-model="form.query"
+          class="fr-input ds-admin__query"
+          rows="3"
+          placeholder="SELECT id, nom, email FROM clients WHERE actif = true"
+        />
+      </div>
+
+      <!-- <h2> et non <h5> : le titre de la modale est un <h1>, la suite
+           de la hiérarchie repart donc d'ici. `fr-h6` ne fixe que la
+           taille. -->
+      <h2 id="sql-colonnes-titre" class="fr-h6 fr-mt-2w">Mapping colonnes → champs Elasticsearch</h2>
+      <div class="fr-table fr-table--bordered ds-stats__table">
+        <table id="sql-colonnes-tableau">
+          <thead>
+            <tr>
+              <th scope="col">Colonne SQL</th>
+              <th scope="col">Champ ES</th>
+              <th scope="col">Type ES</th>
+              <th scope="col">Analyseur</th>
+              <th scope="col">Facette</th>
+              <th scope="col">Libellé facette</th>
+              <th scope="col">Libellé carte</th>
+              <th scope="col"><span class="fr-sr-only">Retirer</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(field, i) in form.fields" :key="i" data-testid="sql-colonne">
+              <td>
                 <input
-                  :id="`sql-facet-${i}`"
-                  v-model="field.facet"
-                  type="checkbox"
-                  :disabled="!isFacetable(field.es_type)"
+                  v-model="field.column"
+                  class="fr-input fr-input--sm"
+                  type="text"
+                  placeholder="colonne SQL"
+                  :aria-label="`Colonne SQL ligne ${i + 1}`"
                 />
-                <label class="fr-label" :for="`sql-facet-${i}`">
-                  <span class="fr-sr-only">Afficher comme facette</span>
-                </label>
-              </div>
-            </td>
-            <td>
-              <input
-                v-model="field.facet_label"
-                class="fr-input fr-input--sm"
-                type="text"
-                placeholder="ex : Bureau"
-                :aria-label="`Libellé de facette ligne ${i + 1}`"
-              />
-            </td>
-            <td>
-              <input
-                v-model="field.card_label"
-                class="fr-input fr-input--sm"
-                type="text"
-                placeholder="vide = auto"
-                :aria-label="`Libellé de carte ligne ${i + 1}`"
-              />
-            </td>
-            <td>
-              <DsfrButton
-                size="sm"
-                tertiary
-                no-outline
-                label="✕"
-                data-testid="sql-colonne-retirer"
-                title="Retirer cette colonne"
-                @click="form.fields.splice(i, 1)"
-              />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <DsfrButton
-      id="sql-colonne-ajouter"
-      class="fr-mt-1w"
-      size="sm"
-      secondary
-      label="+ Ajouter une colonne"
-      @click="form.fields.push(blankField())"
-    />
+              </td>
+              <td>
+                <input
+                  v-model="field.es_field"
+                  class="fr-input fr-input--sm"
+                  type="text"
+                  placeholder="champ ES"
+                  :aria-label="`Champ ES ligne ${i + 1}`"
+                />
+              </td>
+              <td>
+                <select
+                  v-model="field.es_type"
+                  class="fr-select fr-select--sm"
+                  :aria-label="`Type ES ligne ${i + 1}`"
+                  @change="onTypeChange(field)"
+                >
+                  <option v-for="type in SQL_ES_TYPES" :key="type" :value="type">{{ type }}</option>
+                </select>
+              </td>
+              <td>
+                <input
+                  v-model="field.analyzer"
+                  class="fr-input fr-input--sm"
+                  type="text"
+                  placeholder="ex : french"
+                  :aria-label="`Analyseur ligne ${i + 1}`"
+                />
+              </td>
+              <td>
+                <div class="fr-checkbox-group fr-checkbox-group--sm">
+                  <input
+                    :id="`sql-facet-${i}`"
+                    v-model="field.facet"
+                    type="checkbox"
+                    :disabled="!isFacetable(field.es_type)"
+                  />
+                  <label class="fr-label" :for="`sql-facet-${i}`">
+                    <span class="fr-sr-only">Afficher comme facette</span>
+                  </label>
+                </div>
+              </td>
+              <td>
+                <input
+                  v-model="field.facet_label"
+                  class="fr-input fr-input--sm"
+                  type="text"
+                  placeholder="ex : Bureau"
+                  :aria-label="`Libellé de facette ligne ${i + 1}`"
+                />
+              </td>
+              <td>
+                <input
+                  v-model="field.card_label"
+                  class="fr-input fr-input--sm"
+                  type="text"
+                  placeholder="vide = auto"
+                  :aria-label="`Libellé de carte ligne ${i + 1}`"
+                />
+              </td>
+              <td>
+                <DsfrButton
+                  size="sm"
+                  tertiary
+                  no-outline
+                  label="✕"
+                  data-testid="sql-colonne-retirer"
+                  title="Retirer cette colonne"
+                  @click="form.fields.splice(i, 1)"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <DsfrButton
+        id="sql-colonne-ajouter"
+        class="fr-mt-1w"
+        size="sm"
+        secondary
+        label="+ Ajouter une colonne"
+        @click="form.fields.push(blankField())"
+      />
 
-    <p class="fr-hint-text fr-mt-2w">
-      <code>connection_ref</code> est le NOM d'une variable d'environnement contenant le DSN complet,
-      OU le nom d'un DSN chiffré enregistré plus bas — la variable d'environnement reste toujours
-      prioritaire si elle existe. « Analyseur » n'a de sens que pour le type <code>text</code>
-      (ex. <code>french</code>). « Facette » ajoute une section de filtre dans la recherche dès que
-      cette source est interrogée, et n'est possible que pour les types <code>keyword</code> et
-      <code>boolean</code>.
-    </p>
+      <p class="fr-hint-text fr-mt-2w">
+        <code>connection_ref</code> est le NOM d'une variable d'environnement contenant le DSN
+        complet, OU le nom d'un DSN chiffré enregistré dans le panneau « Sources SQL » — la variable
+        d'environnement reste toujours prioritaire si elle existe. « Analyseur » n'a de sens que
+        pour le type <code>text</code> (ex. <code>french</code>). « Facette » ajoute une section de
+        filtre dans la recherche dès que cette source est interrogée, et n'est possible que pour les
+        types <code>keyword</code> et <code>boolean</code>.
+      </p>
 
-    <div class="ds-admin__row fr-mt-1w">
-      <DsfrButton id="sql-enregistrer" size="sm" label="Enregistrer" :disabled="busy" @click="save" />
-      <DsfrButton id="sql-annuler" size="sm" secondary label="Annuler" @click="emit('cancel')" />
-    </div>
-  </div>
+      <template #footer>
+        <div class="ds-admin__row">
+          <DsfrButton id="sql-enregistrer" size="sm" label="Enregistrer" :disabled="busy" @click="save" />
+          <DsfrButton id="sql-annuler" size="sm" secondary label="Annuler" @click="emit('cancel')" />
+        </div>
+      </template>
+    </DsfrModal>
+  </Teleport>
 </template>

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import { mount } from '@vue/test-utils'
+import { DOMWrapper, mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { VIcon } from '@gouvminint/vue-dsfr'
 import AdminPage from './AdminPage.vue'
@@ -257,16 +257,21 @@ describe('AdminPage', () => {
 
     await wrapper.find('#sqlsources-nouvelle').trigger('click')
     await flush()
-    expect(wrapper.find('#sql-formulaire').exists()).toBe(true)
+    // Le formulaire est une modale téléportée dans <body> : hors du
+    // sous-arbre monté, donc hors de portée de `wrapper.find`.
+    // L'identifiant est celui que nous passons — s'il venait à manquer,
+    // DsfrModal en tirerait un au sort et cette recherche échouerait.
+    const modale = new DOMWrapper(document.body)
+    expect(modale.find('#modale-source-sql').exists()).toBe(true)
 
     // Une source neuve s'ouvre déjà avec une ligne de mapping vierge :
     // deux clics en font donc trois, pas deux.
-    await wrapper.find('#sql-colonne-ajouter').trigger('click')
-    await wrapper.find('#sql-colonne-ajouter').trigger('click')
+    await modale.find('#sql-colonne-ajouter').trigger('click')
+    await modale.find('#sql-colonne-ajouter').trigger('click')
     await flush()
-    expect(wrapper.findAll('[data-testid="sql-colonne"]')).toHaveLength(3)
+    expect(modale.findAll('[data-testid="sql-colonne"]')).toHaveLength(3)
     for (const i of [0, 1, 2]) {
-      expect(wrapper.find(`#sql-facet-${i}`).exists(), `sql-facet-${i}`).toBe(true)
+      expect(modale.find(`#sql-facet-${i}`).exists(), `sql-facet-${i}`).toBe(true)
     }
 
     expect(idsDupliques(wrapper)).toEqual([])

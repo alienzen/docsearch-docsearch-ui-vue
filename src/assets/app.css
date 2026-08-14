@@ -1227,12 +1227,8 @@ body.ds-resizing {
   max-width: 22rem;
 }
 
-/* Formulaire d'édition d'une source SQL — encadré pour se distinguer du
-   tableau au-dessus, dont il édite une ligne. */
-.ds-admin__form {
-  padding: 1rem;
-  border: 1px dashed var(--border-active-blue-france);
-}
+/* Requête SQL du formulaire de source : la casse et les espaces comptent,
+   une chasse fixe les rend lisibles. */
 .ds-admin__query {
   font-family: ui-monospace, monospace;
   font-size: 0.875rem;

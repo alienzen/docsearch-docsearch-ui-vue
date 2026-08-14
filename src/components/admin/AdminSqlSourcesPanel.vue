@@ -94,10 +94,12 @@ async function onSaved(name: string) {
   editing.value = null
   actionMessage.value = `Source SQL « ${name} » enregistrée. Le worker SQL la reprend au passage suivant.`
   await refresh()
-  // Le formulaire, haut de plusieurs écrans, vient de disparaître : la
-  // page se raccourcit d'autant et la vue se retrouve bien plus bas que
-  // le panneau. Sans ce recentrage, la confirmation s'afficherait hors
-  // de l'écran — donc, pour l'utilisateur, il ne se passerait rien.
+  // La confirmation s'affiche en TÊTE du panneau, alors que l'ouverture
+  // du formulaire est partie d'un bouton « Modifier » qui peut être
+  // n'importe où dans le tableau, ou du bouton placé sous lui. La modale
+  // refermée, la page est restée où elle était : sans ce recentrage, la
+  // confirmation apparaîtrait hors de l'écran — donc, pour
+  // l'utilisateur, il ne se passerait rien.
   await nextTick()
   document.getElementById('sqlsources-confirmation')?.scrollIntoView({ block: 'center' })
 }
@@ -174,6 +176,18 @@ const { confirm } = useDialogs()</script>
       </table>
     </div>
 
+    <!-- Le bouton ne s'efface plus derrière le formulaire : celui-ci
+         s'ouvre en modale, par-dessus le panneau. Le `v-if` sur la
+         modale, lui, reste la remise à zéro du formulaire d'une
+         ouverture à l'autre (voir AdminSqlSourceForm). -->
+    <DsfrButton
+      id="sqlsources-nouvelle"
+      class="fr-mt-2w"
+      size="sm"
+      secondary
+      label="+ Nouvelle source SQL"
+      @click="openForm(null)"
+    />
     <AdminSqlSourceForm
       v-if="editing"
       :key="editing.name || 'nouvelle'"
@@ -182,15 +196,6 @@ const { confirm } = useDialogs()</script>
       :dsns="data?.dsns || []"
       @saved="onSaved"
       @cancel="editing = null"
-    />
-    <DsfrButton
-      v-else
-      id="sqlsources-nouvelle"
-      class="fr-mt-2w"
-      size="sm"
-      secondary
-      label="+ Nouvelle source SQL"
-      @click="openForm(null)"
     />
 
     <h3 id="sqlsources-dsn-titre" class="fr-h6 fr-mt-3w">DSN chiffrés</h3>
