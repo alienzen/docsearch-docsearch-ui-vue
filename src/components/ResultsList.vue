@@ -3,27 +3,16 @@
  * Liste des résultats et pagination. Portage de renderResults() et
  * renderPagination() (docsearch-ui/public/js/results.js).
  */
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { useSearchStore } from '@/stores/search'
-import { usePreferencesStore } from '@/stores/preferences'
 import { useSelectionStore } from '@/stores/selection'
 
 const emit = defineEmits<{ detail: [string] }>()
 
 const store = useSearchStore()
-const preferences = usePreferencesStore()
 // La sélection vit dans un store : la barre de sélection et la modale
 // de collection en ont besoin autant que cette liste.
 const selection = useSelectionStore()
-
-/**
- * Basculer la vue compacte doit donner une vue UNIFORME, en écrasant
- * les déplis individuels faits entre-temps. En vanilla, une boucle
- * repassait sur chaque carte ; ici, changer cette clé remonte les
- * cartes, qui repartent donc de l'état initial dicté par la préférence.
- */
-const cardsKey = ref(0)
-watch(() => preferences.resultsCompact, () => cardsKey.value++)
 
 const pages = computed(() => store.totalPages)
 
@@ -102,7 +91,7 @@ const paginationPages = computed(() =>
 
       <ResultCard
         v-for="result in store.results"
-        :key="`${cardsKey}-${result.id}`"
+        :key="result.id"
         :result="result"
         :selected="selection.has(result.id)"
         class="fr-mb-2w"

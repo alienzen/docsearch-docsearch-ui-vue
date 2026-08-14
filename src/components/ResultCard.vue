@@ -11,7 +11,7 @@
  *    SOURCE_PALETTE) laisse place aux badges DSFR : des couleurs
  *    maison n'auraient pas tenu le contraste en thème sombre.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { SearchResult } from '@/api/types'
 import { extLabel, fmtSize } from '@/utils/format'
 import { parseHighlights } from '@/utils/highlight'
@@ -27,11 +27,25 @@ const preferences = usePreferencesStore()
 const uiConfig = useUiConfigStore()
 
 /**
- * Dépli individuel. La vue compacte ne fixe que l'état INITIAL : une
- * carte dépliée à la main le reste — mais basculer la vue d'ensemble
- * réimpose un état uniforme à toutes les cartes (voir ResultsList).
+ * Dépli individuel. La vue compacte fixe l'état initial ; une carte
+ * dépliée à la main le reste ensuite.
  */
 const expanded = ref(!preferences.resultsCompact)
+
+/**
+ * Basculer la vue d'ensemble réimpose un état uniforme à toutes les
+ * cartes, en écrasant les déplis individuels faits entre-temps.
+ *
+ * C'est la carte qui suit la préférence, et non ResultsList qui remonte
+ * ses cartes en changeant leur clé comme il le faisait : un remontage
+ * remplace le corps au lieu de le replier, donc sans transition possible.
+ * Au passage, les résultats mis en avant suivent la bascule eux aussi —
+ * leur clé n'a jamais porté le compteur de remontage.
+ */
+watch(
+  () => preferences.resultsCompact,
+  (compact) => (expanded.value = !compact),
+)
 
 /**
  * Champs apportés par la source, au-delà du schéma commun. Les libellés
@@ -152,7 +166,15 @@ const selectable = computed(
       </button>
     </div>
 
-    <div v-show="expanded" :id="`body-${result.id}`" class="ds-result__body">
+    <!-- Replié par une classe et non par `v-show` : `display: none` ne
+         s'anime pas. Ce que le `display` assurait en plus — contenu hors
+         du parcours au clavier et des lecteurs d'écran — est repris par
+         `content-visibility` dans la règle correspondante. -->
+    <div
+      :id="`body-${result.id}`"
+      class="ds-result__body"
+      :class="{ 'ds-result__body--replie': !expanded }"
+    >
       <ul class="ds-result__meta fr-text--sm">
         <li v-if="result.source">Source : {{ uiConfig.sourceLabel(result.source) }}</li>
         <li v-if="result.author">Auteur : {{ result.author }}</li>

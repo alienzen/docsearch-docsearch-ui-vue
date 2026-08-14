@@ -604,8 +604,46 @@ body.ds-resizing {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Dépli du corps de carte, individuel comme dicté par la vue compacte.
+   Hauteur animée plutôt que `display: none`, qui ne s'anime pas.
+
+   Même vocabulaire que les accordéons plus bas — `interpolate-size` pour
+   interpoler vers `auto`, `content-visibility` en `allow-discrete` pour
+   que le contenu reste affiché le temps du repli — mais sans
+   `::details-content` : ici le pli n'est pas un <details> natif, il est
+   piloté par un bouton et la classe ci-dessous. Même durée que les
+   accordéons, ces deux plis coexistant à l'écran.
+
+   Le rembourrage bas se replie AVEC la hauteur : en `box-sizing:
+   border-box`, que le DSFR pose partout, une hauteur nulle est remontée à
+   la hauteur du rembourrage, et la carte repliée garderait un ruban vide
+   d'un rem sous son titre. */
 .ds-result__body {
   padding: 0 1rem 1rem;
+  block-size: auto;
+  overflow: hidden;
+  interpolate-size: allow-keywords;
+  transition:
+    block-size 0.3s,
+    padding-block-end 0.3s,
+    content-visibility 0.3s;
+  transition-behavior: allow-discrete;
+}
+.ds-result__body--replie {
+  block-size: 0;
+  padding-block-end: 0;
+  /* Ce que `display: none` assurait aussi, et qu'il fallait bien
+     remplacer : contenu retiré du parcours au clavier, des lecteurs
+     d'écran et de la recherche dans la page, et non simplement invisible.
+     En `allow-discrete`, la bascule attend la fin du trajet au repli, et
+     vaut dès la première image au dépli. */
+  content-visibility: hidden;
+}
+/* Comme le DSFR le fait pour ses propres transitions. */
+@media (prefers-reduced-motion: reduce) {
+  .ds-result__body {
+    transition: none;
+  }
 }
 .ds-result__meta {
   display: flex;
@@ -1094,6 +1132,62 @@ body.ds-resizing {
   flex: 1;
 }
 
+/* ── Accordéons natifs : panneaux et facettes ──────────────── */
+/* Ouverture et repli progressifs des <details> : les panneaux des
+   statistiques et de l'administration (CollapsiblePanel, .ds-panel-block)
+   comme les sections de la colonne de facettes (FacetSection, .ds-facet).
+   Une seule règle pour les deux — même balisage, même mécanique, et deux
+   règles jumelles n'auraient donné que deux durées à maintenir. D'où
+   cette section, hors de celles des pages qui s'en servent.
+
+   `::details-content` est la seule prise CSS sur le contenu d'un
+   <details> natif : sans elle il n'y a rien à animer, le navigateur
+   l'affiche et le retire d'un coup. Cela se voit surtout sur les bascules
+   globales — le « Tout replier » de l'administration comme celui de la
+   colonne de facettes — où une poignée de blocs s'escamotent ensemble.
+
+   0,3 s : la durée que le DSFR applique déjà au chevron
+   (`.fr-accordion__btn::after { transition: transform 0.3s }`). Le
+   contenu et sa flèche arrivent ainsi ensemble.
+
+   `interpolate-size` est posé ICI plutôt que sur `:root` : il autorise
+   l'animation vers `auto` — seule valeur qui suive la hauteur réelle du
+   bloc, inconnue d'avance — et le restreindre à ces blocs évite d'ouvrir
+   toutes les transitions vers un mot-clé de taille du reste de
+   l'interface.
+
+   `content-visibility` en `allow-discrete` garde le contenu affiché le
+   temps de la fermeture ; sans lui il disparaîtrait dès la première
+   image et la hauteur s'animerait dans le vide.
+
+   Amélioration progressive : un navigateur sans `::details-content`
+   ignore ce bloc et retrouve le comportement actuel, le pli restant
+   assuré par <details> lui-même. */
+.ds-panel-block,
+.ds-facet {
+  interpolate-size: allow-keywords;
+}
+.ds-panel-block::details-content,
+.ds-facet::details-content {
+  block-size: 0;
+  overflow: hidden;
+  transition:
+    block-size 0.3s,
+    content-visibility 0.3s;
+  transition-behavior: allow-discrete;
+}
+.ds-panel-block[open]::details-content,
+.ds-facet[open]::details-content {
+  block-size: auto;
+}
+/* Comme le DSFR le fait pour le chevron. */
+@media (prefers-reduced-motion: reduce) {
+  .ds-panel-block::details-content,
+  .ds-facet::details-content {
+    transition: none;
+  }
+}
+
 /* ── Statistiques ──────────────────────────────────────────── */
 .ds-stats__toolbar {
   display: flex;
@@ -1102,6 +1196,7 @@ body.ds-resizing {
 .ds-panel-block {
   margin-bottom: 1rem;
 }
+
 .ds-stats__cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
