@@ -8,7 +8,7 @@
  * intervalle. L'administration ne gère que le registre — l'API ne
  * résout jamais un DSN et ne se connecte jamais à une base.
  */
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import {
   createSqlDsn,
   deleteSqlDsn,
@@ -26,6 +26,8 @@ const { data, error, refresh } = useStatsPanel(async () => ({
 }))
 
 const actionError = ref<string | null>(null)
+/** Confirmation du dernier enregistrement — voir onSaved(). */
+const actionMessage = ref<string | null>(null)
 /** null = formulaire fermé ; { name: null } = création. */
 const editing = ref<{ name: string | null; source?: SqlSource } | null>(null)
 
@@ -34,6 +36,7 @@ const dsnValue = ref('')
 
 async function run(action: () => Promise<unknown>) {
   actionError.value = null
+  actionMessage.value = null
   try {
     await action()
     await refresh()
@@ -80,9 +83,23 @@ function addDsn() {
   })
 }
 
-async function onSaved() {
+/** null = création. */
+function openForm(name: string | null, source?: SqlSource) {
+  actionError.value = null
+  actionMessage.value = null
+  editing.value = { name, source }
+}
+
+async function onSaved(name: string) {
   editing.value = null
+  actionMessage.value = `Source SQL « ${name} » enregistrée. Le worker SQL la reprend au passage suivant.`
   await refresh()
+  // Le formulaire, haut de plusieurs écrans, vient de disparaître : la
+  // page se raccourcit d'autant et la vue se retrouve bien plus bas que
+  // le panneau. Sans ce recentrage, la confirmation s'afficherait hors
+  // de l'écran — donc, pour l'utilisateur, il ne se passerait rien.
+  await nextTick()
+  document.getElementById('sqlsources-confirmation')?.scrollIntoView({ block: 'center' })
 }
 
 const { confirm } = useDialogs()</script>
@@ -100,6 +117,15 @@ const { confirm } = useDialogs()</script>
       type="error"
       small
       :description="actionError"
+      class="fr-mb-2w"
+    />
+
+    <DsfrAlert
+      v-if="actionMessage"
+      id="sqlsources-confirmation"
+      type="success"
+      small
+      :description="actionMessage"
       class="fr-mb-2w"
     />
 
@@ -133,7 +159,7 @@ const { confirm } = useDialogs()</script>
                 secondary
                 label="Modifier"
                 data-testid="sqlsources-modifier"
-                @click="editing = { name: String(name), source }"
+                @click="openForm(String(name), source)"
               />
               <DsfrButton
                 size="sm"
@@ -164,7 +190,7 @@ const { confirm } = useDialogs()</script>
       size="sm"
       secondary
       label="+ Nouvelle source SQL"
-      @click="editing = { name: null }"
+      @click="openForm(null)"
     />
 
     <h3 id="sqlsources-dsn-titre" class="fr-h6 fr-mt-3w">DSN chiffrés</h3>

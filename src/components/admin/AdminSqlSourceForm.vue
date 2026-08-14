@@ -7,7 +7,7 @@
  * à créer une source distincte plutôt qu'à modifier celle-ci (voir
  * sql_sources_config.add_source côté API).
  */
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import {
   createSqlSource,
   isFacetable,
@@ -24,7 +24,7 @@ const props = defineProps<{
   dsns: SqlDsn[]
 }>()
 
-const emit = defineEmits<{ saved: []; cancel: [] }>()
+const emit = defineEmits<{ saved: [name: string]; cancel: [] }>()
 
 const isEdit = computed(() => !!props.source)
 const error = ref<string | null>(null)
@@ -84,9 +84,35 @@ function onTypeChange(field: SqlField) {
   if (!isFacetable(field.es_type)) field.facet = false
 }
 
+/**
+ * Le bandeau d'erreur est en TÊTE du formulaire, le bouton
+ * « Enregistrer » à son PIED, et il y a un bon écran entre les deux :
+ * annoncé sans être ramené à l'écran, le refus resterait invisible —
+ * exactement le silence qu'on cherche à supprimer.
+ */
+async function signalerErreur(message: string) {
+  error.value = message
+  await nextTick()
+  document.getElementById('sql-erreur')?.scrollIntoView({ block: 'center' })
+}
+
 async function save() {
-  const fields = form.value.fields.filter((f) => f.column.trim() && f.es_field.trim())
   const f = form.value
+  // Une ligne à moitié remplie doit BLOQUER l'enregistrement, pas être
+  // filtrée : écartée en silence, l'appel réussissait, le formulaire se
+  // fermait, et la colonne saisie avait disparu sans un mot d'erreur ni
+  // de confirmation. Seule une ligne entièrement vide reste tolérée —
+  // rien n'y a été saisi, donc rien n'y est perdu (typiquement un
+  // « + Ajouter une colonne » regretté).
+  const incomplete = f.fields.findIndex((x) => !!x.column.trim() !== !!x.es_field.trim())
+  if (incomplete !== -1) {
+    await signalerErreur(
+      `Mapping, ligne ${incomplete + 1} : « Colonne SQL » et « Champ ES » doivent être ` +
+        `renseignées toutes les deux — remplissez celle qui manque, ou retirez la ligne (✕).`,
+    )
+    return
+  }
+  const fields = f.fields.filter((x) => x.column.trim() && x.es_field.trim())
   if (
     !f.name.trim() ||
     !f.connection_ref.trim() ||
@@ -95,8 +121,9 @@ async function save() {
     !f.query.trim() ||
     !fields.length
   ) {
-    error.value =
-      'Tous les champs sont requis : nom, connection_ref, index ES, colonne ID, requête, et au moins une colonne de mapping.'
+    await signalerErreur(
+      'Tous les champs sont requis : nom, connection_ref, index ES, colonne ID, requête, et au moins une colonne de mapping.',
+    )
     return
   }
   busy.value = true
@@ -127,9 +154,9 @@ async function save() {
       label: f.label.trim() || undefined,
       description: f.description.trim() || undefined,
     })
-    emit('saved')
+    emit('saved', f.name.trim())
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    await signalerErreur(e instanceof Error ? e.message : String(e))
   } finally {
     busy.value = false
   }
