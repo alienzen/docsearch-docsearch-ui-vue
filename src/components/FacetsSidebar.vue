@@ -15,12 +15,31 @@ import { useUiConfigStore } from '@/stores/uiConfig'
 import { usePreferencesStore } from '@/stores/preferences'
 import { extLabel } from '@/utils/format'
 import { folderBasename } from '@/utils/paths'
+import { dimensionsAffichables, seauxAffichables, type DimensionFacette } from '@/utils/facettes'
+import type { FacetBucket } from '@/api/types'
 
 const store = useSearchStore()
 const uiConfig = useUiConfigStore()
 const preferences = usePreferencesStore()
 
 const facets = computed(() => store.facets)
+
+/** Dimensions qu'apportent les sources sélectionnées — voir utils/facettes.ts. */
+const dimensions = computed(() => dimensionsAffichables(store.source, uiConfig.allSources))
+
+/**
+ * Une facette fixe reste à l'écran si les sources sélectionnées portent
+ * sa dimension, OU si la recherche lui a quand même trouvé des valeurs.
+ *
+ * Le second terme n'est pas une précaution de style : ce qu'une source
+ * DÉCLARE et ce que ses documents PORTENT peuvent diverger (index plus
+ * ancien que la configuration, colonne renommée), et une facette qui a
+ * des valeurs ne doit jamais disparaître — c'est le seul endroit d'où on
+ * peut les cocher.
+ */
+function affiche(dimension: DimensionFacette, buckets: FacetBucket[] = []) {
+  return dimensions.value.has(dimension) || seauxAffichables(buckets).length > 0
+}
 
 // Les dates passent par des champs locaux : on ne relance la recherche
 // qu'à la validation, pas à chaque frappe dans le sélecteur de date.
@@ -57,7 +76,12 @@ const dateTo = computed({
     <p v-if="!facets" class="fr-hint-text">Lancez une recherche pour affiner les résultats.</p>
 
     <template v-else>
+      <!-- Les facettes fixes décrivent des documents de fichiers : elles
+           ne s'affichent que si les sources sélectionnées les portent
+           (voir `affiche`). Sans sélection de source, elles sont toutes
+           là, comme avant. -->
       <FacetGroup
+        v-if="affiche('ext', facets.extensions)"
         id="facet-extensions"
         title="Type de fichier"
         :buckets="facets.extensions"
@@ -76,6 +100,7 @@ const dateTo = computed({
         @toggle="store.toggleFacet('source', $event)"
       />
       <FacetGroup
+        v-if="affiche('author', facets.authors)"
         id="facet-authors"
         title="Auteur"
         :buckets="facets.authors"
@@ -84,6 +109,7 @@ const dateTo = computed({
         @toggle="store.toggleFacet('author', $event)"
       />
       <FacetGroup
+        v-if="affiche('keywords', facets.keywords)"
         id="facet-keywords"
         title="Mots-clés"
         :buckets="facets.keywords"
@@ -93,6 +119,7 @@ const dateTo = computed({
         @toggle="store.toggleFacet('keywords', $event)"
       />
       <FacetGroup
+        v-if="affiche('folder', facets.folders)"
         id="facet-folders"
         title="Dossier"
         :buckets="facets.folders"
@@ -119,7 +146,7 @@ const dateTo = computed({
            `v-else` : hors de lui, elle s'affichait alors que les autres
            étaient absentes, ce qui la faisait paraître d'une autre
            nature. -->
-      <FacetSection id="facet-dates" title="Période de modification">
+      <FacetSection v-if="affiche('date')" id="facet-dates" title="Période de modification">
         <div class="fr-input-group fr-input-group--sm">
           <label class="fr-label" for="date-from">Du</label>
           <input id="date-from" v-model="dateFrom" class="fr-input" type="date" />

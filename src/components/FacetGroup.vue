@@ -8,6 +8,7 @@
  */
 import { computed } from 'vue'
 import type { FacetBucket } from '@/api/types'
+import { seauxAffichables } from '@/utils/facettes'
 
 const props = defineProps<{
   /** Identifiant stable, sert de clé de persistance du pli. */
@@ -30,10 +31,11 @@ const props = defineProps<{
 
 const emit = defineEmits<{ toggle: [value: string] }>()
 
-// Les seaux à clé vide sont écartés : Elasticsearch en renvoie pour les
-// documents dont le champ n'est pas renseigné, et une ligne de facette
-// sans libellé n'est pas cliquable utilement.
-const rows = computed(() => props.buckets.filter((b) => b.key !== '' && b.key != null))
+// Même filtre que celui dont FacetsSidebar se sert pour décider si une
+// facette a quelque chose à montrer : les deux doivent voir la même
+// chose, sans quoi la colonne garderait une section pour un seau que ce
+// composant écarte.
+const rows = computed(() => seauxAffichables(props.buckets))
 </script>
 
 <template>
