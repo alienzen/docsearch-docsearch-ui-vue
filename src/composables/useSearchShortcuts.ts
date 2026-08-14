@@ -1,6 +1,7 @@
 import { onBeforeUnmount, onMounted } from 'vue'
 import { useSearchStore } from '@/stores/search'
 import { usePreferencesStore } from '@/stores/preferences'
+import { remonterEnHaut } from '@/utils/scroll'
 
 type Actions = {
   /** Appelé par « s » — enregistrer la recherche en cours. */
@@ -48,16 +49,22 @@ export function useSearchShortcuts(actions: Actions = {}) {
         e.preventDefault()
         document.querySelector<HTMLInputElement>('.fr-search-bar input')?.focus()
         break
+      // Les deux flèches remontent comme le fait la pagination cliquée :
+      // le raccourci s'utilise justement en fin de liste, une fois les
+      // résultats parcourus, donc à un endroit d'où la page suivante
+      // s'ouvrirait sur ses derniers résultats.
       case 'ArrowLeft':
         if (resultsVisible && store.page > 1) {
           e.preventDefault()
           store.goToPage(store.page - 1)
+          remonterEnHaut()
         }
         break
       case 'ArrowRight':
         if (resultsVisible && store.page < store.totalPages) {
           e.preventDefault()
           store.goToPage(store.page + 1)
+          remonterEnHaut()
         }
         break
       case 'c':
@@ -122,7 +129,7 @@ export function useSearchShortcuts(actions: Actions = {}) {
         break
       case 'h':
       case 'H':
-        window.scrollTo({ top: 0, behavior: 'smooth' })
+        remonterEnHaut('smooth')
         break
     }
   }

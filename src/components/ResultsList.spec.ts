@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import ResultsList from './ResultsList.vue'
@@ -61,5 +61,35 @@ describe('ResultsList — indication d\'attente', () => {
     const w = mountList()
     expect(w.find('.ds-spinner').exists()).toBe(false)
     expect(w.classes()).not.toContain('ds-results--loading')
+  })
+})
+
+describe('ResultsList — changement de page', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    // jsdom ne défile pas : `window.scrollTo` y lève « Not implemented »
+    // au lieu d'être observable. On le remplace pour vérifier l'appel.
+    vi.stubGlobal('scrollTo', vi.fn())
+  })
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('remonte en haut de la page au clic sur la pagination', async () => {
+    const store = useSearchStore()
+    store.hasSearched = true
+    store.results = [{ id: '1' }] as never
+    // Deux pages au moins, sans quoi la pagination n'est pas rendue.
+    store.total = 100
+    // La recherche elle-même n'est pas le sujet, et partirait vers une
+    // API absente.
+    const goToPage = vi.spyOn(store, 'goToPage').mockResolvedValue(undefined)
+
+    const w = mountList()
+    await w.findComponent({ name: 'DsfrPagination' }).vm.$emit('update:current-page', 2)
+
+    // DsfrPagination compte à partir de zéro, le store à partir de un.
+    expect(goToPage).toHaveBeenCalledWith(3)
+    // Saut immédiat, et non animé : la liste est remplacée en entier,
+    // il n'y a pas de déplacement à donner à voir (voir utils/scroll.ts).
+    expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'instant' })
   })
 })

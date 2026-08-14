@@ -6,6 +6,7 @@
 import { computed } from 'vue'
 import { useSearchStore } from '@/stores/search'
 import { useSelectionStore } from '@/stores/selection'
+import { remonterEnHaut } from '@/utils/scroll'
 
 const emit = defineEmits<{ detail: [string] }>()
 
@@ -30,6 +31,17 @@ const paginationPages = computed(() =>
     href: '#',
   })),
 )
+
+/**
+ * Le défilement ne peut pas vivre dans `goToPage` : le store est le
+ * même pour toute l'application et n'a aucune raison de toucher au DOM.
+ * Il est donc posé sur les deux seuls chemins qui changent de page —
+ * ici et dans useSearchShortcuts, pour les flèches.
+ */
+function allerALaPage(numero: number) {
+  store.goToPage(numero)
+  remonterEnHaut()
+}
 </script>
 
 <template>
@@ -104,7 +116,7 @@ const paginationPages = computed(() =>
         id="resultats-pagination"
         :current-page="store.page - 1"
         :pages="paginationPages"
-        @update:current-page="store.goToPage($event + 1)"
+        @update:current-page="allerALaPage($event + 1)"
       />
     </template>
   </div>
