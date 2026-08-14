@@ -37,9 +37,16 @@ const expanded = ref(!preferences.resultsCompact)
  * Champs apportés par la source, au-delà du schéma commun. Les libellés
  * viennent de `card_fields` de la source (mapping SQL) ; à défaut ils
  * sont dérivés du nom de champ, et un libellé vide masque le champ.
+ *
+ * `admin` ouvre en plus les champs réservés (l'empreinte de contenu —
+ * voir RESERVES_ADMIN dans extraFields), que `card_fields` ne peut pas
+ * commander puisqu'ils ne viennent pas d'une source SQL. Même argument
+ * dans la fiche détail, qui rend les mêmes champs.
  */
 const extras = computed(() =>
-  extraFields(props.result, uiConfig.sourceCardFields(props.result.source || '')),
+  extraFields(props.result, uiConfig.sourceCardFields(props.result.source || ''), {
+    admin: uiConfig.isAdmin,
+  }),
 )
 
 /** Réglages propres à la source, s'il en existe (public/custom-sources.js). */
@@ -130,7 +137,16 @@ const selectable = computed(
           Mis en avant
         </span>
         <span class="ds-result__title">{{ title }}</span>
-        <span v-if="scorePct !== null" class="fr-badge fr-badge--sm fr-badge--info">
+        <!-- Le pourcentage de pertinence se masque depuis l'administration
+             (`score_enabled`) : un score relatif à une requête se lit mal
+             sans savoir ce qu'il mesure, et « 40 % » sur un document
+             pourtant juste inquiète plus qu'il n'informe. Le CLASSEMENT,
+             lui, ne bouge pas. -->
+        <span
+          v-if="scorePct !== null && uiConfig.config.score_enabled"
+          class="fr-badge fr-badge--sm fr-badge--info"
+          data-testid="carte-resultat-score"
+        >
           {{ scorePct }} %
         </span>
       </button>

@@ -61,9 +61,16 @@ watch(
  * libellés de son mapping. Même mécanisme que la carte de résultat :
  * une fiche d'agent doit montrer bureau, fonction et téléphone, pas une
  * enfilade de « — » sur des métadonnées de fichier qu'elle n'a pas.
+ *
+ * Et même réserve d'administration : l'empreinte de contenu ne sort
+ * qu'en administration (voir RESERVES_ADMIN dans extraFields). Sans ce
+ * drapeau, la fiche l'aurait montrée à tous alors que la carte la
+ * masque — le même champ, deux écrans, deux réponses.
  */
 const extras = computed(() =>
-  extraFields(doc.value || {}, uiConfig.sourceCardFields(doc.value?.source || '')),
+  extraFields(doc.value || {}, uiConfig.sourceCardFields(doc.value?.source || ''), {
+    admin: uiConfig.isAdmin,
+  }),
 )
 
 /**

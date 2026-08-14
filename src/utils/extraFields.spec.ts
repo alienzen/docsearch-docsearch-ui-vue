@@ -78,6 +78,24 @@ describe('champs apportés par la source', () => {
     expect(champs.mail).toBe('Mail')
   })
 
+  // L'empreinte de contenu est posée par l'ingestion sur tout document
+  // fichier : elle ne peut pas se masquer par `card_fields`, qui ne
+  // décrit que les colonnes d'une source SQL. Elle sert à
+  // l'administrateur (panneau des doublons), à personne d'autre.
+  it('réserve l’empreinte de contenu aux administrateurs', () => {
+    const doc = { id: 'abc', filename: 'rapport.pdf', content_sha256: 'a1b2c3' }
+    expect(extraFields(doc, {}).map((c) => c.key)).not.toContain('content_sha256')
+    expect(extraFields(doc, {}, { admin: true }).map((c) => c.key)).toContain('content_sha256')
+  })
+
+  // Le défaut protège : la carte de résultat et la fiche détail passent
+  // le drapeau, un troisième appelant qui l'oublierait masquerait plutôt
+  // que de divulguer.
+  it('masque les champs réservés quand le drapeau est absent', () => {
+    const champs = extraFields({ id: 'abc', content_sha256: 'a1b2c3' })
+    expect(champs).toEqual([])
+  })
+
   it('ignore les valeurs vides et non affichables sur une ligne', () => {
     const cles = extraFields(
       { id: '1', score: 1, highlight: [], vide: '', absent: null, liste: [1, 2] },

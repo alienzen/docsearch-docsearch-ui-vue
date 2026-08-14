@@ -44,6 +44,12 @@ export type UiConfig = {
    */
   search_time_enabled: boolean
   /**
+   * Badge de pourcentage de pertinence sur les cartes de résultat.
+   * `true` par défaut : le badge existait avant sa bascule. N'influe que
+   * sur son affichage — le classement par pertinence reste le même.
+   */
+  score_enabled: boolean
+  /**
    * Section « Droits d'accès » de la fiche détail, visible des
    * utilisateurs non administrateurs. Désactivée, elle reste visible des
    * seuls administrateurs.
@@ -145,6 +151,7 @@ const DEFAULT_UI_CONFIG: UiConfig = {
   collections_shared_enabled: false,
   sort_enabled: true,
   search_time_enabled: false,
+  score_enabled: true,
   acl_visible_enabled: true,
   shortcuts_link_enabled: true,
   empty_state_animation_enabled: true,

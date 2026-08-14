@@ -49,6 +49,27 @@ const TECHNIQUES = new Set([
   'pinned',
 ])
 
+/**
+ * Champs réservés aux administrateurs.
+ *
+ * `content_sha256` est l'empreinte de contenu posée par l'ingestion sur
+ * les documents fichiers. Elle n'apprend rien à un utilisateur — 64
+ * caractères hexadécimaux au milieu de ses métadonnées — mais sert à
+ * l'administrateur pour rapprocher un document d'une ligne du panneau
+ * des doublons, qui regroupe précisément sur ce champ.
+ *
+ * Ici et non dans `TECHNIQUES` : c'est un champ AFFICHABLE, sous
+ * condition, pas un champ de service. Et ici plutôt qu'au cas par cas
+ * chez les appelants : la carte de résultat et la fiche détail rendent
+ * les mêmes champs, et deux règles à tenir alignées finissent par
+ * diverger.
+ *
+ * ⚠️ Ce n'est pas un contrôle d'accès : la valeur reste dans la réponse
+ * de l'API. Masquer un champ d'écran ne protège rien — même réserve que
+ * la section « Droits d'accès » de la fiche détail.
+ */
+const RESERVES_ADMIN = new Set(['content_sha256'])
+
 export type ExtraField = { key: string; label: string; value: string }
 
 /**
@@ -73,6 +94,9 @@ function libelleParDefaut(key: string): string {
  * intérêt à l'écran (un identifiant interne, un nom déjà présent dans le
  * titre) et de corriger les libellés dérivés, qui ignorent les accents —
  * « numero_piece » ne peut pas donner « Numéro de pièce » tout seul.
+ *
+ * `admin` ouvre les champs de RESERVES_ADMIN. Il vaut `false` par
+ * défaut : un appelant qui l'oublie masque, il ne divulgue pas.
  */
 export function extraFields(
   // Un simple dictionnaire : cette fonction ne fait qu'itérer des
@@ -80,10 +104,12 @@ export function extraFields(
   // détail — deux types voisins mais distincts.
   result: Record<string, unknown>,
   labels: Record<string, string | null> = {},
+  { admin = false }: { admin?: boolean } = {},
 ): ExtraField[] {
   const out: ExtraField[] = []
   for (const [key, value] of Object.entries(result)) {
     if (TECHNIQUES.has(key)) continue
+    if (!admin && RESERVES_ADMIN.has(key)) continue
     // Les sous-champs ACL arrivent aplatis (« acl.public », « acl.groups »).
     if (key.startsWith('acl')) continue
     if (value === null || value === undefined || value === '') continue

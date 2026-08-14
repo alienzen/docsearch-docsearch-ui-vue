@@ -62,6 +62,11 @@ const TOGGLES: { key: keyof UiConfig; label: string }[] = [
       'Temps de recherche affiché à côté du décompte de résultats (chacun peut ensuite le masquer)',
   },
   {
+    key: 'score_enabled',
+    label:
+      'Pourcentage de pertinence sur les cartes de résultat (masqué, le classement par pertinence reste le même)',
+  },
+  {
     key: 'acl_visible_enabled',
     label: 'Section « Droits d’accès » de la fiche détail, visible de tous (sinon : administrateurs seuls)',
   },
