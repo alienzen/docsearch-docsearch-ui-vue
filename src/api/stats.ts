@@ -115,6 +115,13 @@ export type SearchLogEntry = {
   date_to?: string
   feedback?: 'up' | 'down'
   clicks?: unknown[]
+  /**
+   * Clics dont l'utilisateur a effacé le détail : le document ouvert et
+   * la date ont été supprimés du journal, leur nombre est reporté ici
+   * (voir `history_purge.py`). Absent tant que personne n'a rien effacé.
+   * `clicks.length` seul sous-compterait donc les consultations.
+   */
+  clicks_erased?: number
   // Absents des recherches antérieures à la mesure des temps.
   duration_ms?: number
   took_ms?: number

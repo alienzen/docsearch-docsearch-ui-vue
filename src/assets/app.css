@@ -237,6 +237,16 @@
   }
 }
 
+/* Titre de la liste des documents récemment consultés, et sa commande
+   d'effacement à côté. Centré comme le reste de cet écran d'accueil. */
+.ds-empty__recents-entete {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
 /* Variante « suggestions » ---------------------------------- */
 .ds-empty__examples {
   display: flex;
@@ -716,6 +726,12 @@ body.ds-resizing {
 .ds-menu__name {
   display: block;
   font-weight: 500;
+}
+/* Effacement d'une liste personnelle. Signalé par la couleur d'erreur —
+   c'est une commande destructrice — mais laissé dans le flux des
+   entrées : elle demande confirmation avant d'agir. */
+.fr-menu .ds-menu__button--effacer {
+  color: var(--text-default-error);
 }
 /* Puces de critères resserrées et sur une seule ligne de hauteur. */
 .ds-menu__entry .fr-tags-group {

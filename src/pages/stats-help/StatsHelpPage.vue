@@ -180,6 +180,21 @@ onMounted(async () => {
       courant mais <strong>ignore la pagination</strong> : il contient toutes les lignes
       correspondantes, pas seulement la page affichée.
     </p>
+    <p>
+      La colonne « Utilisateur » de l'export porte <strong>« (anonymisée) »</strong> pour les
+      recherches dont l'auteur a effacé son historique : ce geste ôte du journal, définitivement,
+      le compte et l'adresse IP de ses recherches passées. La requête, ses résultats et les
+      groupes restent — la ligne compte toujours dans les volumétries et dans les répartitions
+      par service, elle sort seulement des décomptes par utilisateur.
+    </p>
+    <p>
+      La colonne « Clics » indique, elle, <strong>« 3 (dont 2 effacés) »</strong> quand
+      l'utilisateur a effacé ses documents consultés : le détail de ces clics — quel document, à
+      quelle heure — est supprimé du journal, seul leur nombre subsiste. La recherche a bien mené
+      à trois consultations et le tableau continue de le dire ; ce qu'on ne peut plus savoir,
+      c'est lesquelles. L'export XLS reprend ce total et détaille la part effacée en dernière
+      colonne.
+    </p>
 
     <h2 id="aide-stats-audit" class="fr-h5">Journal d'audit</h2>
     <p>
@@ -220,11 +235,14 @@ onMounted(async () => {
       <li>
         « Non renseigné » rassemble les enregistrements antérieurs à la capture des groupes et les
         utilisateurs sans appartenance — et, pour les suggestions, celles déposées anonymement, que
-        rien ne permet de distinguer sans percer l'anonymat.
+        rien ne permet de distinguer sans percer l'anonymat. Les recherches anonymisées par leur
+        auteur, elles, gardent leurs groupes : elles restent comptées dans leur service.
       </li>
       <li>
         Aucun effectif minimum n'est appliqué : dans un groupe très restreint, ces chiffres peuvent
-        désigner une seule personne. À manier en conséquence.
+        désigner une seule personne. À manier en conséquence — y compris pour les recherches
+        anonymisées, dont le service subsiste : l'anonymisation ôte le nom, elle ne rend pas
+        indevinable ce qu'un effectif de trois laisse deviner.
       </li>
     </ul>
 

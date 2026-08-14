@@ -68,6 +68,25 @@ const FEEDBACK_LABELS: Record<string, { icone: string; texte: string }> = {
   up: { icone: 'fr-icon-thumb-up-line', texte: 'Positif' },
   down: { icone: 'fr-icon-thumb-down-line', texte: 'Négatif' },
 }
+
+/**
+ * Nombre de documents ouverts depuis cette recherche — clics effacés
+ * COMPRIS.
+ *
+ * Quand l'utilisateur efface ses documents consultés, le détail de ses
+ * clics est supprimé du journal et seul leur nombre subsiste
+ * (`clicks_erased`, voir history_purge.py). Ne compter que `clicks`
+ * ferait passer pour infructueuse une recherche qui a mené à trois
+ * consultations : la mention « dont N effacés » dit pourquoi le détail
+ * manque, plutôt que de laisser croire à un défaut de collecte.
+ */
+function clics(entry: SearchLogEntry): string {
+  const detailles = (entry.clicks || []).length
+  const effaces = entry.clicks_erased || 0
+  if (!detailles && !effaces) return '—'
+  if (!effaces) return String(detailles)
+  return `${detailles + effaces} (dont ${effaces} effacé${effaces > 1 ? 's' : ''})`
+}
 </script>
 
 <template>
@@ -149,7 +168,7 @@ const FEEDBACK_LABELS: Record<string, { icone: string; texte: string }> = {
               </template>
               <template v-else>—</template>
             </td>
-            <td>{{ (entry.clicks || []).length || '—' }}</td>
+            <td>{{ clics(entry) }}</td>
           </tr>
         </tbody>
       </table>

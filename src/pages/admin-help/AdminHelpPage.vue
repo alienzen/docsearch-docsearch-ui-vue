@@ -192,6 +192,26 @@ onMounted(async () => {
       Conséquence à connaître&nbsp;: les statistiques, l'historique de recherche personnel et
       les documents récemment consultés ne portent que sur la fenêtre conservée.
     </p>
+    <p class="fr-hint-text">
+      ⚠️ Cette purge est la <strong>seule</strong> qui supprime des lignes entières, mais ce
+      n'est plus la seule qui écrit dans le journal&nbsp;: les deux effacements que
+      l'utilisateur commande lui-même le réécrivent, définitivement.
+    </p>
+    <p class="fr-hint-text">
+      Quand il efface ses <strong>recherches récentes</strong>, elles y sont
+      <strong>anonymisées</strong> — compte et adresse IP ôtés. La requête, les résultats, les
+      temps, l'avis déposé et <strong>les groupes</strong> restent&nbsp;: un groupe désigne un
+      service, pas quelqu'un. Ces lignes quittent donc les décomptes par utilisateur, mais ni
+      les volumétries ni les répartitions par service.
+    </p>
+    <p class="fr-hint-text">
+      Quand il efface ses <strong>documents consultés</strong>, le détail de ses clics est
+      <strong>supprimé</strong> — quel document, quand, à quelle position — et seul leur
+      <strong>nombre</strong> subsiste. La colonne « Clics » de l'historique continue donc de
+      compter juste, en indiquant « dont N effacés »&nbsp;; l'export XLS porte le détail dans
+      une colonne dédiée. Ce qui disparaît, ce sont les documents ouverts, pas le fait que la
+      recherche ait abouti.
+    </p>
 
     <h2 id="aide-admin-apparence" class="fr-h5">Apparence</h2>
     <p>

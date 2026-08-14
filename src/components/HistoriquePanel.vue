@@ -131,19 +131,21 @@ function occurrences(entree: RechercheRecente): string {
  * les rattachait à leur auteur en est ôté pour de bon, le texte cherché
  * y reste pour les statistiques (voir history_purge.py).
  *
- * Trois choses s'y disent parce qu'elles surprendraient sinon : que le
- * texte demeure au journal, que les documents récemment consultés
- * partent avec (ils sont enregistrés dans ces mêmes recherches), et que
- * c'est irréversible. Promettre une disparition totale, ou taire le
- * dommage collatéral, serait un mensonge d'écran.
+ * Quatre choses s'y disent parce qu'elles surprendraient sinon : que le
+ * texte demeure au journal, que le SERVICE y demeure aussi (les groupes
+ * ne sont pas anonymisés — ils décrivent un service, pas quelqu'un), que
+ * les documents récemment consultés partent avec (ils sont enregistrés
+ * dans ces mêmes recherches), et que c'est irréversible. Promettre une
+ * disparition totale, ou taire le dommage collatéral, serait un mensonge
+ * d'écran.
  */
 async function effacer() {
   const ok = await confirm(
-    "Vos recherches passées seront rendues anonymes dans le journal de l'installation : " +
-      "ni votre compte, ni votre poste, ni votre service n'y resteront attachés. Elles " +
-      'disparaîtront de cette liste, des suggestions de saisie et de vos derniers documents ' +
-      'consultés, qui sont enregistrés dans ces mêmes recherches. Le texte cherché, lui, reste ' +
-      'au journal pour les statistiques, mais plus rien ne le rattachera à vous. ' +
+    "Vos recherches passées seront rendues anonymes dans le journal de l'installation : ni " +
+      "votre compte ni votre poste n'y resteront attachés — seul votre service y reste, pour " +
+      'les statistiques. Elles disparaîtront de cette liste, des suggestions de saisie et de ' +
+      'vos derniers documents consultés, qui sont enregistrés dans ces mêmes recherches. Le ' +
+      'texte cherché, lui, reste au journal, sans plus votre nom. ' +
       "C'est définitif.",
     { title: 'Effacer mes recherches récentes', confirmLabel: 'Effacer' },
   )

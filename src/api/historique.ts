@@ -50,6 +50,39 @@ export function listerRecherchesRecentes(limite = 10): Promise<{ searches: Reche
 }
 
 /**
+ * Efface l'historique de recherche de l'utilisateur courant, en
+ * ANONYMISANT ses recherches au journal de l'installation.
+ *
+ * ⚠️ Irréversible, et pas un simple masquage : l'API ôte des recherches
+ * passées le compte et l'adresse IP (voir `history_purge.py`). Le texte
+ * cherché, les résultats, les avis et les groupes restent au journal
+ * pour les statistiques — un groupe décrit un service, pas quelqu'un —
+ * mais plus rien n'y nomme leur auteur.
+ *
+ * ⚠️ Emporte aussi « Vos derniers documents consultés » pour la période
+ * antérieure : les clics sont enregistrés DANS le document de leur
+ * recherche. L'écran qui appelle cette fonction doit annoncer les deux —
+ * une confirmation qui tait ce qu'elle détruit ne confirme rien.
+ */
+export function purgerRecherchesRecentes(): Promise<{ purged_at: string }> {
+  return api<{ purged_at: string }>('/me/searches', { method: 'DELETE' })
+}
+
+/**
+ * Efface « Vos derniers documents consultés ».
+ *
+ * ⚠️ Irréversible aussi, mais par SUPPRESSION et non par anonymisation :
+ * le détail des clics antérieurs — quel document, quand, à quelle
+ * position — est ôté du journal, seul leur nombre y reste (voir
+ * `history_purge.py`). Anonymiser aurait emporté les recherches, dont
+ * les clics font partie ; supprimer ne coûte que ce qui est demandé.
+ * L'écran doit le dire aussi précisément que l'autre.
+ */
+export function purgerDocumentsRecents(): Promise<{ purged_at: string }> {
+  return api<{ purged_at: string }>('/me/recent-documents', { method: 'DELETE' })
+}
+
+/**
  * `signal` est indispensable, pas décoratif : l'appel part à chaque
  * frappe, et sans annulation une réponse lente pour « bud » peut arriver
  * après celle de « budget » et réafficher les suggestions d'avant.

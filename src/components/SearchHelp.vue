@@ -176,16 +176,37 @@ const operators: [string, string, string][] = [
         </li>
         <li v-if="uiConfig.config.search_history_enabled">
           <strong>« Mes recherches récentes »</strong> (barre de navigation)&nbsp;: vos
-          dernières recherches, dédoublonnées, relançables d'un clic.
+          dernières recherches, dédoublonnées, relançables d'un clic. La dernière entrée du
+          menu les efface.
         </li>
         <li v-if="uiConfig.config.recent_documents_enabled">
           <strong>« Vos derniers documents consultés »</strong>, sur l'écran d'accueil, tant
-          qu'aucune recherche n'est lancée.
+          qu'aucune recherche n'est lancée. Le lien « Effacer », à côté du titre, vide la
+          liste.
         </li>
       </ul>
       <p class="fr-hint-text">
         Ces trois listes ne montrent que <strong>votre</strong> activité&nbsp;: personne
         d'autre ne voit vos recherches, et vous ne voyez pas celles des autres.
+      </p>
+      <!-- Deux avertissements et non un : effacer ses recherches réécrit
+           le journal, effacer ses documents consultés ne fait que vider
+           une vue. Les réunir obligerait à une formule assez vague pour
+           couvrir les deux, donc fausse pour chacune. -->
+      <p v-if="uiConfig.config.search_history_enabled" class="fr-hint-text">
+        ⚠️ Effacer vos recherches récentes les retire de cette liste et des suggestions de
+        saisie, et les rend <strong>anonymes</strong> dans le journal technique de
+        l'application&nbsp;: ni votre compte ni votre poste n'y restent attachés, et les
+        documents ouverts depuis ces recherches cessent eux aussi d'être rattachés à vous. Le
+        texte cherché y demeure pour les statistiques, ainsi que votre service — les chiffres
+        par service continuent d'en tenir compte, sans savoir de qui il s'agit.
+        <strong>C'est définitif.</strong>
+      </p>
+      <p v-if="uiConfig.config.recent_documents_enabled" class="fr-hint-text">
+        ⚠️ Effacer vos derniers documents consultés <strong>supprime</strong> ces consultations
+        du journal technique&nbsp;: ni le document ouvert ni la date n'y sont conservés. Seul
+        leur nombre y reste, pour que les recherches qui vous y ont mené ne passent pas pour
+        infructueuses. <strong>C'est définitif</strong>, et vos recherches ne sont pas touchées.
       </p>
     </template>
 

@@ -18,13 +18,15 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useSearchStore } from '@/stores/search'
 import { useUiConfigStore } from '@/stores/uiConfig'
-import { listerDocumentsRecents } from '@/api/historique'
+import { listerDocumentsRecents, purgerDocumentsRecents } from '@/api/historique'
+import { useDialogs } from '@/composables/useDialogs'
 import type { SearchResult } from '@/api/types'
 
 const emit = defineEmits<{ detail: [string] }>()
 
 const store = useSearchStore()
 const uiConfig = useUiConfigStore()
+const { confirm } = useDialogs()
 
 /**
  * Les derniers documents ouverts par l'utilisateur, sur l'espace vide
@@ -54,6 +56,41 @@ async function chargerRecents() {
 // Chargé quand la configuration arrive : /ui-config est encore en vol au
 // montage, et la bascule y vaut `false` par défaut.
 watch(() => uiConfig.config.recent_documents_enabled, chargerRecents, { immediate: true })
+
+/**
+ * Efface la liste. Le message dit ce qui se passe réellement : les
+ * consultations antérieures sont SUPPRIMÉES du journal de l'installation
+ * — quel document, quand — et il n'en reste que le nombre, pour que les
+ * recherches concernées ne passent pas pour infructueuses (voir
+ * history_purge.py).
+ *
+ * Deux choses s'y disent parce qu'elles surprendraient sinon : que c'est
+ * irréversible, et que le compte demeure. Annoncer une disparition sans
+ * reste serait faux ; taire l'irréversibilité laisserait croire à un
+ * masquage.
+ *
+ * L'échec, lui, n'est pas muet — contrairement à celui du chargement :
+ * une liste toujours là après un clic sur « Effacer » a besoin d'une
+ * explication, alors qu'une liste absente au chargement n'en demande pas.
+ */
+const erreurPurge = ref<string | null>(null)
+
+async function effacerRecents() {
+  const ok = await confirm(
+    "Vos consultations passées seront supprimées du journal de l'installation : ni le " +
+      'document ouvert ni la date ne seront conservés. Seul leur nombre y reste, pour que les ' +
+      "recherches qui vous y ont mené ne passent pas pour infructueuses. C'est définitif. Vos " +
+      'recherches, elles, ne sont pas touchées.',
+    { title: 'Effacer les documents consultés', confirmLabel: 'Effacer' },
+  )
+  if (!ok) return
+  try {
+    await purgerDocumentsRecents()
+    recents.value = []
+  } catch (e) {
+    erreurPurge.value = e instanceof Error ? e.message : String(e)
+  }
+}
 
 /**
  * Les trois dernières illustrent la devise « Explorez, trouvez,
@@ -266,7 +303,24 @@ onBeforeUnmount(() => clearInterval(timer))
          laissait vide. Relus par l'API à travers l'ACL : ce qui n'est
          plus accessible n'apparaît plus, sans mention ni trou. -->
     <div v-if="recents.length" class="ds-empty__recents fr-mt-4w">
-      <p class="fr-text--sm fr-mb-1w">Vos derniers documents consultés</p>
+      <p class="fr-text--sm fr-mb-1w ds-empty__recents-entete">
+        <span>Vos derniers documents consultés</span>
+        <button
+          class="fr-link fr-link--sm"
+          type="button"
+          data-testid="documents-recents-effacer"
+          @click="effacerRecents"
+        >
+          Effacer
+        </button>
+      </p>
+      <DsfrAlert
+        v-if="erreurPurge"
+        type="error"
+        small
+        :description="erreurPurge"
+        class="fr-mb-1w"
+      />
       <ul class="fr-tags-group">
         <li v-for="document in recents" :key="document.id">
           <button
