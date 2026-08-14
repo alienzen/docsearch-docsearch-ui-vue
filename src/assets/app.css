@@ -96,6 +96,147 @@
   z-index: 20;
 }
 
+/* En-tête réduit au défilement. La classe est posée sur la racine par
+   useHeaderReduit(), sous le drapeau d'administration
+   `header_shrink_enabled` ; sans lui, aucune de ces règles ne s'applique.
+
+   SEULEMENT À PARTIR DE 62em : en deçà, le DSFR range déjà l'en-tête
+   derrière un burger et un bouton loupe — il n'y a presque rien à
+   gagner, et le défilement élastique tactile ferait osciller l'état.
+
+   Le trajet est ANIMÉ (0,3 s), au prix d'un `display: none` abandonné :
+   il ne s'anime pas, là où `block-size` le fait dès qu'`interpolate-size`
+   autorise l'interpolation vers `auto` — seule valeur qui suive la
+   hauteur réelle d'un en-tête dont le logo, le titre et la navigation
+   varient. Même vocabulaire que les panneaux repliables plus bas
+   (`.ds-panel-block::details-content`).
+
+   Ce que cela coûte, et qui avait fait écarter l'animation : le
+   ResizeObserver de useHeaderHeight() republie `--ds-header-height` à
+   chaque image du trajet, donc `.ds-facets` — dont le décalage et la
+   hauteur maximale en dépendent — se recale autant de fois. C'est un
+   recalage CONTINU et non un saut : la colonne descend avec l'en-tête au
+   lieu de sauter à l'arrivée. À surveiller sur la page de recherche, la
+   seule à porter cette colonne, si son défilement venait à saccader. */
+@media (min-width: 62em) {
+  /* `.fr-header__brand-top` porte le bloc-marque et le logo opérateur.
+     Le titre de service — qui porte le lien d'accueil — vit dans le bloc
+     voisin `.fr-header__service`, conservé.
+
+     `.fr-header__tools-links` emporte AUSSI le menu du compte, rendu dans
+     le slot `after-quick-links` de DsfrHeader, qui débouche dedans (voir
+     HeaderUserMenu). Il n'est escamoté que sur la page de RECHERCHE (voir
+     plus bas) : ailleurs, « Raccourcis », « Aide » et le menu du compte
+     restent à portée une fois l'en-tête réduit. La barre de recherche est
+     sa VOISINE dans `.fr-header__tools`, pas sa fille : elle reste en
+     place, avec les commandes que la page de recherche y téléporte
+     (recherche exacte, sources, remise à zéro). */
+  .fr-header__brand-top,
+  .fr-header__tools-links,
+  .fr-header__service-tagline {
+    interpolate-size: allow-keywords;
+    transition:
+      block-size 0.3s,
+      opacity 0.2s,
+      content-visibility 0.3s;
+    transition-behavior: allow-discrete;
+  }
+  /* Rognage pendant le trajet, sans quoi le contenu déborderait de sa
+     boîte qui rétrécit. Posé à demeure sur ces deux blocs seulement :
+     `.fr-header__tools-links` porte le menu du compte, dont le panneau
+     déroulant est en position absolue — un `overflow: hidden` permanent
+     le couperait en en-tête déployé. Il ne le reçoit donc que replié,
+     où il n'y a plus de menu à ouvrir. */
+  .fr-header__brand-top,
+  .fr-header__service-tagline {
+    overflow: hidden;
+  }
+  :root.ds-header-reduit .fr-header__brand-top,
+  :root.ds-header-reduit .fr-header__service-tagline,
+  /* Les liens d'outils ne s'escamotent QUE sur la page de recherche.
+     Sur l'administration et les statistiques ils restent en place : ce
+     sont des écrans où l'on travaille en défilant, et y perdre les
+     raccourcis et le menu du compte obligeait à remonter en haut de page
+     pour les retrouver.
+
+     Le discriminant est la barre de recherche de l'en-tête, que seule
+     SearchPage demande (`show-search` sur son DsfrHeader) : elle est la
+     voisine des liens dans `.fr-header__tools`, d'où le `:has()` sur le
+     parent. Aucune classe de page n'existe sur la racine, et en poser
+     une pour ce seul besoin ferait porter à trois pages un marqueur que
+     le DOM de l'en-tête donne déjà. */
+  :root.ds-header-reduit .fr-header__tools:has(.fr-header__search) .fr-header__tools-links {
+    block-size: 0;
+    opacity: 0;
+    overflow: hidden;
+    /* Ce que `display: none` assurait aussi : contenu retiré du parcours
+       au clavier et des lecteurs d'écran, et non simplement transparent.
+       En `allow-discrete`, la bascule attend la fin du trajet à la
+       fermeture, et vaut dès la première image au retour. */
+    content-visibility: hidden;
+  }
+  /* Le DSFR pose 1.5rem sur la rangée et 1rem sur le bloc de service à
+     ce point de rupture ; c'est l'essentiel de la hauteur regagnée, le
+     bloc-marque masqué n'étant pas toujours l'élément le plus haut. */
+  .fr-header__body-row,
+  .fr-header__service {
+    transition: padding 0.3s;
+  }
+  :root.ds-header-reduit .fr-header__body-row {
+    padding: 0.5rem 0;
+  }
+  :root.ds-header-reduit .fr-header__service {
+    padding: 0.5rem 1rem;
+  }
+  /* Comme le DSFR le fait pour ses propres transitions. */
+  @media (prefers-reduced-motion: reduce) {
+    .fr-header__brand-top,
+    .fr-header__tools-links,
+    .fr-header__service-tagline,
+    .fr-header__body-row,
+    .fr-header__service {
+      transition: none;
+    }
+  }
+  /* La rangée masquée ci-dessus emportait la Marianne ET le logo du
+     logiciel : une fois l'en-tête réduit, plus rien ne rattachait la
+     page à l'État ni à l'application. Les deux reviennent en petit
+     devant le titre de service, seul élément conservé de la rangée, dans
+     l'ordre où ils se trouvent en haut de page — Marianne puis logo.
+
+     `favicon.svg` est le bloc Marianne, sans aucun texte : ses tracés
+     restent lisibles à 1,5 rem, ce que ne permettrait pas un bloc-marque
+     complet. `logo-docsearch.svg` est la marque du LOGICIEL, celle que
+     les pages posent en `operator-img-src` (voir public/LISEZMOI.md).
+
+     DEUX IMAGES DE FOND SUR UN SEUL PSEUDO-ÉLÉMENT, et non un pseudo
+     chacune : `::after` est déjà pris par le badge « Démonstrateur »
+     plus bas, et DsfrHeader n'expose aucun slot dans le titre de service
+     où glisser du vrai balisage. Les deux sont décoratives ici — le
+     bloc-marque et le logo opérateur restent dans le document, en haut
+     de page.
+
+     1,5 rem alignés au milieu : c'est la plus grande taille qui NE
+     rallonge PAS la rangée réduite (mesuré sur la page d'administration,
+     en-tête à 28 px avec comme sans l'image ; 1,75 rem la pousse à
+     29,6 px, et `vertical-align: text-bottom` à 28,7 px). Une image qui
+     regagnerait la hauteur que l'en-tête réduit vient de libérer
+     n'aurait guère de sens. La largeur totale suit : deux fois 1,5 rem,
+     séparées de 0,25 rem. */
+  :root.ds-header-reduit .fr-header__service-title::before {
+    content: "";
+    display: inline-block;
+    width: 3.25rem;
+    height: 1.5rem;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+    background-image: url("/favicon.svg"), url("/logo-docsearch.svg");
+    background-repeat: no-repeat, no-repeat;
+    background-position: left center, right center;
+    background-size: 1.5rem 1.5rem, 1.5rem 1.5rem;
+  }
+}
+
 /* Badge « Démonstrateur » accolé au titre de service, à l'emplacement que
    le DSFR documente pour l'en-tête (un .fr-badge dans
    .fr-header__service-title). Même badge que ~/charlie/app-front et
