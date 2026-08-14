@@ -45,6 +45,10 @@ async function loadFileSources() {
   }
 }
 
+// Les deux listes doivent recenser TOUT ce que le gabarit affiche, dans
+// l'ordre d'affichage : le bouton « Tout replier » et les raccourcis
+// chiffrés ne connaissent que ce qui y figure. Un panneau ou un groupe
+// ajouté au gabarit sans être ajouté ici reste ouvert.
 const PANEL_IDS = [
   'status-panel',
   'allsources-panel',
@@ -53,8 +57,11 @@ const PANEL_IDS = [
   'pathfilters-panel',
   'scan-panel',
   'source-tree-panel',
+  'duplicates-panel',
   'sqlsources-panel',
   'websources-panel',
+  'synonyms-panel',
+  'pinned-panel',
   'engagement-panel',
   'ui-config-panel',
   'config-panel',
@@ -64,6 +71,7 @@ const GROUP_IDS = [
   'group-file-sources',
   'group-sql-sources',
   'group-web-sources',
+  'group-recherche',
   'group-interface',
 ]
 

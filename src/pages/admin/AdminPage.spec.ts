@@ -154,20 +154,25 @@ describe('AdminPage', () => {
     expect(mountPage().html()).toBeTruthy()
   })
 
-  it('affiche les cinq groupes de panneaux', async () => {
+  // Liste EXACTE et ORDONNÉE, pas une suite de `toContain` sur le texte
+  // de la page : « Recherche » se retrouve dans une bonne part des
+  // libellés de l'écran, et un groupe absent y passerait donc inaperçu.
+  // L'ordre compte aussi — c'est lui que suivent les raccourcis chiffrés.
+  it('affiche les six groupes de panneaux, dans l’ordre', async () => {
     vi.stubGlobal('fetch', respondWith())
     const wrapper = mountPage()
     await flush()
-    const text = wrapper.text()
-    for (const group of [
+    const titres = wrapper
+      .findAll('details.ds-panel-block--group > summary')
+      .map((s) => s.text().trim())
+    expect(titres).toEqual([
       "Vue d'ensemble",
       'Sources fichiers',
       'Sources SQL',
       'Sources web',
+      'Recherche',
       'Interface et engagement',
-    ]) {
-      expect(text).toContain(group)
-    }
+    ])
   })
 
   it('peuple les panneaux avec les données de l’API', async () => {
@@ -218,6 +223,33 @@ describe('AdminPage', () => {
     ]) {
       expect(wrapper.find(`#${id}`).exists(), id).toBe(true)
     }
+  })
+
+  // « Tout replier » ne connaît que les identifiants listés dans la page ;
+  // un panneau ou un groupe ajouté au gabarit sans y être inscrit restait
+  // ouvert (cas du groupe « Recherche » et du panneau des doublons). On
+  // interroge donc le DOM plutôt que ces listes : le test ne peut pas
+  // manquer ce que le gabarit affiche.
+  it('replie vraiment TOUS les panneaux et groupes affichés', async () => {
+    vi.stubGlobal('fetch', respondWith())
+    const wrapper = mountPage()
+    await flush()
+
+    const plies = () =>
+      wrapper.findAll('details.ds-panel-block').filter((d) => d.attributes('open') !== undefined)
+    const total = wrapper.findAll('details.ds-panel-block').length
+    expect(total).toBeGreaterThan(15) // 15 panneaux + 6 groupes
+    expect(plies()).toHaveLength(total)
+
+    await wrapper.find('#admin-tout-replier').trigger('click')
+    await flush()
+    expect(plies().map((d) => d.attributes('id'))).toEqual([])
+
+    // Et le bouton bascule bien vers « Tout déplier ».
+    expect(wrapper.find('#admin-tout-replier').text()).toContain('Tout déplier')
+    await wrapper.find('#admin-tout-replier').trigger('click')
+    await flush()
+    expect(plies()).toHaveLength(total)
   })
 
   it('marque chaque ligne répétée d’un data-testid', async () => {
