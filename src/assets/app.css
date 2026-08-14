@@ -995,6 +995,36 @@ body.ds-resizing {
   display: flex;
   gap: 0.5rem;
 }
+/* Nom d'une collection qui n'est pas que la sienne — reçue d'un groupe,
+   ou ouverte à un groupe. Glycine plutôt qu'un bleu ou un rouge : le
+   bleu est déjà celui des liens et des boutons tertiaires du DSFR, le
+   rouge celui de l'effacement (.ds-menu__button--effacer). Jeton `label`
+   du DSFR, donc contrasté AA sur fond clair comme sombre.
+   La couleur ne fait que DOUBLER la mention « partagée par… » /
+   « partagée avec… » qui la suit : jamais elle ne la remplace (RGAA 3.1,
+   information non portée par la seule couleur).
+   Posée sur le <span> du nom et non sur le bouton : une couleur héritée
+   perd toujours face à une règle posée sur l'élément lui-même, ce qui
+   évite d'avoir à surenchérir sur `.fr-nav__link` et `.fr-btn--tertiary`
+   qui imposent la leur.
+   Le jeton de texte seul ne se remarquait pas en thème clair : glycine y
+   vaut #6e445a, une prune sombre qui, à côté du #3a3a3a des entrées de
+   menu, se lit comme du texte normal. Aucune glycine plus lumineuse n'est
+   utilisable en texte — la variante suivante du DSFR (#a66989) tombe à
+   4,2:1 sur blanc, sous le seuil AA. D'où le fond teinté, qui porte
+   l'écart sans toucher au contraste : même recette que la pastille
+   « Démonstrateur » du titre de service. 6,8:1 en clair, 5,1:1 en sombre.
+   Le retrait négatif compense le rembourrage, sinon le nom se décale
+   d'un quart de cadratin par rapport à la mention qui le suit. */
+.ds-collection__nom--partagee {
+  width: fit-content;
+  max-width: 100%;
+  margin-left: -0.25rem;
+  padding: 0 0.25rem;
+  border-radius: 0.25rem;
+  background-color: var(--background-contrast-purple-glycine);
+  color: var(--text-label-purple-glycine);
+}
 
 .ds-nps__scale {
   display: flex;
