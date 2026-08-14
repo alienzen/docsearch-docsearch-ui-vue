@@ -34,16 +34,28 @@ const { data, error, refresh } = useStatsPanel(
 )
 const { error: fieldError, edit } = useSourceField(refresh)
 const actionError = ref<string | null>(null)
+/**
+ * Le refus de la création a son propre bandeau, DANS la modale : celui
+ * du panneau (`actionError`, partagé avec le retrait et la suspension)
+ * s'afficherait derrière elle, donc nulle part.
+ */
+const formError = ref<string | null>(null)
+/** La modale de création est ouverte. */
+const creating = ref(false)
 
-const form = ref({
-  name: '',
-  label: '',
-  crawl_index: '',
-  es_index: '',
-  acl_public: true,
-  poll_interval_seconds: 3600,
-  description: '',
-})
+function blankForm() {
+  return {
+    name: '',
+    label: '',
+    crawl_index: '',
+    es_index: '',
+    acl_public: true,
+    poll_interval_seconds: 3600,
+    description: '',
+  }
+}
+
+const form = ref(blankForm())
 
 async function run(action: () => Promise<unknown>) {
   actionError.value = null
@@ -76,13 +88,22 @@ async function remove(name: string) {
   return run(() => deleteWebSource(name))
 }
 
-function add() {
+/** Ouvre la modale sur un formulaire vierge. */
+function openForm() {
+  form.value = blankForm()
+  formError.value = null
+  actionError.value = null
+  creating.value = true
+}
+
+async function add() {
   const f = form.value
   if (!f.name.trim() || !f.crawl_index.trim() || !f.es_index.trim()) {
-    actionError.value = 'Nom, index de crawl et index ES final sont requis.'
+    formError.value = 'Nom, index de crawl et index ES final sont requis.'
     return
   }
-  return run(async () => {
+  formError.value = null
+  try {
     await createWebSource({
       name: f.name.trim(),
       crawl_index: f.crawl_index.trim(),
@@ -92,16 +113,14 @@ function add() {
       label: f.label.trim() || null,
       description: f.description.trim() || null,
     })
-    form.value = {
-      name: '',
-      label: '',
-      crawl_index: '',
-      es_index: '',
-      acl_public: true,
-      poll_interval_seconds: 3600,
-      description: '',
-    }
-  })
+  } catch (e) {
+    // La modale reste ouverte : la saisie refusée est encore là, à
+    // corriger. La refermer obligerait à tout retaper.
+    formError.value = e instanceof Error ? e.message : String(e)
+    return
+  }
+  creating.value = false
+  await refresh()
 }
 
 const { confirm } = useDialogs()</script>
@@ -203,87 +222,133 @@ const { confirm } = useDialogs()</script>
       poursuit son cycle indépendamment.
     </p>
 
-    <h3 id="websources-ajout-titre" class="fr-h6 fr-mt-3w">Ajouter une source</h3>
-    <div class="ds-admin__row">
-      <div class="fr-input-group fr-mb-0">
-        <label class="fr-label fr-sr-only" for="new-web-name">Nom</label>
-        <input
-          id="new-web-name"
-          v-model="form.name"
-          class="fr-input fr-input--sm"
-          type="text"
-          placeholder="nom (ex : cc_decisions)"
-        />
-      </div>
-      <div class="fr-input-group fr-mb-0">
-        <label class="fr-label fr-sr-only" for="new-web-label">Libellé</label>
-        <input
-          id="new-web-label"
-          v-model="form.label"
-          class="fr-input fr-input--sm"
-          type="text"
-          placeholder="libellé (optionnel)"
-        />
-      </div>
-    </div>
-    <div class="ds-admin__row fr-mt-1w">
-      <div class="fr-input-group fr-mb-0">
-        <label class="fr-label fr-sr-only" for="new-web-crawlindex">Index de crawl</label>
-        <input
-          id="new-web-crawlindex"
-          v-model="form.crawl_index"
-          class="fr-input fr-input--sm"
-          type="text"
-          placeholder="index de crawl (output_index du crawler)"
-        />
-      </div>
-      <div class="fr-input-group fr-mb-0">
-        <label class="fr-label fr-sr-only" for="new-web-esindex">Index ES final</label>
-        <input
-          id="new-web-esindex"
-          v-model="form.es_index"
-          class="fr-input fr-input--sm"
-          type="text"
-          placeholder="index ES final (ex : cc_decisions)"
-        />
-      </div>
-    </div>
-    <div class="ds-admin__row fr-mt-1w">
-      <div class="fr-checkbox-group fr-mb-0">
-        <input id="new-web-public" v-model="form.acl_public" type="checkbox" />
-        <label class="fr-label" for="new-web-public">
-          Contenu public (sans authentification)
-        </label>
-      </div>
-      <div class="fr-input-group fr-mb-0 ds-admin__narrow">
-        <label class="fr-label fr-sr-only" for="new-web-interval">Intervalle (s)</label>
-        <input
-          id="new-web-interval"
-          v-model="form.poll_interval_seconds"
-          class="fr-input fr-input--sm"
-          type="number"
-          min="30"
-        />
-      </div>
-    </div>
-    <div class="ds-admin__row fr-mt-1w">
-      <div class="fr-input-group fr-mb-0">
-        <label class="fr-label fr-sr-only" for="new-web-description">Description</label>
-        <input
-          id="new-web-description"
-          v-model="form.description"
-          class="fr-input fr-input--sm"
-          type="text"
-          placeholder="description (optionnel)"
-        />
-      </div>
-      <DsfrButton id="websources-ajouter" size="sm" label="Ajouter" @click="add" />
-    </div>
+    <DsfrButton
+      id="websources-nouvelle"
+      class="fr-mt-2w"
+      size="sm"
+      secondary
+      label="+ Nouvelle source web"
+      @click="openForm"
+    />
 
-    <p class="fr-hint-text fr-mt-2w">
-      L'index de crawl doit correspondre au <code>output_index</code> déclaré dans la configuration
-      du crawler — jamais le même que l'index ES final, qui reçoit le contenu transformé au schéma
-      DocSearch.
-    </p>
+    <!-- Téléportée dans <body>, comme les autres modales : le panneau
+         est un <details> que les raccourcis de l'administration
+         (chiffres, « tout replier ») referment sans savoir qu'une saisie
+         est en cours, et la modale disparaîtrait avec lui. DsfrModal ne
+         téléporte pas de lui-même. -->
+    <Teleport to="body">
+      <!-- `disable-outside-interaction` : un clic à côté ne doit pas
+           jeter la saisie. Restent la croix, Échap et « Annuler ». -->
+      <DsfrModal
+        v-if="creating"
+        modal-id="modale-source-web"
+        opened
+        size="lg"
+        disable-outside-interaction
+        title="Nouvelle source web"
+        @close="creating = false"
+      >
+        <DsfrAlert
+          v-if="formError"
+          id="websources-formulaire-erreur"
+          type="error"
+          small
+          :description="formError"
+          class="fr-mb-2w"
+        />
+
+        <div class="ds-admin__row">
+          <div class="fr-input-group fr-mb-0">
+            <label class="fr-label" for="new-web-name">Nom</label>
+            <input
+              id="new-web-name"
+              v-model="form.name"
+              class="fr-input fr-input--sm"
+              type="text"
+              placeholder="ex : cc_decisions"
+            />
+          </div>
+          <div class="fr-input-group fr-mb-0">
+            <label class="fr-label" for="new-web-label">Libellé (optionnel)</label>
+            <input
+              id="new-web-label"
+              v-model="form.label"
+              class="fr-input fr-input--sm"
+              type="text"
+            />
+          </div>
+        </div>
+        <div class="ds-admin__row fr-mt-1w">
+          <div class="fr-input-group fr-mb-0">
+            <label class="fr-label" for="new-web-crawlindex">Index de crawl</label>
+            <input
+              id="new-web-crawlindex"
+              v-model="form.crawl_index"
+              class="fr-input fr-input--sm"
+              type="text"
+              placeholder="output_index du crawler"
+            />
+          </div>
+          <div class="fr-input-group fr-mb-0">
+            <label class="fr-label" for="new-web-esindex">Index ES final</label>
+            <input
+              id="new-web-esindex"
+              v-model="form.es_index"
+              class="fr-input fr-input--sm"
+              type="text"
+              placeholder="ex : cc_decisions"
+            />
+          </div>
+        </div>
+        <div class="ds-admin__row fr-mt-1w">
+          <div class="fr-checkbox-group fr-mb-0">
+            <input id="new-web-public" v-model="form.acl_public" type="checkbox" />
+            <label class="fr-label" for="new-web-public">
+              Contenu public (sans authentification)
+            </label>
+          </div>
+          <div class="fr-input-group fr-mb-0 ds-admin__narrow">
+            <label class="fr-label" for="new-web-interval">Intervalle (s)</label>
+            <input
+              id="new-web-interval"
+              v-model="form.poll_interval_seconds"
+              class="fr-input fr-input--sm"
+              type="number"
+              min="30"
+            />
+          </div>
+        </div>
+        <div class="ds-admin__row fr-mt-1w">
+          <div class="fr-input-group fr-mb-0">
+            <label class="fr-label" for="new-web-description">Description (optionnel)</label>
+            <input
+              id="new-web-description"
+              v-model="form.description"
+              class="fr-input fr-input--sm"
+              type="text"
+            />
+          </div>
+        </div>
+
+        <p class="fr-hint-text fr-mt-2w">
+          L'index de crawl doit correspondre au <code>output_index</code> déclaré dans la
+          configuration du crawler — jamais le même que l'index ES final, qui reçoit le contenu
+          transformé au schéma DocSearch.
+        </p>
+
+        <template #footer>
+          <div class="ds-admin__row">
+            <DsfrButton id="websources-ajouter" size="sm" label="Ajouter" @click="add" />
+            <DsfrButton
+              id="websources-annuler"
+              size="sm"
+              secondary
+              label="Annuler"
+              @click="creating = false"
+            />
+          </div>
+        </template>
+      </DsfrModal>
+    </Teleport>
   </AdminPanel>
 </template>

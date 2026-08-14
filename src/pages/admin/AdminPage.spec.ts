@@ -208,7 +208,7 @@ describe('AdminPage', () => {
       'sqlsources-dsn-tableau',
       'sqlsources-dsn-enregistrer',
       'websources-tableau',
-      'websources-ajouter',
+      'websources-nouvelle',
       'engagement-bascules',
       'ui-config-bascules',
       'ui-config-theme-recherche',
@@ -275,6 +275,38 @@ describe('AdminPage', () => {
     }
 
     expect(idsDupliques(wrapper)).toEqual([])
+    wrapper.unmount()
+  })
+
+  // La création d'une source web est passée en modale, et son refus de
+  // validation avec elle : posé dans le bandeau du panneau, il resterait
+  // DERRIÈRE la modale — pour l'utilisateur, le bouton ne ferait rien.
+  it('garde dans sa modale le refus de la nouvelle source web', async () => {
+    document.body.innerHTML = ''
+    vi.stubGlobal('fetch', respondWith())
+    const wrapper = mountPage()
+    await flush()
+
+    await wrapper.find('#websources-nouvelle').trigger('click')
+    await flush()
+    const modale = new DOMWrapper(document.body)
+    expect(modale.find('#modale-source-web').exists()).toBe(true)
+
+    await modale.find('#websources-ajouter').trigger('click')
+    await flush()
+    expect(modale.find('#websources-formulaire-erreur').text()).toContain('sont requis')
+    // La modale reste ouverte : la saisie est encore là, à corriger.
+    expect(modale.find('#modale-source-web').exists()).toBe(true)
+    expect(idsDupliques(wrapper)).toEqual([])
+
+    // Une fois les trois champs requis renseignés, elle se referme.
+    await modale.find('#new-web-name').setValue('cc_decisions')
+    await modale.find('#new-web-crawlindex').setValue('crawl-cc')
+    await modale.find('#new-web-esindex').setValue('cc_decisions')
+    await modale.find('#websources-ajouter').trigger('click')
+    await flush()
+    expect(document.body.querySelector('#modale-source-web')).toBeNull()
+
     wrapper.unmount()
   })
 
