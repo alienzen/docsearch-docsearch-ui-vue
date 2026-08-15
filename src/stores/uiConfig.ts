@@ -45,8 +45,8 @@ export type UiConfig = {
   search_time_enabled: boolean
   /**
    * Badge de pourcentage de pertinence sur les cartes de résultat.
-   * `true` par défaut : le badge existait avant sa bascule. N'influe que
-   * sur son affichage — le classement par pertinence reste le même.
+   * `false` par défaut depuis le 2026-08-15. N'influe que sur son
+   * affichage — le classement par pertinence reste le même.
    */
   score_enabled: boolean
   /**
@@ -127,32 +127,29 @@ export function normalizeScheme(value: string | undefined): Scheme {
 const SCHEME_CACHE_KEY = 'vue-dsfr-scheme'
 
 /**
- * Repli si /ui-config échoue : tout activé, comme en vanilla —
- * `search_time_enabled` excepté, qui suit le défaut de l'API (voir
- * ui_config.py, qui explique pourquoi lui seul démarre désactivé). Un
- * repli à `true` ferait apparaître le temps de recherche précisément
- * quand la configuration n'a pas pu être lue.
+ * Repli si /ui-config échoue. Règle unique : le repli vaut le défaut de
+ * l'API (voir ui_config.py), sinon une fonctionnalité apparaîtrait
+ * précisément quand la configuration n'a pas pu être lue. Le repli
+ * historique « tout activé » ne tenait plus depuis que plusieurs
+ * bascules démarrent éteintes côté API.
  */
 const DEFAULT_UI_CONFIG: UiConfig = {
-  chat_enabled: true,
+  chat_enabled: false,
   footer_enabled: true,
-  admin_links_enabled: true,
-  export_enabled: true,
+  admin_links_enabled: false,
+  export_enabled: false,
   help_enabled: true,
   collections_enabled: true,
   custom_keywords_enabled: true,
-  alerts_enabled: true,
-  // Comme search_time_enabled : le repli vaut le défaut de l'API, sinon
-  // la fonctionnalité apparaîtrait précisément quand /ui-config n'a pas
-  // pu être lu.
+  alerts_enabled: false,
   search_history_enabled: false,
   autocomplete_enabled: false,
   recent_documents_enabled: false,
   collections_shared_enabled: false,
-  sort_enabled: true,
+  sort_enabled: false,
   search_time_enabled: false,
-  score_enabled: true,
-  acl_visible_enabled: true,
+  score_enabled: false,
+  acl_visible_enabled: false,
   shortcuts_link_enabled: true,
   empty_state_animation_enabled: true,
   show_current_user_enabled: true,

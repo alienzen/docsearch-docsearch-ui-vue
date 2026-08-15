@@ -24,6 +24,9 @@ const RESPONSES: Record<string, unknown> = {
     collections_enabled: true,
     alerts_enabled: true,
     chat_enabled: true,
+    // Explicite depuis que le repli du store vaut false : cette page de
+    // test veut tous ses éléments présents, dont le sélecteur de tri.
+    sort_enabled: true,
     show_current_user_enabled: true,
   },
   '/is-admin': { is_admin: true, user: 'alice.admin', groups: ['docsearch-admins'] },

@@ -52,6 +52,9 @@ describe('ResultCard — pourcentage de pertinence', () => {
   beforeEach(() => setActivePinia(createPinia()))
 
   it('affiche le score tant que la bascule est active', () => {
+    // Explicite depuis que le repli du store vaut false : le test porte
+    // sur la bascule active, pas sur la valeur par défaut.
+    useUiConfigStore().config.score_enabled = true
     expect(monter().find('[data-testid="carte-resultat-score"]').text()).toBe('80 %')
   })
 
