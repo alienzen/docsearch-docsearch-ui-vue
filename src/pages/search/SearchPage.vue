@@ -16,6 +16,7 @@ import { usePreferencesStore } from '@/stores/preferences'
 import { useSearchShortcuts } from '@/composables/useSearchShortcuts'
 import { useNps } from '@/composables/useNps'
 import { useHeaderHeight } from '@/composables/useHeaderHeight'
+import { useHeaderReduit } from '@/composables/useHeaderReduit'
 import { useAutocompleteOff } from '@/composables/useAutocompleteOff'
 import { useDialogs } from '@/composables/useDialogs'
 import { usePermalien } from '@/composables/usePermalien'
@@ -197,6 +198,10 @@ async function saveCurrentSearch() {
 useSearchShortcuts({ saveCurrentSearch, toggleShortcuts })
 // L'en-tête est collant : sa hauteur décale la colonne de facettes.
 useHeaderHeight()
+// Et il se replie au défilement, si l'administrateur l'a demandé. Le
+// décalage ci-dessus suit tout seul : c'est le même ResizeObserver qui
+// mesure l'en-tête réduit.
+useHeaderReduit(() => uiConfig.config.header_shrink_enabled)
 // Les deux barres de recherche de l'en-tête — bureau et modal mobile —
 // ne doivent pas ouvrir la liste de saisies du navigateur par-dessus nos
 // suggestions.
@@ -278,6 +283,24 @@ onMounted(() => {
           <AlertsPanel v-if="uiConfig.config.alerts_enabled" />
           <li v-if="uiConfig.config.chat_enabled" class="fr-nav__item">
             <a id="lien-assistant" class="fr-nav__link" href="/chat">Assistant IA</a>
+          </li>
+          <!-- Entrées apportées par les modules complémentaires actifs.
+               Le cœur ne rend rien d'autre que ce que le contrat a validé
+               à l'installation : un libellé, un chemin sous /ext/<nom>/ et
+               une classe d'icône DSFR. Aucun HTML, aucun script — voir
+               PLAN-PLUGINS.md §3 pour pourquoi ça ne s'ouvrira pas. -->
+          <li
+            v-for="entree in uiConfig.config.plugin_nav"
+            :key="`${entree.module}-${entree.chemin}`"
+            class="fr-nav__item"
+          >
+            <a
+              class="fr-nav__link"
+              :class="entree.icone ? `fr-link--icon-left ${entree.icone}` : undefined"
+              :href="entree.chemin"
+              data-testid="lien-module"
+              >{{ entree.libelle }}</a
+            >
           </li>
         </ul>
       </nav>

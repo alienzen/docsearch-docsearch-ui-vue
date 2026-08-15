@@ -12,6 +12,14 @@ import { versionCourte } from '@/version'
 // Ici les composants lisent des computed : l'ordre d'arrivée n'a plus
 // d'importance, d'où la disparition de ces fonctions de resynchronisation.
 
+/** Entrée de menu apportée par un module complémentaire. */
+export type PluginNavEntry = {
+  module: string
+  libelle: string
+  chemin: string
+  icone: string | null
+}
+
 /** Bascules d'interface — voir docsearch-api/app/ui_config.py. */
 export type UiConfig = {
   chat_enabled: boolean
@@ -59,6 +67,16 @@ export type UiConfig = {
   shortcuts_link_enabled: boolean
   /** Animation d'accueil tant qu'aucune recherche n'a été lancée. */
   empty_state_animation_enabled: boolean
+  /**
+   * En-tête réduit au défilement : bloc-marque, logo opérateur et
+   * baseline masqués, marges resserrées. Titre de service — donc lien
+   * d'accueil —, barre de recherche, outils et navigation conservés.
+   * Sans effet sous 62em, où le DSFR replie déjà l'en-tête. Un seul
+   * drapeau pour la recherche, les statistiques et l'administration :
+   * c'est une commodité de défilement, pas un choix d'affichage de
+   * l'identité comme les bascules dédoublées par famille ci-dessous.
+   */
+  header_shrink_enabled: boolean
   show_current_user_enabled: boolean
   show_current_user_groups_enabled: boolean
   // Famille « administration » (admin.html, stats.html, admin-help.html)
@@ -86,6 +104,18 @@ export type UiConfig = {
   footer_bottom_text: string
   sources_mount: string
   sources_mount_display: string
+  /**
+   * Entrées de menu déclarées par les modules complémentaires ACTIFS
+   * (voir docsearch-api/app/plugin_ui_config.py). Servies par /ui-config
+   * plutôt que par une route dédiée : une route de plus, c'est un
+   * préfixe de plus à déclarer dans les deux nginx.conf ET dans
+   * API_ROUTES.
+   *
+   * Le cœur ne rend JAMAIS de code venu d'un module : seulement un
+   * libellé, un chemin sous /ext/<nom>/ et une classe d'icône DSFR, tous
+   * trois validés à l'installation (docsearch_contract/interface.py).
+   */
+  plugin_nav: PluginNavEntry[]
   /**
    * Page de connexion — les trois éléments que charlie/app-front affiche
    * sous le formulaire (voir LoginView.vue), ici optionnels.
@@ -152,6 +182,12 @@ const DEFAULT_UI_CONFIG: UiConfig = {
   acl_visible_enabled: false,
   shortcuts_link_enabled: true,
   empty_state_animation_enabled: true,
+  // Repli à false, comme search_time_enabled : ce drapeau AJOUTE un
+  // comportement sur l'écran de tous, il ne masque pas un existant (la
+  // règle est écrite dans ui_config.py). Il démarre donc éteint côté
+  // API, et le repli le suit — sans quoi l'en-tête se mettrait à bouger
+  // précisément quand /ui-config n'a pas pu être lu.
+  header_shrink_enabled: false,
   show_current_user_enabled: true,
   show_current_user_groups_enabled: true,
   footer_enabled_admin: true,
@@ -165,6 +201,10 @@ const DEFAULT_UI_CONFIG: UiConfig = {
   footer_bottom_text: '',
   sources_mount: '/sources',
   sources_mount_display: '',
+  // Repli VIDE : une installation sans module, ou une API injoignable,
+  // n'affiche aucune entrée plutôt qu'une entrée périmée qui mènerait à
+  // un 502.
+  plugin_nav: [],
   // Exception au « tout activé » ci-dessus, et c'est voulu : si
   // /ui-config échoue, l'écran de connexion doit rester le formulaire
   // seul. Un repli qui afficherait des liens sans URL ou un jalon
