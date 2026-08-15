@@ -62,6 +62,13 @@ const API_ROUTES =
     'auth',
     'admin/', // /admin/... (API) — surtout PAS /admin.html (page)
     'api/preview/',
+    // Modules complémentaires : /ext/<nom>/... La barre oblique compte,
+    // comme pour 'me/' et 'admin/'. En conteneur, ces chemins sont servis
+    // par les fragments nginx écrits à l'installation d'un module ; ici,
+    // le serveur de développement les proxifie vers l'API, ce qui rendra
+    // 404 tant qu'aucun module ne tourne — c'est le comportement voulu,
+    // le contraire (page blanche de l'interface) serait pire.
+    'ext/',
   ].join('|') +
   ')'
 
