@@ -877,6 +877,80 @@ body.ds-resizing {
   --collapse: 0;
 }
 
+/* Ouverture et fermeture progressives des menus déroulants (« Mes
+   recherches », « Mes recherches récentes », Collections, Alertes,
+   compte).
+
+   La règle ci-dessus supprime le dépli du DSFR, pas toute animation :
+   ce qui n'était pas animable, c'est la HAUTEUR, faute de la mesure que
+   son JavaScript aurait faite. Un menu déroulant n'a de toute façon pas
+   à se déplier comme un accordéon — au-delà de 62em il est hors flux,
+   il s'estompe et descend, exactement comme la présélection de sources
+   (`.ds-sources__panel`), et avec la même durée de 0,15 s.
+
+   Cantonné à ce point de rupture : en dessous, le DSFR range la
+   navigation dans une fenêtre modale où le menu reste DANS le flux.
+   L'estomper sans animer la hauteur y ferait sauter la mise en page
+   avant le fondu ; l'ouverture y reste donc franche.
+
+   `translate` et non `transform`, pour la raison exposée sur
+   `.ds-sources__panel`. */
+
+/* `fr-collapsing` (voir plus bas) rend au menu sa hauteur pleine le temps
+   du fondu. Dans la navigation modale, où le menu est dans le flux, cela
+   laisserait les entrées suivantes repoussées pendant 0,2 s après une
+   fermeture pourtant instantanée : le repli y reste donc franc, et la
+   règle n'est levée qu'au-delà du point de rupture. */
+.fr-nav .fr-menu.fr-collapsing {
+  --collapse-max-height: 0;
+}
+
+@media (min-width: 62em) {
+  .fr-nav .fr-menu__list {
+    opacity: 0;
+    translate: 0 -0.25rem;
+    transition:
+      opacity 0.15s ease-out,
+      translate 0.15s ease-out;
+  }
+  .fr-nav .fr-collapse--expanded .fr-menu__list {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  /* Le temps du fondu de SORTIE, deux contraintes du repli DSFR sont à
+     tenir à distance, sans quoi il n'y aurait rien à estomper :
+
+     - `max-height: 0`, qui escamote le menu à l'instant même où la
+       classe `fr-collapse--expanded` tombe. La parade est celle du
+       DSFR : la classe `fr-collapsing` désarme sa règle de repli. Elle
+       est posée par `useFermetureProgressive`, son JavaScript n'étant
+       pas chargé.
+     - `visibility: hidden`, qui s'applique dès le repli. Contrairement
+       aux autres propriétés, `visibility` reste à `visible` pendant
+       TOUTE la transition et ne bascule qu'à son terme : la transiter
+       suffit à garder le menu à l'écran le temps du trajet. C'est ce
+       que le DSFR fait lui-même sur `.fr-collapse`.
+
+     Le menu reste visible sans être cliquable : un clic sur une entrée
+     en train de disparaître ne viserait déjà plus ce qu'on croit. */
+  .fr-nav .fr-menu.fr-collapsing {
+    --collapse-max-height: none;
+    transition: visibility 0.15s;
+  }
+  .fr-nav .fr-menu.fr-collapsing .fr-menu__list {
+    pointer-events: none;
+  }
+}
+
+/* Comme le DSFR le fait pour ses propres transitions. */
+@media (prefers-reduced-motion: reduce) {
+  .fr-nav .fr-menu__list,
+  .fr-nav .fr-menu.fr-collapsing {
+    transition: none;
+  }
+}
+
 /* Contenu des menus déroulants de la navigation (recherches
    enregistrées, collections, alertes). La structure — fr-nav__item,
    fr-nav__btn, fr-collapse fr-menu, fr-menu__list — et son

@@ -16,6 +16,7 @@
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useOutsideClose } from '@/composables/useOutsideClose'
+import { useFermetureProgressive } from '@/composables/useFermetureProgressive'
 
 const props = defineProps<{
   /**
@@ -36,6 +37,8 @@ const emit = defineEmits<{ open: [] }>()
 const buttonId = computed(() => `${props.id}-bouton`)
 const menuId = computed(() => `${props.id}-menu`)
 const open = ref(false)
+/** Vrai le temps du fondu de fermeture — voir `.fr-menu` dans app.css. */
+const fermeture = useFermetureProgressive(open)
 const item = ref<HTMLElement | null>(null)
 const menu = ref<HTMLElement | null>(null)
 /** Vrai quand le menu est aligné sur le bord DROIT de son entrée. */
@@ -99,7 +102,11 @@ defineExpose({ close: () => (open.value = false), open: () => (open.value = true
       :id="menuId"
       ref="menu"
       class="fr-collapse fr-menu"
-      :class="{ 'fr-collapse--expanded': open, 'ds-menu--right': alignRight }"
+      :class="{
+        'fr-collapse--expanded': open,
+        'fr-collapsing': fermeture,
+        'ds-menu--right': alignRight,
+      }"
     >
       <ul class="fr-menu__list">
         <slot />

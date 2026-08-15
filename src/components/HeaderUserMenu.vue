@@ -15,6 +15,7 @@
 import { computed, ref, useId } from 'vue'
 import { useUiConfigStore } from '@/stores/uiConfig'
 import { useOutsideClose } from '@/composables/useOutsideClose'
+import { useFermetureProgressive } from '@/composables/useFermetureProgressive'
 
 const props = withDefaults(
   defineProps<{
@@ -38,6 +39,8 @@ const uiConfig = useUiConfigStore()
 
 const menuId = `menu-${useId()}`
 const open = ref(false)
+/** Vrai le temps du fondu de fermeture — voir `.fr-menu` dans app.css. */
+const fermeture = useFermetureProgressive(open)
 const item = ref<HTMLElement | null>(null)
 const button = ref<HTMLButtonElement | null>(null)
 
@@ -102,7 +105,7 @@ useOutsideClose(
       <div
         :id="menuId"
         class="fr-collapse fr-menu ds-menu--right"
-        :class="{ 'fr-collapse--expanded': open }"
+        :class="{ 'fr-collapse--expanded': open, 'fr-collapsing': fermeture }"
       >
         <ul class="fr-menu__list">
           <li v-if="label" class="ds-header__account-user">{{ label }}</li>
