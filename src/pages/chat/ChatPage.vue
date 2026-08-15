@@ -1,15 +1,21 @@
 <script setup lang="ts">
 /**
- * Assistant conversationnel — portage de docsearch-ui/public/chat.html.
+ * Assistant de recherche.
  *
- * ⚠️ DÉMONSTRATION : aucune requête n'est envoyée, les réponses sont
- * préenregistrées (voir cannedResponses.ts). Le bandeau d'avertissement
- * en haut de page est la seule chose qui empêche de prendre cet écran
- * pour une fonctionnalité opérationnelle — ne pas le retirer tant que
- * l'endpoint /ask n'existe pas.
+ * Les réponses viennent du module complémentaire servi sous
+ * /ext/assistant/ (dépôt docsearch-plugin-assistant), qui interroge la
+ * recherche AU NOM de l'utilisateur : chaque document cité est un
+ * document qu'il a le droit de lire.
+ *
+ * ⚠️ Les réponses sont EXTRACTIVES, pas rédigées : le module assemble des
+ * passages déjà présents dans les documents, il n'y a aucun modèle de
+ * langage derrière. Le bandeau de la page le dit, et il doit continuer de
+ * le dire tant que c'est vrai — sans quoi l'utilisateur lira ces extraits
+ * comme une synthèse.
  */
 import { computed, nextTick, onMounted, ref } from 'vue'
-import { findResponse, SUGGESTIONS, type CannedResponse } from './cannedResponses'
+import { SUGGESTIONS } from './suggestions'
+import { AssistantIndisponible, poserQuestion, type SegmentReponse } from '@/api/assistant'
 import { useUiConfigStore } from '@/stores/uiConfig'
 
 // Chargée pour la marque et pour le menu du compte, qui a besoin de
@@ -31,9 +37,9 @@ const adminLinks = computed(() =>
 
 type Message = {
   role: 'user' | 'ai'
-  answer: CannedResponse['answer']
+  answer: SegmentReponse[]
   sources: string[]
-  /** Vrai tant que la réponse simulée n'est pas arrivée. */
+  /** Vrai tant que la réponse du module n'est pas arrivée. */
   pending?: boolean
 }
 
@@ -57,12 +63,21 @@ async function ask(text: string) {
   const index = messages.value.length - 1
   await scrollToBottom()
 
-  // Délai simulé : une réponse instantanée trahirait immédiatement le
-  // caractère fictif de la démonstration.
-  await new Promise((r) => setTimeout(r, 700 + Math.random() * 600))
-
-  const { answer, sources } = findResponse(text)
-  messages.value[index] = { role: 'ai', answer, sources }
+  try {
+    const { answer, sources } = await poserQuestion(text)
+    messages.value[index] = { role: 'ai', answer, sources }
+  } catch (e) {
+    // L'échec se dit DANS la conversation, pas dans une alerte à part :
+    // la question posée reste à l'écran, et la réponse manquante a sa
+    // place là où elle aurait dû s'afficher.
+    const texte =
+      e instanceof AssistantIndisponible
+        ? "L'assistant n'est pas disponible sur cette installation. La recherche classique, elle, fonctionne."
+        : e instanceof Error
+          ? e.message
+          : "L'assistant n'a pas pu répondre."
+    messages.value[index] = { role: 'ai', answer: [{ text: texte }], sources: [] }
+  }
   await scrollToBottom()
 }
 
@@ -81,7 +96,7 @@ onMounted(() => {
     role: 'ai',
     answer: [
       {
-        text: "Bonjour ! Je suis une démonstration de l'assistant IA envisagé pour DocSearch (option RAG). Mes réponses ici sont des exemples préparés à l'avance, pas une vraie recherche dans vos documents — utilisez les suggestions ci-dessous ou la recherche classique pour une vraie requête.",
+        text: "Bonjour ! Posez votre question en français : je cherche dans les documents auxquels vous avez accès et je vous montre les passages les plus proches, avec leur source. Je ne rédige pas de synthèse — tout ce que je cite est écrit tel quel dans un document.",
       },
     ],
     sources: [],
@@ -122,9 +137,9 @@ onMounted(() => {
   <main id="main-content" class="fr-container fr-my-4w ds-chat">
     <DsfrAlert
       id="chat-avertissement"
-      type="warning"
-      title="Aperçu — réponses de démonstration"
-      description="Cette page illustre l'assistant envisagé. Les réponses sont préparées à l'avance : aucune recherche n'est faite dans vos documents."
+      type="info"
+      title="Réponses extraites de vos documents"
+      description="L'assistant cherche dans les documents auxquels vous avez accès et cite les passages trouvés. Il ne rédige pas de synthèse et n'invente rien : chaque phrase citée figure telle quelle dans le document indiqué."
       class="fr-mb-3w"
     />
 

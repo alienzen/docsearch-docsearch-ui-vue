@@ -1,17 +1,43 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { VIcon } from '@gouvminint/vue-dsfr'
 import ChatPage from './ChatPage.vue'
 import RouterLinkShim from '@/components/RouterLinkShim.vue'
-import { SUGGESTIONS } from './cannedResponses'
+import { SUGGESTIONS } from './suggestions'
 import { idsDupliques } from '@/test/ids'
 
 // Test de fumée : monter la page suffit à détecter une boucle de rendu
 // (le test dépasse alors son délai au lieu de figer un onglet en
 // recette). Deux boucles de ce genre sont déjà passées inaperçues à la
 // relecture pendant cette migration — d'où ce garde-fou.
+//
+// `fetch` est remplacé, et rien d'autre : c'est l'ENTRÉE de la page, pas
+// sa logique. Le module qui répond a ses propres tests (dépôt
+// docsearch-plugin-assistant), dont celui qui vérifie que la recherche
+// est bien faite au nom de l'utilisateur.
+
+const REPONSE = {
+  answer: [
+    { text: 'Le document le plus proche de votre question est ' },
+    { text: 'Budget prévisionnel 2024', strong: true },
+    { text: '.' },
+  ],
+  sources: ['Budget prévisionnel 2024'],
+  total: 3,
+}
+
+function repondre(corps: unknown, status = 200) {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: status >= 200 && status < 300,
+      status,
+      json: async () => corps,
+    }),
+  )
+}
 
 function mountPage() {
   return mount(ChatPage, {
@@ -22,25 +48,35 @@ function mountPage() {
   })
 }
 
+/** Monte la page, pose la première suggestion, attend la réponse. */
+async function poserUneQuestion() {
+  const wrapper = mountPage()
+  await nextTick()
+  await wrapper.findAll('[data-testid="chat-suggestion"]')[0].trigger('click')
+  await nextTick()
+  await nextTick()
+  await nextTick()
+  return wrapper
+}
+
 describe('ChatPage', () => {
+  beforeEach(() => repondre(REPONSE))
+  afterEach(() => vi.unstubAllGlobals())
+
   it('se monte sans boucle de rendu', () => {
-    const wrapper = mountPage()
-    expect(wrapper.html()).toBeTruthy()
+    expect(mountPage().html()).toBeTruthy()
   })
 
-  it('affiche d’emblée l’avertissement de démonstration', () => {
-    // Ce bandeau est la seule chose qui empêche de prendre cet écran
-    // pour une fonctionnalité opérationnelle : l'endpoint /ask n'existe
-    // pas côté API.
-    expect(mountPage().text()).toContain('réponses de démonstration')
+  it('annonce des réponses extraites, et non rédigées', () => {
+    // Ce bandeau est ce qui empêche de lire des extraits comme une
+    // synthèse : le module n'a aucun modèle de langage derrière lui.
+    expect(mountPage().text()).toContain('Réponses extraites de vos documents')
   })
 
   it('affiche le message d’accueil', async () => {
-    // Le message est poussé dans onMounted : il faut laisser passer un
-    // cycle de rendu avant de lire le texte.
     const wrapper = mountPage()
     await nextTick()
-    expect(wrapper.text()).toContain("démonstration de l'assistant IA")
+    expect(wrapper.text()).toContain('Posez votre question en français')
   })
 
   it('propose les suggestions de questions', () => {
@@ -66,32 +102,59 @@ describe('ChatPage', () => {
     expect(wrapper.findAll('[data-testid="chat-suggestion"]')).toHaveLength(SUGGESTIONS.length)
   })
 
+  it('interroge le module sous /ext/, avec le cookie de session', async () => {
+    // Le chemin compte : /ext/ est proxifié par les deux nginx.conf ET
+    // déclaré dans API_ROUTES de vite.config.ts. Le viser à côté produit
+    // un 404 qui ne se voit qu'en conteneur.
+    await poserUneQuestion()
+    // On CHERCHE l'appel plutôt que de prendre le premier : la page en
+    // fait d'autres au montage (/ui-config, /is-admin), et leur ordre
+    // n'est pas la propriété testée ici.
+    const appels = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls
+    const appel = appels.find(([u]) => String(u).startsWith('/ext/'))
+    expect(appel, `aucun appel /ext/ parmi ${appels.map(([u]) => u).join(', ')}`).toBeTruthy()
+    const [url, options] = appel!
+    expect(url).toBe('/ext/assistant/ask')
+    expect(options.credentials).toBe('same-origin')
+    expect(JSON.parse(options.body).question).toBe(SUGGESTIONS[0])
+  })
+
   it('marque chaque bulle de la conversation, et son locuteur', async () => {
-    vi.useFakeTimers()
-    try {
-      const wrapper = mountPage()
-      await nextTick()
-      // Au départ : le seul message d'accueil, côté assistant.
-      expect(wrapper.findAll('[data-testid="chat-message"]')).toHaveLength(1)
+    const wrapper = mountPage()
+    await nextTick()
+    expect(wrapper.findAll('[data-testid="chat-message"]')).toHaveLength(1)
 
-      await wrapper.findAll('[data-testid="chat-suggestion"]')[0].trigger('click')
-      await nextTick()
-      // Pendant l'attente : accueil + question + bulle en cours.
-      const enAttente = wrapper.findAll('[data-testid="chat-message"]')
-      expect(enAttente).toHaveLength(3)
-      expect(enAttente.map((m) => m.attributes('data-role'))).toEqual(['ai', 'user', 'ai'])
-      expect(wrapper.findAll('[data-testid="chat-attente"]')).toHaveLength(1)
+    await wrapper.findAll('[data-testid="chat-suggestion"]')[0].trigger('click')
+    await nextTick()
+    const bulles = wrapper.findAll('[data-testid="chat-message"]')
+    expect(bulles).toHaveLength(3)
+    expect(bulles.map((m) => m.attributes('data-role'))).toEqual(['ai', 'user', 'ai'])
+  })
 
-      await vi.advanceTimersByTimeAsync(2000)
-      await nextTick()
-      // Après réponse : toujours trois bulles — la bulle d'attente est
-      // REMPLACÉE, pas complétée par une quatrième — et plus d'attente.
-      expect(wrapper.findAll('[data-testid="chat-message"]')).toHaveLength(3)
-      expect(wrapper.findAll('[data-testid="chat-attente"]')).toHaveLength(0)
-      expect(wrapper.findAll('[data-testid="chat-source"]').length).toBeGreaterThan(0)
-    } finally {
-      vi.useRealTimers()
-    }
+  it('remplace la bulle d’attente par la réponse du module', async () => {
+    const wrapper = await poserUneQuestion()
+    // Toujours trois bulles — la bulle d'attente est REMPLACÉE, pas
+    // complétée par une quatrième — et plus d'attente en cours.
+    expect(wrapper.findAll('[data-testid="chat-message"]')).toHaveLength(3)
+    expect(wrapper.findAll('[data-testid="chat-attente"]')).toHaveLength(0)
+    expect(wrapper.text()).toContain('Budget prévisionnel 2024')
+    expect(wrapper.text()).toContain('Sources :')
+  })
+
+  it('dit clairement que le module n’est pas installé', async () => {
+    // 404 = aucun fragment nginx ne route /ext/assistant/. Ce n'est pas
+    // une panne à réessayer, c'est un module à installer — et la
+    // recherche classique, elle, marche toujours.
+    repondre({}, 404)
+    const wrapper = await poserUneQuestion()
+    expect(wrapper.text()).toContain("L'assistant n'est pas disponible")
+    expect(wrapper.text()).toContain('recherche classique')
+  })
+
+  it('invite à se reconnecter quand la session a expiré', async () => {
+    repondre({}, 401)
+    const wrapper = await poserUneQuestion()
+    expect(wrapper.text()).toContain('session a expiré')
   })
 
   it('n’expose que des identifiants uniques', async () => {
@@ -99,41 +162,8 @@ describe('ChatPage', () => {
     // la conversation est le seul `v-for` de cette page qui grossit, donc
     // le seul endroit où un `id` littéral pourrait se dédoubler.
     document.body.innerHTML = ''
-    vi.useFakeTimers()
-    try {
-      const wrapper = mountPage()
-      await nextTick()
-      await wrapper.findAll('[data-testid="chat-suggestion"]')[0].trigger('click')
-      await vi.advanceTimersByTimeAsync(2000)
-      await nextTick()
-      expect(idsDupliques(wrapper)).toEqual([])
-      wrapper.unmount()
-    } finally {
-      vi.useRealTimers()
-    }
-  })
-
-  it('répond à une suggestion et remplace la bulle d’attente', async () => {
-    // La réponse est différée pour imiter un temps de réflexion : sans
-    // faux minuteurs, le test attendrait réellement plus d'une seconde.
-    vi.useFakeTimers()
-    try {
-      const wrapper = mountPage()
-      await nextTick()
-      await wrapper.findAll('[data-testid="chat-suggestion"]')[0].trigger('click')
-      await nextTick()
-      // Pendant l'attente, une bulle vide tient la place.
-      expect(wrapper.text()).toContain('Quels documents parlent du budget 2024 ?')
-
-      await vi.advanceTimersByTimeAsync(2000)
-      await nextTick()
-      // Et elle doit bien être REMPLACÉE par la réponse : muter l'objet
-      // poussé au lieu de le remplacer dans le tableau laissait la bulle
-      // bloquée sur « … », sans erreur nulle part.
-      expect(wrapper.text()).toContain('Budget prévisionnel 2024')
-      expect(wrapper.text()).toContain('Sources :')
-    } finally {
-      vi.useRealTimers()
-    }
+    const wrapper = await poserUneQuestion()
+    expect(idsDupliques(wrapper)).toEqual([])
+    wrapper.unmount()
   })
 })
