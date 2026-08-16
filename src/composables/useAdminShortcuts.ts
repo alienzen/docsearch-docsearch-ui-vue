@@ -23,6 +23,10 @@ export function useAdminShortcuts(actions: {
   toggleShortcuts?: () => void
   /** Replie ou déplie la Nième section, 0 pour la première. */
   toggleAt?: (index: number) => void
+  /** Donne le focus à la ligne de recherche du sommaire. */
+  focusSearch?: () => void
+  /** Escamote ou rétablit le sommaire. */
+  toggleSommaire?: () => void
 }) {
   function isTypingTarget(el: EventTarget | null): boolean {
     if (!(el instanceof HTMLElement)) return false
@@ -61,6 +65,22 @@ export function useAdminShortcuts(actions: {
       case 'h':
       case 'H':
         window.scrollTo({ top: 0, behavior: 'smooth' })
+        break
+      // « s » comme sommaire, par symétrie avec le « f » des filtres de
+      // la recherche : même geste — escamoter la colonne latérale pour
+      // laisser toute la largeur au contenu.
+      case 's':
+      case 'S':
+        if (!actions.toggleSommaire) return
+        e.preventDefault()
+        actions.toggleSommaire()
+        break
+      // Convention habituelle du « aller à » ; les lettres restant
+      // toutes prises par les commandes de la page.
+      case '/':
+        if (!actions.focusSearch) return
+        e.preventDefault()
+        actions.focusSearch()
         break
       case '?':
         if (!actions.toggleShortcuts) return

@@ -12,16 +12,20 @@
  * cache global devait être peuplé avant eux, ce qui obligeait à
  * séquencer les rendus à la main.
  */
-import { computed, onMounted, provide, ref } from 'vue'
+import { computed, nextTick, onMounted, provide, ref, useTemplateRef } from 'vue'
 import { getFileSources } from '@/api/admin'
 import { ApiError } from '@/api/client'
 import { useUiConfigStore } from '@/stores/uiConfig'
+import { usePreferencesStore } from '@/stores/preferences'
 import { useAdminGroupsStore, useAdminPanelsStore } from '@/stores/adminPanels'
 import { useAdminShortcuts } from '@/composables/useAdminShortcuts'
+import { useHeaderHeight } from '@/composables/useHeaderHeight'
 import { useHeaderReduit } from '@/composables/useHeaderReduit'
 import { ADMIN_SHORTCUTS } from '@/constants'
+import { GROUP_IDS, PANEL_IDS } from './sections'
 
 const uiConfig = useUiConfigStore()
+const preferences = usePreferencesStore()
 const panels = useAdminPanelsStore()
 const groups = useAdminGroupsStore()
 
@@ -29,7 +33,17 @@ const groups = useAdminGroupsStore()
 // page empile une vingtaine de panneaux.
 useHeaderReduit(() => uiConfig.config.header_shrink_enabled)
 
+// Publie --ds-header-height : le sommaire est collant sous un en-tête
+// lui-même collant, et le saut vers une ancre doit décaler d'autant.
+useHeaderHeight()
+
 const accessDenied = ref<string | null>(null)
+
+/**
+ * Le sommaire disparaît aussi bien sur demande que sur refus d'accès —
+ * dans ce dernier cas il ne reste plus une seule section à sommairiser.
+ */
+const sommaireVisible = computed(() => !accessDenied.value && !preferences.sommaireHidden)
 
 provide('reportError', (e: unknown) => {
   if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
@@ -50,37 +64,11 @@ async function loadFileSources() {
   }
 }
 
-// Les deux listes doivent recenser TOUT ce que le gabarit affiche, dans
-// l'ordre d'affichage : le bouton « Tout replier » et les raccourcis
-// chiffrés ne connaissent que ce qui y figure. Un panneau ou un groupe
-// ajouté au gabarit sans être ajouté ici reste ouvert.
-const PANEL_IDS = [
-  'status-panel',
-  'allsources-panel',
-  'filesources-panel',
-  'filetypes-panel',
-  'pathfilters-panel',
-  'scan-panel',
-  'source-tree-panel',
-  'duplicates-panel',
-  'sqlsources-panel',
-  'websources-panel',
-  'plugins-panel',
-  'synonyms-panel',
-  'pinned-panel',
-  'engagement-panel',
-  'ui-config-panel',
-  'config-panel',
-]
-const GROUP_IDS = [
-  'group-overview',
-  'group-file-sources',
-  'group-sql-sources',
-  'group-web-sources',
-  'group-plugins',
-  'group-recherche',
-  'group-interface',
-]
+// `PANEL_IDS` et `GROUP_IDS` viennent de sections.ts, qui décrit aussi
+// le sommaire : le bouton « Tout replier » et les raccourcis chiffrés ne
+// connaissent que ce qui y figure, et un panneau ajouté au gabarit sans
+// y être déclaré resterait ouvert — et absent du sommaire. Le test de
+// cette page compare cette déclaration au DOM rendu.
 
 const toggleAllLabel = computed(() =>
   panels.anyExpanded || groups.anyExpanded ? 'Tout replier' : 'Tout déplier',
@@ -113,10 +101,26 @@ function reloadAll() {
 /** Palette des raccourcis, ouverte par « ? » ou par le lien d'en-tête. */
 const shortcutsOpen = ref(false)
 
+const sommaire = useTemplateRef<{ focaliserChamp: () => void }>('sommaire')
+
+/**
+ * Chercher suppose de voir le sommaire : « / » le rouvre d'abord. Sans
+ * ça, la touche paraîtrait morte une fois la colonne escamotée. Le
+ * `nextTick` est indispensable — la colonne est en `v-if`, la référence
+ * n'existe donc qu'au rendu suivant.
+ */
+async function focaliserSommaire() {
+  preferences.sommaireHidden = false
+  await nextTick()
+  sommaire.value?.focaliserChamp()
+}
+
 useAdminShortcuts({
   reload: reloadAll,
   toggleAll,
   toggleShortcuts: () => (shortcutsOpen.value = !shortcutsOpen.value),
+  focusSearch: focaliserSommaire,
+  toggleSommaire: () => (preferences.sommaireHidden = !preferences.sommaireHidden),
   // Les chiffres visent les GROUPES, accordéons de premier niveau : ce
   // sont eux qu'on plie pour naviguer, les panneaux étant à l'intérieur.
   toggleAt: (i) => {
@@ -180,86 +184,120 @@ onMounted(() => {
     </template>
   </DsfrHeader>
 
-  <main id="main-content" class="fr-container fr-my-4w">
-    <DsfrAlert
-      v-if="accessDenied"
-      id="admin-acces-refuse"
-      type="error"
-      title="Accès refusé"
-      :description="accessDenied"
-    />
-
-    <template v-else>
-      <div id="admin-outils" class="ds-stats__toolbar">
-        <DsfrButton
-          id="admin-recharger"
-          size="sm"
-          tertiary
-          no-outline
-          label="Recharger"
-          title="Recharger tous les panneaux (r)"
-          aria-keyshortcuts="r"
-          @click="reloadAll"
-        />
-        <DsfrButton
-          id="admin-tout-replier"
-          size="sm"
-          tertiary
-          no-outline
-          :label="toggleAllLabel"
-          :title="`${toggleAllLabel} (t)`"
-          aria-keyshortcuts="t"
-          @click="toggleAll"
-        />
+  <!-- Deux colonnes : le sommaire collant à gauche, les panneaux à
+       droite. La grille ne se forme qu'à partir de 48em — le point de
+       rupture du `fr-sidemenu`, qui range le sommaire derrière un bouton
+       en deçà. Refus d'accès : une seule colonne, il n'y a plus rien à
+       sommairiser. -->
+  <div
+    class="fr-container fr-my-4w ds-admin-layout"
+    :class="{ 'ds-admin-layout--sommaire': sommaireVisible }"
+  >
+    <div v-if="sommaireVisible" class="ds-admin-layout__cote">
+      <div class="ds-admin-layout__collant">
+        <AdminSommaire ref="sommaire" />
       </div>
+    </div>
 
-      <!-- Ce groupe reste hors du conteneur remonté, pour le seul panneau
-           d'état : sa voisine est donc remontée individuellement. -->
-      <AdminGroup id="group-overview" title="Vue d'ensemble">
-        <AdminStatusPanel :rechargement="reloadKey" />
-        <AdminAllSourcesPanel :key="reloadKey" />
-      </AdminGroup>
+    <main id="main-content">
+      <DsfrAlert
+        v-if="accessDenied"
+        id="admin-acces-refuse"
+        type="error"
+        title="Accès refusé"
+        :description="accessDenied"
+      />
 
-      <div :key="reloadKey">
+      <template v-else>
+        <div id="admin-outils" class="ds-admin-layout__outils">
+          <!-- Cette bascule vit ICI et non dans le sommaire : placée
+               dedans, elle disparaîtrait avec lui et il n'y aurait plus
+               aucun moyen de le rouvrir. Même raisonnement — et mêmes
+               attributs — que le bouton « Filtres » de la recherche.
+               `aria-expanded` porte l'état, ce qui évite un libellé
+               changeant à chaque clic. -->
+          <button
+            id="admin-sommaire-bascule"
+            class="fr-btn fr-btn--sm fr-btn--tertiary-no-outline fr-btn--icon-left fr-icon-menu-2-fill"
+            type="button"
+            aria-controls="admin-sommaire"
+            title="Afficher ou masquer le sommaire (s)"
+            aria-keyshortcuts="s"
+            :aria-expanded="!preferences.sommaireHidden"
+            @click="preferences.sommaireHidden = !preferences.sommaireHidden"
+          >
+            Sommaire
+          </button>
+          <DsfrButton
+            id="admin-recharger"
+            size="sm"
+            tertiary
+            no-outline
+            label="Recharger"
+            title="Recharger tous les panneaux (r)"
+            aria-keyshortcuts="r"
+            @click="reloadAll"
+          />
+          <DsfrButton
+            id="admin-tout-replier"
+            size="sm"
+            tertiary
+            no-outline
+            :label="toggleAllLabel"
+            :title="`${toggleAllLabel} (t)`"
+            aria-keyshortcuts="t"
+            @click="toggleAll"
+          />
+        </div>
 
-      <AdminGroup id="group-file-sources" title="Sources fichiers">
-        <AdminFileSourcesPanel @changed="loadFileSources" />
-        <AdminFiletypesPanel :sources="fileSources" />
-        <AdminPathFiltersPanel :sources="fileSources" />
-        <AdminScanPanel :sources="fileSources" />
-        <AdminSourceTreePanel :sources="fileSources" />
-        <!-- Avec les sources fichiers : l'empreinte de contenu n'existe
-             que pour elles (une ligne SQL n'a pas de fichier). -->
-        <AdminDuplicatesPanel :sources="fileSources" />
-      </AdminGroup>
+        <!-- Ce groupe reste hors du conteneur remonté, pour le seul panneau
+             d'état : sa voisine est donc remontée individuellement. -->
+        <AdminGroup id="group-overview" title="Vue d'ensemble">
+          <AdminStatusPanel :rechargement="reloadKey" />
+          <AdminAllSourcesPanel :key="reloadKey" />
+        </AdminGroup>
 
-      <AdminGroup id="group-sql-sources" title="Sources SQL">
-        <AdminSqlSourcesPanel />
-      </AdminGroup>
+        <div :key="reloadKey">
 
-      <AdminGroup id="group-web-sources" title="Sources web">
-        <AdminWebSourcesPanel />
-      </AdminGroup>
+        <AdminGroup id="group-file-sources" title="Sources fichiers">
+          <AdminFileSourcesPanel @changed="loadFileSources" />
+          <AdminFiletypesPanel :sources="fileSources" />
+          <AdminPathFiltersPanel :sources="fileSources" />
+          <AdminScanPanel :sources="fileSources" />
+          <AdminSourceTreePanel :sources="fileSources" />
+          <!-- Avec les sources fichiers : l'empreinte de contenu n'existe
+               que pour elles (une ligne SQL n'a pas de fichier). -->
+          <AdminDuplicatesPanel :sources="fileSources" />
+        </AdminGroup>
 
-      <!-- Un groupe à part, et pas sous « Sources » : un module peut
-           n'apporter aucune source et n'exister que pour son écran. -->
-      <AdminGroup id="group-plugins" title="Modules complémentaires">
-        <AdminPluginsPanel />
-      </AdminGroup>
+        <AdminGroup id="group-sql-sources" title="Sources SQL">
+          <AdminSqlSourcesPanel />
+        </AdminGroup>
 
-      <AdminGroup id="group-recherche" title="Recherche">
-        <AdminSynonymsPanel />
-        <AdminPinnedPanel />
-      </AdminGroup>
+        <AdminGroup id="group-web-sources" title="Sources web">
+          <AdminWebSourcesPanel />
+        </AdminGroup>
 
-      <AdminGroup id="group-interface" title="Interface et engagement">
-        <AdminEngagementPanel />
-        <AdminUiConfigPanel />
-        <AdminConfigPanel />
-      </AdminGroup>
-      </div>
-    </template>
-  </main>
+        <!-- Un groupe à part, et pas sous « Sources » : un module peut
+             n'apporter aucune source et n'exister que pour son écran. -->
+        <AdminGroup id="group-plugins" title="Modules complémentaires">
+          <AdminPluginsPanel />
+        </AdminGroup>
+
+        <AdminGroup id="group-recherche" title="Recherche">
+          <AdminSynonymsPanel />
+          <AdminPinnedPanel />
+        </AdminGroup>
+
+        <AdminGroup id="group-interface" title="Interface et engagement">
+          <AdminEngagementPanel />
+          <AdminUiConfigPanel />
+          <AdminConfigPanel />
+        </AdminGroup>
+        </div>
+      </template>
+    </main>
+  </div>
 
   <BackToTop />
 

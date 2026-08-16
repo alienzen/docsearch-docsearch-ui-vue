@@ -6,6 +6,7 @@ import { VIcon } from '@gouvminint/vue-dsfr'
 import AdminPage from './AdminPage.vue'
 import RouterLinkShim from '@/components/RouterLinkShim.vue'
 import { idsDupliques } from '@/test/ids'
+import { SECTIONS } from './sections'
 
 // Même garde-fou que ChatPage et StatsPage : monter la page détecte une
 // boucle de rendu (dépassement de délai) plutôt que de figer un onglet.
@@ -130,8 +131,15 @@ function respondWith(status = 200) {
   })
 }
 
-function mountPage() {
+/**
+ * `attachTo` seulement pour les tests qui regardent le focus : il ne
+ * s'établit que sur un élément réellement dans le document, et attacher
+ * systématiquement laisserait le corps du document jonché entre les
+ * tests.
+ */
+function mountPage(attachTo?: HTMLElement) {
   return mount(AdminPage, {
+    attachTo,
     global: {
       plugins: [createPinia()],
       components: { VIcon, RouterLink: RouterLinkShim },
@@ -147,6 +155,18 @@ describe('AdminPage', () => {
   beforeEach(() => {
     localStorage.clear()
     vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }))
+    // jsdom n'implémente ni ResizeObserver — dont `useHeaderHeight` se
+    // sert pour caler le sommaire sous l'en-tête collant — ni le
+    // défilement, où `window.scrollTo` lève « Not implemented ».
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    )
+    vi.stubGlobal('scrollTo', vi.fn())
   })
 
   it('se monte sans boucle de rendu', () => {
@@ -178,6 +198,195 @@ describe('AdminPage', () => {
     ])
   })
 
+  // sections.ts est la source du sommaire, du bouton « Tout replier » et
+  // des raccourcis chiffrés : ce qu'elle déclare doit être EXACTEMENT ce
+  // que le gabarit rend, dans le même ordre. C'est ce contrôle qui rend
+  // la duplication des titres acceptable.
+  it('rend exactement les groupes et panneaux déclarés dans sections.ts', async () => {
+    vi.stubGlobal('fetch', respondWith())
+    const wrapper = mountPage()
+    await flush()
+
+    // Le premier nœud texte du <summary> seulement : le sous-titre le
+    // suit dans un <small>, et `text()` recollerait les deux.
+    const titreDe = (details: DOMWrapper<Element>) =>
+      details.find('summary').element.childNodes[0]?.textContent?.trim()
+
+    for (const groupe of SECTIONS) {
+      const details = wrapper.find(`details#${groupe.id}`)
+      expect(details.exists(), groupe.id).toBe(true)
+      expect(titreDe(details)).toBe(groupe.titre)
+
+      // Les panneaux du groupe, dans l'ordre, et lui seuls.
+      const rendus = details
+        .findAll(':scope > .fr-accordion__inner > details.ds-panel-block')
+        .map((d) => ({ id: d.attributes('id'), titre: titreDe(d) }))
+      expect(rendus, groupe.id).toEqual(groupe.panneaux.map((p) => ({ id: p.id, titre: p.titre })))
+    }
+
+    // Et rien d'autre : un panneau ajouté au gabarit hors de tout groupe
+    // déclaré échapperait aux boucles ci-dessus.
+    expect(wrapper.findAll('details.ds-panel-block--group')).toHaveLength(SECTIONS.length)
+    expect(wrapper.findAll('details.ds-panel-block:not(.ds-panel-block--group)')).toHaveLength(
+      SECTIONS.flatMap((g) => g.panneaux).length,
+    )
+  })
+
+  it('liste tous les groupes et panneaux dans le sommaire', async () => {
+    vi.stubGlobal('fetch', respondWith())
+    const wrapper = mountPage()
+    await flush()
+
+    expect(wrapper.findAll('[data-testid="sommaire-groupe"]').map((a) => a.text())).toEqual(
+      SECTIONS.map((g) => g.titre),
+    )
+    expect(wrapper.findAll('[data-testid="sommaire-panneau"]').map((a) => a.text())).toEqual(
+      SECTIONS.flatMap((g) => g.panneaux.map((p) => p.titre)),
+    )
+  })
+
+  // Le cas d'usage qui a motivé le sommaire : taper « alerte » et
+  // atterrir SUR la case, pas sur le panneau ni sur le groupe.
+  it('mène de la recherche du sommaire à la case à cocher, panneau replié compris', async () => {
+    document.body.innerHTML = ''
+    // Groupe ET panneau repliés au départ : le saut doit ouvrir les deux.
+    localStorage.setItem('docsearch-admin-collapsed-groups', '["group-interface"]')
+    localStorage.setItem('docsearch-admin-collapsed-panels', '["ui-config-panel"]')
+    vi.stubGlobal('fetch', respondWith())
+    const wrapper = mountPage(document.body)
+    await flush()
+
+    expect(wrapper.find('details#group-interface').attributes('open')).toBeUndefined()
+
+    const champ = wrapper.find('#sommaire-recherche')
+    await champ.setValue('alerte')
+    const propositions = wrapper.findAll('[data-testid="sommaire-resultat"]')
+    expect(propositions[0].attributes('data-cible')).toBe('ui-alerts_enabled')
+
+    await champ.trigger('keydown', { key: 'Enter' })
+    await flush()
+
+    expect(wrapper.find('details#group-interface').attributes('open')).toBe('')
+    expect(wrapper.find('details#ui-config-panel').attributes('open')).toBe('')
+    expect(document.activeElement?.id).toBe('ui-alerts_enabled')
+    // Le champ se vide, sinon la liste masquerait le sommaire au retour.
+    expect((champ.element as HTMLInputElement).value).toBe('')
+
+    wrapper.unmount()
+  })
+
+  // La bascule doit SURVIVRE à ce qu'elle escamote : dans le sommaire,
+  // elle disparaîtrait avec lui et rien ne permettrait de le rouvrir.
+  it('escamote et rétablit le sommaire, la bascule restant atteignable', async () => {
+    vi.stubGlobal('fetch', respondWith())
+    const wrapper = mountPage()
+    await flush()
+
+    const bascule = () => wrapper.find('#admin-sommaire-bascule')
+    expect(bascule().attributes('aria-expanded')).toBe('true')
+    expect(wrapper.find('#admin-sommaire').exists()).toBe(true)
+
+    await bascule().trigger('click')
+    await flush()
+    expect(wrapper.find('#admin-sommaire').exists()).toBe(false)
+    expect(bascule().exists()).toBe(true)
+    expect(bascule().attributes('aria-expanded')).toBe('false')
+    // Et la préférence est retenue d'une visite à l'autre.
+    expect(localStorage.getItem('docsearch-admin-sommaire-hidden')).toBe('1')
+
+    await bascule().trigger('click')
+    await flush()
+    expect(wrapper.find('#admin-sommaire').exists()).toBe(true)
+  })
+
+  it('rouvre le sommaire escamoté quand on le cherche avec « / »', async () => {
+    document.body.innerHTML = ''
+    localStorage.setItem('docsearch-admin-sommaire-hidden', '1')
+    vi.stubGlobal('fetch', respondWith())
+    const wrapper = mountPage(document.body)
+    await flush()
+    expect(wrapper.find('#admin-sommaire').exists()).toBe(false)
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '/' }))
+    await flush()
+    expect(wrapper.find('#admin-sommaire').exists()).toBe(true)
+    expect(document.activeElement?.id).toBe('sommaire-recherche')
+
+    wrapper.unmount()
+  })
+
+  it('bascule le sommaire sur « s »', async () => {
+    vi.stubGlobal('fetch', respondWith())
+    const wrapper = mountPage()
+    await flush()
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 's' }))
+    await flush()
+    expect(wrapper.find('#admin-sommaire').exists()).toBe(false)
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 's' }))
+    await flush()
+    expect(wrapper.find('#admin-sommaire').exists()).toBe(true)
+  })
+
+  it('donne le focus à la ligne de recherche sur « / »', async () => {
+    document.body.innerHTML = ''
+    vi.stubGlobal('fetch', respondWith())
+    const wrapper = mountPage(document.body)
+    await flush()
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '/' }))
+    await flush()
+    expect(document.activeElement?.id).toBe('sommaire-recherche')
+
+    // Et la touche ne se déclenche pas pendant une saisie : « / » est un
+    // caractère comme un autre dans un motif de filtre. L'événement part
+    // du champ — c'est ce que fait le navigateur, et c'est sa cible que
+    // regarde le composable.
+    const champ = wrapper.find('#new-pattern')
+    ;(champ.element as HTMLInputElement).focus()
+    champ.element.dispatchEvent(new KeyboardEvent('keydown', { key: '/', bubbles: true }))
+    await flush()
+    expect(document.activeElement?.id).toBe('new-pattern')
+
+    wrapper.unmount()
+  })
+
+  // /admin.html#ui-alerts_enabled : c'est ce qui permet à l'aide
+  // administrateur de renvoyer vers un réglage plutôt que vers la page.
+  it('ouvre le panneau visé par l’ancre de l’URL', async () => {
+    document.body.innerHTML = ''
+    localStorage.setItem('docsearch-admin-collapsed-groups', '["group-interface"]')
+    localStorage.setItem('docsearch-admin-collapsed-panels', '["ui-config-panel"]')
+    history.replaceState(null, '', '/admin.html#ui-alerts_enabled')
+    vi.stubGlobal('fetch', respondWith())
+    const wrapper = mountPage(document.body)
+    await flush()
+
+    expect(wrapper.find('details#group-interface').attributes('open')).toBe('')
+    expect(wrapper.find('details#ui-config-panel').attributes('open')).toBe('')
+
+    history.replaceState(null, '', '/admin.html')
+    wrapper.unmount()
+  })
+
+  // Une ancre qui n'existe pas encore — un tableau pas encore chargé —
+  // ne doit pas rendre l'entrée inerte : on atterrit sur son panneau.
+  it('se rabat sur le panneau quand l’ancre visée manque', async () => {
+    document.body.innerHTML = ''
+    localStorage.setItem('docsearch-admin-collapsed-panels', '["scan-panel"]')
+    vi.stubGlobal('fetch', respondWith())
+    const wrapper = mountPage(document.body)
+    await flush()
+
+    const sommaire = wrapper.findComponent({ name: 'AdminSommaire' })
+    await sommaire.vm.allerA('ancre-inexistante', 'scan-panel')
+    await flush()
+
+    expect(wrapper.find('details#scan-panel').attributes('open')).toBe('')
+    wrapper.unmount()
+  })
+
   it('peuple les panneaux avec les données de l’API', async () => {
     vi.stubGlobal('fetch', respondWith())
     const wrapper = mountPage()
@@ -196,6 +405,8 @@ describe('AdminPage', () => {
       'admin-outils',
       'admin-recharger',
       'admin-tout-replier',
+      'sommaire-recherche',
+      'sommaire-resultats',
       'status-cartes',
       'status-versions',
       'status-versions-titre',

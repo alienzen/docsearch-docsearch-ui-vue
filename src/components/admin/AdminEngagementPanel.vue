@@ -12,22 +12,14 @@
 import { onMounted, ref } from 'vue'
 import { saveEngagementConfig } from '@/api/admin'
 import { useUiConfigStore } from '@/stores/uiConfig'
+// Libellés sortis du composant pour être indexables par le sommaire —
+// voir l'en-tête de champs.ts.
+import { BASCULES_ENGAGEMENT, type CleEngagement } from './champs'
 
 const uiConfig = useUiConfigStore()
 const error = ref<string | null>(null)
 
-const TOGGLES = [
-  { key: 'feedback_enabled', label: 'Pouce haut/bas après chaque recherche' },
-  {
-    key: 'nps_enabled',
-    label: 'Popup NPS occasionnelle (toutes les 20 recherches, délai de 30 jours)',
-  },
-  { key: 'suggestions_enabled', label: 'Lien « Suggérer une idée » dans l’en-tête de recherche' },
-] as const
-
-type ToggleKey = (typeof TOGGLES)[number]['key']
-
-async function update(key: ToggleKey, checked: boolean) {
+async function update(key: CleEngagement, checked: boolean) {
   const before = uiConfig.engagement[key]
   uiConfig.engagement[key] = checked
   error.value = null
@@ -60,7 +52,7 @@ onMounted(() => uiConfig.loadEngagementConfig())
     />
 
     <div id="engagement-bascules" class="fr-fieldset__content">
-      <div v-for="toggle in TOGGLES" :key="toggle.key" class="fr-checkbox-group">
+      <div v-for="toggle in BASCULES_ENGAGEMENT" :key="toggle.key" class="fr-checkbox-group">
         <input
           :id="`eng-${toggle.key}`"
           data-testid="engagement-bascule"

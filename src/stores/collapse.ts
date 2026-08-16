@@ -35,6 +35,16 @@ export function createCollapseStore(storeId: string, storageKey: string) {
     }
 
     /**
+     * Ouvre sans basculer. Le sommaire de l'administration en a besoin :
+     * sauter à un réglage doit ouvrir son panneau, et refermer celui qui
+     * était déjà ouvert serait exactement le contraire de ce qu'on
+     * demande. Sans effet sur un identifiant déjà déplié ou inconnu.
+     */
+    function deplier(id: string) {
+      if (isCollapsed(id)) collapsed.value = collapsed.value.filter((x) => x !== id)
+    }
+
+    /**
      * Un seul bouton pour tout replier ou tout déplier : tant qu'au
      * moins un est ouvert, l'action est « tout replier » ; une fois tout
      * replié, elle devient « tout déplier ».
@@ -53,6 +63,6 @@ export function createCollapseStore(storeId: string, storageKey: string) {
       }
     })
 
-    return { collapsed, known, isCollapsed, toggle, anyExpanded, toggleAll }
+    return { collapsed, known, isCollapsed, toggle, deplier, anyExpanded, toggleAll }
   })
 }

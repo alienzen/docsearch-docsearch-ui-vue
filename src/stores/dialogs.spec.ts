@@ -66,13 +66,20 @@ describe('raccourcis publiés', () => {
   })
 
   /**
-   * La page de statistiques n'a pas de rechargement global : publier « r »
-   * y décrirait une touche inopérante — exactement ce que la règle de
-   * synchronisation entre liste publiée et touches branchées interdit.
+   * La page de statistiques n'a ni rechargement global ni sommaire :
+   * publier « r », « / » ou « s » y décrirait des touches inopérantes —
+   * exactement ce que la règle de synchronisation entre liste publiée et
+   * touches branchées interdit.
+   *
+   * Écrit comme une différence d'ensembles et non comme un décompte : un
+   * décompte tombe en panne à chaque raccourci ajouté d'un côté ou de
+   * l'autre, sans rien dire de ce qui a bougé.
    */
-  it('la liste des statistiques omet « r », sans rien perdre d’autre', () => {
-    expect(STATS_SHORTCUTS.map((s) => s.keys)).not.toContain('r')
-    expect(STATS_SHORTCUTS.length).toBe(ADMIN_SHORTCUTS.length - 1)
+  it('la liste des statistiques omet ce qui n’y est pas branché, sans rien perdre d’autre', () => {
+    const propresAdmin = ['r', '/', 's']
+    expect(STATS_SHORTCUTS.map((s) => s.keys)).toEqual(
+      ADMIN_SHORTCUTS.map((s) => s.keys).filter((k) => !propresAdmin.includes(k)),
+    )
   })
 
   // Une touche partagée entre les deux familles de pages doit y désigner

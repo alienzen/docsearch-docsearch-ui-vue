@@ -64,6 +64,27 @@ onMounted(async () => {
   <main id="main-content" class="fr-container ds-prose fr-my-4w">
     <h1 id="aide-admin-titre" class="fr-h3">Aide administrateur</h1>
 
+    <h2 id="aide-admin-sommaire" class="fr-h5">Se déplacer dans la page</h2>
+    <p>
+      La colonne de gauche de la page d'administration suit le défilement : elle liste les sections
+      et leurs panneaux, et la ligne « Aller à un réglage » y cherche par titre de section ou par
+      libellé de réglage. Choisir un résultat déplie la section et le panneau, amène le réglage à
+      l'écran et l'y désigne quelques secondes.
+    </p>
+    <p>
+      Cette recherche porte sur l'<strong>interface</strong>, pas sur les données : le nom d'une
+      source ou d'un synonyme ne s'y trouve pas, le panneau qui les gère si.
+    </p>
+    <p>
+      Le bouton « Sommaire », en tête des panneaux, escamote cette colonne pour laisser toute la
+      largeur au contenu ; le choix est retenu d'une visite à l'autre. Chercher avec
+      <kbd>/</kbd> la rétablit au passage.
+    </p>
+    <p>
+      Chaque réglage a une adresse propre, qu'on peut mettre en favori ou transmettre — par exemple
+      <code>/admin.html#ui-alerts_enabled</code> pour les alertes sur les recherches enregistrées.
+    </p>
+
     <h2 id="aide-admin-raccourcis" class="fr-h5">Raccourcis clavier</h2>
     <div class="fr-table fr-table--bordered">
       <table id="aide-admin-raccourcis-tableau">

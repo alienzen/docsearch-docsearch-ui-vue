@@ -13,6 +13,10 @@ const FACET_COLLAPSED_KEY = 'docsearch-collapsed-facets'
 // identifiant de section et le drapeau global se marcheraient dessus.
 const FACETS_HIDDEN_KEY = 'docsearch-facets-hidden'
 const FACETS_WIDTH_KEY = 'docsearch-facets-width'
+// Même geste que FACETS_HIDDEN_KEY, mais côté administration : escamoter
+// la colonne latérale pour laisser toute la largeur au contenu. Clé
+// distincte, les deux pages n'ayant aucune raison de se suivre.
+const SOMMAIRE_HIDDEN_KEY = 'docsearch-admin-sommaire-hidden'
 // Nouvelle clé, sans équivalent dans docsearch-ui : le temps de
 // recherche n'y était pas affiché.
 const SHOW_SEARCH_TIME_KEY = 'docsearch-show-search-time'
@@ -59,6 +63,14 @@ function readShowSearchTime(): boolean {
 function readFacetsHidden(): boolean {
   try {
     return localStorage.getItem(FACETS_HIDDEN_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function readSommaireHidden(): boolean {
+  try {
+    return localStorage.getItem(SOMMAIRE_HIDDEN_KEY) === '1'
   } catch {
     return false
   }
@@ -112,6 +124,14 @@ export const usePreferencesStore = defineStore('preferences', () => {
    * les sections retrouvent leur état à la réouverture de la colonne.
    */
   const facetsHidden = ref(readFacetsHidden())
+
+  /**
+   * Sommaire de la page d'administration escamoté. Même geste que
+   * `facetsHidden` sur la recherche : le contenu récupère toute la
+   * largeur, et la bascule qui le rouvre vit HORS de la colonne (voir
+   * AdminPage), faute de quoi elle disparaîtrait avec elle.
+   */
+  const sommaireHidden = ref(readSommaireHidden())
 
   /** Largeur de la colonne de facettes, en pixels, toujours bornée. */
   const facetsWidth = ref(readFacetsWidth())
@@ -203,6 +223,14 @@ export const usePreferencesStore = defineStore('preferences', () => {
     }
   })
 
+  watch(sommaireHidden, (value) => {
+    try {
+      localStorage.setItem(SOMMAIRE_HIDDEN_KEY, value ? '1' : '0')
+    } catch {
+      /* idem */
+    }
+  })
+
   watch(facetsWidth, (value) => {
     try {
       localStorage.setItem(FACETS_WIDTH_KEY, String(value))
@@ -223,6 +251,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
     resultsCompact,
     showSearchTime,
     facetsHidden,
+    sommaireHidden,
     facetsWidth,
     setFacetsWidth,
     resetFacetsWidth,

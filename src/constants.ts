@@ -74,6 +74,8 @@ export const SHORTCUTS: Shortcut[] = [
  * précisément l'incohérence à corriger.
  */
 export const ADMIN_SHORTCUTS: Shortcut[] = [
+  { keys: '/', label: 'Chercher une section ou un réglage dans le sommaire', aria: '/' },
+  { keys: 's', label: 'Afficher ou masquer le sommaire', aria: 's' },
   { keys: 'r', label: 'Recharger tous les panneaux', aria: 'r' },
   { keys: 't', label: 'Replier ou déplier tous les panneaux', aria: 't' },
   { keys: '1 … 9', label: 'Replier ou déplier le panneau correspondant' },
@@ -83,11 +85,18 @@ export const ADMIN_SHORTCUTS: Shortcut[] = [
 ]
 
 /**
- * Liste publiée par la page de statistiques : la même, moins « r ». Cette
- * page n'a pas de rechargement global — chaque panneau se recharge seul —
- * et publier une touche inopérante est pire que ne rien publier.
+ * Touches branchées par la seule page d'administration : « r » pour le
+ * rechargement global — la page de statistiques n'en a pas, chaque
+ * panneau s'y recharge seul — et « / » comme « s » pour le sommaire,
+ * qu'elle n'a pas non plus. Publier une touche inopérante est pire que
+ * ne rien publier.
  */
-export const STATS_SHORTCUTS: Shortcut[] = ADMIN_SHORTCUTS.filter((s) => s.keys !== 'r')
+const TOUCHES_ADMIN_SEULEMENT = ['r', '/', 's']
+
+/** Liste publiée par la page de statistiques. */
+export const STATS_SHORTCUTS: Shortcut[] = ADMIN_SHORTCUTS.filter(
+  (s) => !TOUCHES_ADMIN_SEULEMENT.includes(s.keys),
+)
 
 export const SEARCH_IN_LABELS: Record<string, string> = {
   title: 'Titre',

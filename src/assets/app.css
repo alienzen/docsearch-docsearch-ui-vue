@@ -1456,6 +1456,128 @@ body.ds-resizing {
   }
 }
 
+/* ── Administration : sommaire collant ─────────────────────── */
+
+/* Deux colonnes à partir de 48em seulement — le point de rupture du
+   `fr-sidemenu`, qui range le sommaire derrière son bouton en deçà. En
+   dessous, tout retombe dans le flux : une colonne de navigation de
+   18rem ne tiendrait pas à côté des panneaux. */
+@media (min-width: 48em) {
+  .ds-admin-layout--sommaire {
+    display: grid;
+    grid-template-columns: minmax(0, 19rem) minmax(0, 1fr);
+    gap: 2rem;
+  }
+
+  /* Le `fr-sidemenu` réserve 2rem à sa droite, plus 1,5rem dans son
+     `__inner` : la gouttière est déjà celle de la grille, et ces 3,5rem
+     étaient pris sur la ligne de recherche, qui n'affichait plus qu'une
+     vingtaine de caractères. Le filet vertical du `__inner` (une ombre
+     interne) est conservé, c'est lui qui sépare les deux colonnes. */
+  .ds-sommaire.fr-sidemenu {
+    padding-right: 0;
+  }
+  .ds-sommaire .fr-sidemenu__inner {
+    padding-right: 1rem;
+  }
+
+  /* ⚠️ Surtout PAS d'`align-items: start` ici : l'élément de grille doit
+     s'étirer sur toute la hauteur de la ligne, faute de quoi son enfant
+     collant n'a aucune course pour glisser et le sommaire remonte avec
+     le contenu. Même mécanique que la colonne de facettes. */
+  .ds-admin-layout__collant {
+    position: sticky;
+    /* `+ 0.5rem` et non `+ 1rem` : le remplissage de 0,5rem ajouté
+       ci-dessous décale déjà le contenu d'autant, et l'espace sous
+       l'en-tête doit rester d'un rem au total. Idem pour la hauteur. */
+    top: calc(var(--ds-header-height, 0px) + 0.5rem);
+    max-height: calc(100vh - var(--ds-header-height, 0px) - 1rem);
+    overflow-y: auto;
+    /* Un titre de panneau long ne doit pas élargir la colonne. */
+    overflow-x: hidden;
+
+    /* Le défilement propre à cette colonne en fait une zone de rognage
+       sur les QUATRE côtés — `overflow-y: auto` force `overflow-x` à
+       `auto`, il n'existe pas de débordement visible sur un seul axe.
+       Tout ce qui se peint HORS de la boîte y passe donc à la trappe :
+       le contour de focus du DSFR, posé à 2px du bord, était coupé sur
+       sa gauche, et le liseré bleu de la section active affleurait le
+       bord. On rend ces quelques pixels par du remplissage, annulé par
+       une marge négative pour que la colonne ne se décale pas d'un
+       poil — c'est le procédé du DSFR lui-même pour son
+       `.fr-sidemenu--sticky`.
+
+       0,5rem et non les 0,25rem du DSFR : mesuré sur la page, le contour
+       de focus fait 2,67px posés à 2px du bord, soit 4,7px — les 4px du
+       DSFR en rognaient encore un cheveu. */
+    padding: 0.5rem;
+    margin: -0.5rem;
+  }
+}
+
+/* Barre d'outils en tête de la colonne de contenu, et non dans le
+   sommaire : la bascule qui escamote celui-ci doit lui survivre, sans
+   quoi rien ne permettrait de le rouvrir. « Sommaire » est poussé à
+   gauche, les commandes de panneaux restant groupées à droite. */
+.ds-admin-layout__outils {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+.ds-admin-layout__outils > #admin-sommaire-bascule {
+  margin-right: auto;
+}
+
+/* Les titres de panneau sont des phrases (« Filtres de sous-dossiers ») :
+   ils passent à la ligne plutôt que de déborder. */
+.ds-sommaire .fr-sidemenu__link {
+  overflow-wrap: anywhere;
+}
+
+.ds-sommaire__recherche {
+  margin-bottom: 1rem;
+}
+
+/* Les résultats REMPLACENT l'arbre des sections au lieu de flotter
+   au-dessus : la colonne a son propre défilement, une liste en
+   `position: absolute` s'y ferait rogner par `overflow`. */
+.ds-sommaire__resultat {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+/* Survol et sélection au clavier partagent le même rendu, comme les
+   suggestions de la barre de recherche. */
+.ds-sommaire__resultat--actif {
+  background-color: var(--background-open-blue-france);
+}
+
+.ds-sommaire__libelle {
+  display: block;
+  font-weight: 400;
+}
+
+/* `font-weight` explicite sur les deux lignes : `.fr-sidemenu__list`
+   met ses éléments de premier niveau en gras, et le chemin comme le
+   libellé en héritaient. */
+.ds-sommaire__chemin {
+  display: block;
+  margin-bottom: 0;
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+/* Cible d'un saut depuis le sommaire. Le focus y est posé, mais un
+   contour de focus seul ne se distingue pas assez au milieu de vingt-cinq
+   cases à cocher : celui-ci reste deux secondes puis s'efface. Pas
+   d'animation — rien à neutraliser pour `prefers-reduced-motion`. */
+.ds-cible {
+  outline: 2px solid var(--border-action-high-blue-france);
+  outline-offset: 3px;
+}
+
 /* ── Statistiques ──────────────────────────────────────────── */
 .ds-stats__toolbar {
   display: flex;
