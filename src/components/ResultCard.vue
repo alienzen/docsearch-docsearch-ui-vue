@@ -228,6 +228,26 @@ const selectable = computed(
         >
           Voir l'aperçu
         </a>
+        <!-- Actions apportées par les modules complémentaires actifs. Le
+             cœur ne rend qu'un libellé, un chemin sous /ext/<module>/ et
+             une classe d'icône DSFR, tous validés à l'installation —
+             jamais du balisage venu d'un module.
+
+             L'identifiant du document part en paramètre `doc`. Le module
+             DOIT le relire par l'API avec le cookie de l'utilisateur :
+             recevoir un identifiant ne prouve pas que celui qui l'envoie
+             a le droit de le lire. -->
+        <a
+          v-for="action in uiConfig.config.plugin_actions"
+          :key="`${action.module}-${action.chemin}`"
+          class="fr-link fr-link--sm"
+          :class="action.icone ? `fr-link--icon-left ${action.icone}` : undefined"
+          :href="`${action.chemin}?doc=${encodeURIComponent(result.id)}`"
+          target="_blank"
+          rel="noopener"
+          data-testid="carte-resultat-action-module"
+          >{{ action.libelle }}</a
+        >
       </div>
     </div>
   </div>

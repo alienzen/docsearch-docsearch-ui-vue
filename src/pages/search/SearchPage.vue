@@ -289,6 +289,23 @@ onMounted(() => {
                à l'installation : un libellé, un chemin sous /ext/<nom>/ et
                une classe d'icône DSFR. Aucun HTML, aucun script — voir
                PLAN-PLUGINS.md §3 pour pourquoi ça ne s'ouvrira pas. -->
+          <!-- Écrans de module (accroche `page`) : le cœur fabrique
+               lui-même l'entrée de menu, qui mène à sa page hôte et non
+               au module — un module ne peut pas déclarer un lien hors de
+               /ext/<lui-même>/, et c'est très bien ainsi. -->
+          <li
+            v-for="ecran in uiConfig.config.plugin_pages"
+            :key="`page-${ecran.module}`"
+            class="fr-nav__item"
+          >
+            <a
+              class="fr-nav__link"
+              :class="ecran.icone ? `fr-link--icon-left ${ecran.icone}` : undefined"
+              :href="`/module.html?m=${encodeURIComponent(ecran.module)}`"
+              data-testid="lien-module-page"
+              >{{ ecran.libelle }}</a
+            >
+          </li>
           <li
             v-for="entree in uiConfig.config.plugin_nav"
             :key="`${entree.module}-${entree.chemin}`"

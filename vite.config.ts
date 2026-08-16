@@ -136,6 +136,11 @@ export default defineConfig({
         index: fileURLToPath(new URL('./index.html', import.meta.url)),
         help: fileURLToPath(new URL('./help.html', import.meta.url)),
         chat: fileURLToPath(new URL('./chat.html', import.meta.url)),
+        // Écran hôte des modules complémentaires : une seule page pour
+        // tous, le module visé arrivant en paramètre (?m=<nom>). Une page
+        // par module serait impossible — le paquet est construit avant
+        // qu'aucun module n'existe.
+        module: fileURLToPath(new URL('./module.html', import.meta.url)),
         stats: fileURLToPath(new URL('./stats.html', import.meta.url)),
         'stats-help': fileURLToPath(new URL('./stats-help.html', import.meta.url)),
         admin: fileURLToPath(new URL('./admin.html', import.meta.url)),

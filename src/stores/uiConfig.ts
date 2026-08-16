@@ -116,6 +116,10 @@ export type UiConfig = {
    * trois validés à l'installation (docsearch_contract/interface.py).
    */
   plugin_nav: PluginNavEntry[]
+  /** Liens posés sur chaque carte de résultat par les modules actifs. */
+  plugin_actions: PluginNavEntry[]
+  /** Écrans de module, encadrés par l'interface du produit (module.html). */
+  plugin_pages: PluginNavEntry[]
   /**
    * Page de connexion — les trois éléments que charlie/app-front affiche
    * sous le formulaire (voir LoginView.vue), ici optionnels.
@@ -205,6 +209,8 @@ const DEFAULT_UI_CONFIG: UiConfig = {
   // n'affiche aucune entrée plutôt qu'une entrée périmée qui mènerait à
   // un 502.
   plugin_nav: [],
+  plugin_actions: [],
+  plugin_pages: [],
   // Exception au « tout activé » ci-dessus, et c'est voulu : si
   // /ui-config échoue, l'écran de connexion doit rester le formulaire
   // seul. Un repli qui afficherait des liens sans URL ou un jalon
