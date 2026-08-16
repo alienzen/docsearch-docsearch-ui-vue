@@ -352,6 +352,15 @@ export const useUiConfigStore = defineStore('uiConfig', () => {
     return allSources.value.find((s) => s.name === name)?.card_fields || {}
   }
 
+  /**
+   * Type d'une source — `file`, `sql`, `web` ou `plugin` —, ou `null`
+   * tant que la liste n'est pas chargée. Sert à savoir si un document a
+   * un FICHIER derrière lui : seules les sources fichiers en ont un.
+   */
+  function sourceType(name: string): string | null {
+    return allSources.value.find((s) => s.name === name)?.type ?? null
+  }
+
   function sourceCollectable(name: string) {
     const found = allSources.value.find((s) => s.name === name)
     return found ? found.collectable !== false : true
@@ -493,6 +502,7 @@ export const useUiConfigStore = defineStore('uiConfig', () => {
     footerBottomText,
     sourceLabel,
     sourceCardFields,
+    sourceType,
     sourceCollectable,
     loadUiConfig,
     loadEngagementConfig,

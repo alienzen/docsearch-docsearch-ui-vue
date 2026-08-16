@@ -91,9 +91,21 @@ const isArchiveMember = computed(() => (props.result.filepath || '').includes(':
  * L'aperçu convertit un FICHIER : sans chemin, il n'y a rien à
  * convertir. Une ligne de source SQL n'en a pas — le lien menait à une
  * erreur. Un membre d'archive en a un, mais le fichier n'existe que le
- * temps de l'indexation, d'où la seconde condition.
+ * temps de l'indexation, d'où la deuxième condition.
+ *
+ * La TROISIÈME est arrivée le 2026-08-16, et elle rattrape un défaut que
+ * « :: » masquait par accident : un document poussé par un module porte
+ * bien un `filepath` (« plugin:<source>/<id> »), mais aucun fichier n'est
+ * derrière. Le lien s'affichait et menait à une erreur de conversion.
+ * Une page web indexée est dans le même cas depuis toujours. Seule une
+ * source FICHIER a réellement quelque chose à convertir.
  */
-const previewable = computed(() => !!props.result.filepath && !isArchiveMember.value)
+const previewable = computed(
+  () =>
+    !!props.result.filepath &&
+    !isArchiveMember.value &&
+    uiConfig.sourceType(props.result.source || '') === 'file',
+)
 
 /** Case à cocher pour les collections, si la source l'autorise. */
 const selectable = computed(
