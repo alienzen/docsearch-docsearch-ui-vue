@@ -81,7 +81,10 @@ describe('lien d’aperçu', () => {
     const uiConfig = useUiConfigStore()
     uiConfig.allSources = sources as never
     return mount(ResultCard, {
-      props: { result: { id: 'x', filename: 'f', filepath, source, highlight: [] } as never },
+      props: {
+        result: { id: 'x', filename: 'f', filepath, source, highlight: [] } as never,
+        selected: false,
+      },
       global: { plugins: [pinia], components: { VIcon } },
     })
   }
