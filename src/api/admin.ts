@@ -506,3 +506,44 @@ export function startScan(
     body: JSON.stringify({ source, subfolder }),
   })
 }
+
+// ── Modules complémentaires ──────────────────────────────────
+// Les réglages qu'un module DÉCLARE (figés par son manifeste) et ceux
+// qu'un administrateur a CHOISIS. Voir docsearch-infra/PLAN-PLUGINS.md §3.
+
+export type ReglageDeclare = {
+  cle: string
+  type: 'booleen' | 'texte' | 'liste'
+  libelle: string
+  aide: string | null
+  defaut: string
+  /** Nom de la variable d'environnement livrée au module, à titre indicatif. */
+  variable: string
+}
+
+export type ModuleComplementaire = {
+  enabled: boolean
+  admin_panel: ReglageDeclare[]
+  reglages: Record<string, string>
+  /**
+   * Vrai dès qu'un réglage a changé sans que le module ait été relancé.
+   * Les variables d'environnement d'un conteneur sont fixées à sa
+   * création : tant que ce drapeau est levé, la valeur affichée n'est PAS
+   * celle qu'utilise le module.
+   */
+  restart_requis: boolean
+}
+
+export function getPlugins(): Promise<Record<string, ModuleComplementaire>> {
+  return api('/admin/plugins')
+}
+
+export function setPluginReglages(
+  nom: string,
+  reglages: Record<string, string>,
+): Promise<{ nom: string; reglages: Record<string, string>; restart_requis: boolean }> {
+  return api(`/admin/plugins/${encodeURIComponent(nom)}/reglages`, {
+    method: 'POST',
+    body: JSON.stringify({ reglages }),
+  })
+}

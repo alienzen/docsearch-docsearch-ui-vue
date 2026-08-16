@@ -158,7 +158,7 @@ describe('AdminPage', () => {
   // de la page : « Recherche » se retrouve dans une bonne part des
   // libellés de l'écran, et un groupe absent y passerait donc inaperçu.
   // L'ordre compte aussi — c'est lui que suivent les raccourcis chiffrés.
-  it('affiche les six groupes de panneaux, dans l’ordre', async () => {
+  it('affiche les sept groupes de panneaux, dans l’ordre', async () => {
     vi.stubGlobal('fetch', respondWith())
     const wrapper = mountPage()
     await flush()
@@ -170,6 +170,9 @@ describe('AdminPage', () => {
       'Sources fichiers',
       'Sources SQL',
       'Sources web',
+      // Un groupe à part, et pas sous « Sources » : un module peut
+      // n'apporter aucune source et n'exister que pour son écran.
+      'Modules complémentaires',
       'Recherche',
       'Interface et engagement',
     ])

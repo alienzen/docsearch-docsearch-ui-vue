@@ -78,6 +78,11 @@ const TOGGLES: { key: keyof UiConfig; label: string }[] = [
     key: 'empty_state_animation_enabled',
     label: "Animation d'accueil sur la page de recherche vide",
   },
+  {
+    key: 'header_shrink_enabled',
+    label:
+      'En-tête réduit au défilement — bloc-marque et logo masqués, barre de recherche et navigation conservées (sans effet sur écran étroit)',
+  },
   { key: 'show_current_user_enabled', label: 'Badge « Connecté : … » côté recherche' },
   { key: 'show_current_user_groups_enabled', label: '… avec ses groupes' },
   { key: 'show_current_user_enabled_admin', label: 'Badge « Connecté : … » côté administration' },

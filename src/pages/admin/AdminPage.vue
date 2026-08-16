@@ -18,11 +18,16 @@ import { ApiError } from '@/api/client'
 import { useUiConfigStore } from '@/stores/uiConfig'
 import { useAdminGroupsStore, useAdminPanelsStore } from '@/stores/adminPanels'
 import { useAdminShortcuts } from '@/composables/useAdminShortcuts'
+import { useHeaderReduit } from '@/composables/useHeaderReduit'
 import { ADMIN_SHORTCUTS } from '@/constants'
 
 const uiConfig = useUiConfigStore()
 const panels = useAdminPanelsStore()
 const groups = useAdminGroupsStore()
+
+// En-tête replié au défilement, si l'administrateur l'a demandé : la
+// page empile une vingtaine de panneaux.
+useHeaderReduit(() => uiConfig.config.header_shrink_enabled)
 
 const accessDenied = ref<string | null>(null)
 
@@ -60,6 +65,7 @@ const PANEL_IDS = [
   'duplicates-panel',
   'sqlsources-panel',
   'websources-panel',
+  'plugins-panel',
   'synonyms-panel',
   'pinned-panel',
   'engagement-panel',
@@ -71,6 +77,7 @@ const GROUP_IDS = [
   'group-file-sources',
   'group-sql-sources',
   'group-web-sources',
+  'group-plugins',
   'group-recherche',
   'group-interface',
 ]
@@ -232,6 +239,12 @@ onMounted(() => {
 
       <AdminGroup id="group-web-sources" title="Sources web">
         <AdminWebSourcesPanel />
+      </AdminGroup>
+
+      <!-- Un groupe à part, et pas sous « Sources » : un module peut
+           n'apporter aucune source et n'exister que pour son écran. -->
+      <AdminGroup id="group-plugins" title="Modules complémentaires">
+        <AdminPluginsPanel />
       </AdminGroup>
 
       <AdminGroup id="group-recherche" title="Recherche">
