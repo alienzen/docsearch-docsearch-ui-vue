@@ -126,3 +126,39 @@ describe('champs apportés par la source', () => {
     expect(extraFields(doc, {})).toEqual([])
   })
 })
+
+describe('plomberie des modules complémentaires', () => {
+  /**
+   * Un document poussé par un module porte `run_id`, l'identifiant de la
+   * passe qui l'a produit — c'est ce que compare la réconciliation de fin
+   * de passe côté cœur. Il ne dit rien du document, et s'affichait en
+   * clair sur la carte de résultat : « Run id :
+   * 2026-08-17T15:46:47.930402+00:00-b8bb », entre l'auteur et le flux.
+   *
+   * Constaté à l'écran sur la source RSS le 2026-08-17, mais présent
+   * depuis le module d'exemple : tout document de module en portait un.
+   */
+  const article = {
+    id: 'a1',
+    source: 'rss_presse',
+    title: 'Le budget 2027 en discussion',
+    author: 'Camille Rey',
+    run_id: '2026-08-17T15:46:47.930402+00:00-b8bb',
+    flux: 'Le Monde — Une',
+  }
+
+  it('n’affiche pas l’identifiant de passe', () => {
+    const cles = extraFields(article, {}).map((c) => c.key)
+
+    expect(cles).not.toContain('run_id')
+  })
+
+  it('affiche toujours les champs déclarés par le module', () => {
+    // Le témoin : ce n'est pas tout le bloc qui a disparu, seulement la
+    // donnée de service. `flux` est déclaré au manifeste du module RSS et
+    // porte sa facette.
+    const cles = extraFields(article, {}).map((c) => c.key)
+
+    expect(cles).toContain('flux')
+  })
+})

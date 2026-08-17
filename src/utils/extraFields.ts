@@ -47,6 +47,14 @@ const TECHNIQUES = new Set([
   // carte ; ici, il s'affichait en clair, « Pinned : true » au milieu des
   // métadonnées du document.
   'pinned',
+  // Identifiant de PASSE d'un module complémentaire, posé sur chaque
+  // document poussé (docsearch_contract.documents.construire_document).
+  // C'est la plomberie de la réconciliation de fin de passe : le cœur
+  // compare ce marqueur pour savoir ce qui a disparu depuis. Il ne dit
+  // rien du document, et s'affichait en clair sur la carte — « Run id :
+  // 2026-08-17T15:46:47.930402+00:00-b8bb » au milieu des métadonnées.
+  // Même nature que `folder_top` juste au-dessus : une donnée de service.
+  'run_id',
 ])
 
 /**
