@@ -13,10 +13,15 @@ import { useUiConfigStore } from '@/stores/uiConfig'
 import { useStatsPanelsStore } from '@/stores/statsPanels'
 import { ApiError } from '@/api/client'
 import { useAdminShortcuts } from '@/composables/useAdminShortcuts'
+import { useHeaderReduit } from '@/composables/useHeaderReduit'
 import { STATS_SHORTCUTS } from '@/constants'
 
 const uiConfig = useUiConfigStore()
 const panels = useStatsPanelsStore()
+
+// En-tête replié au défilement, si l'administrateur l'a demandé : les
+// tableaux de cette page sont longs.
+useHeaderReduit(() => uiConfig.config.header_shrink_enabled)
 
 /**
  * Mêmes raccourcis que l'administration, dont cette page partage la
@@ -152,6 +157,14 @@ onMounted(() => {
     help-label="Aide des statistiques"
     @close="shortcutsOpen = false"
   />
+
+  <!-- Hôte des confirmations (useDialogs) — sans lui, `confirm()` pose
+       une demande dans le store que RIEN ne rend : la promesse n'est
+       jamais résolue, le clic sur « Supprimer » ne produit ni fenêtre ni
+       erreur, et le bouton paraît simplement mort. Vu à l'écran, pas en
+       relisant : les tests du panneau résolvent la demande directement
+       par le store, comme le font tous ceux du dépôt. -->
+  <AppDialogs />
 
   <BackToTop />
 
