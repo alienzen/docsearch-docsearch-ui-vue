@@ -17,6 +17,7 @@ import { extLabel, fmtSize } from '@/utils/format'
 import { parseHighlights } from '@/utils/highlight'
 import { sourceCardCustom } from '@/utils/sourceCards'
 import { extraFields } from '@/utils/extraFields'
+import { lienExterne } from '@/utils/paths'
 import { usePreferencesStore } from '@/stores/preferences'
 import { useUiConfigStore } from '@/stores/uiConfig'
 
@@ -86,6 +87,9 @@ const scorePct = computed(() =>
 )
 /** Un membre d'archive a un chemin de la forme "archive.zip::interne". */
 const isArchiveMember = computed(() => (props.result.filepath || '').includes('::'))
+
+/** Adresse ouvrable, quand le `filepath` en est une. */
+const lien = computed(() => lienExterne(props.result.filepath))
 
 /**
  * L'aperçu convertit un FICHIER : sans chemin, il n'y a rien à
@@ -208,7 +212,24 @@ const selectable = computed(
       </ul>
 
       <p v-if="result.filepath" class="ds-result__path fr-text--sm">
-        <span class="ds-result__path-text" :title="result.filepath">{{ result.filepath }}</span>
+        <!-- Cliquable quand le `filepath` est une adresse — sources web et
+             documents de modules (un article RSS, par exemple). Ailleurs
+             c'est un chemin de fichier, qui n'a rien à ouvrir. Voir
+             `lienExterne` pour la liste blanche de schémas, qui est ce
+             qui rend ce lien sûr. -->
+        <a
+          v-if="lien"
+          class="ds-result__path-text fr-link fr-link--sm"
+          data-testid="carte-resultat-lien"
+          :href="lien"
+          :title="`${result.filepath} — nouvelle fenêtre`"
+          target="_blank"
+          rel="noopener"
+          >{{ result.filepath }}</a
+        >
+        <span v-else class="ds-result__path-text" :title="result.filepath">{{ result.filepath }}</span>
+        <!-- Conservés dans les deux cas : copier une adresse est aussi
+             utile que copier un chemin. -->
         <CopyPathButtons :filepath="result.filepath" />
       </p>
 

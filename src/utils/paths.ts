@@ -48,6 +48,28 @@ export function folderBasename(path: string): string {
 }
 
 /**
+ * L'adresse d'un document quand son `filepath` en est une, sinon `null`.
+ *
+ * Tous les types de source ne rangent pas la même chose dans `filepath` :
+ * une source fichier y met un chemin, une source WEB y met l'URL de la
+ * page (web_indexer.py), et une source de MODULE y met ce que le module a
+ * fourni — pour le module RSS, le lien de l'article. Ces deux derniers
+ * cas s'affichaient en texte brut, sans moyen d'ouvrir la page.
+ *
+ * ⚠️  Liste blanche de schémas, et surtout pas un test du genre
+ * « contient :// ». Le `:href` de Vue N'ASSAINIT RIEN : un `filepath`
+ * valant « javascript:… » produirait un lien exécutable au clic. Or il
+ * vient d'un tiers — l'URL d'une entrée RSS est écrite par l'éditeur du
+ * flux, et en mode archive elle reste indexée indéfiniment. Le module
+ * peut bien écarter ces liens à l'ingestion, le cœur ne s'y fie pas :
+ * un module complémentaire est du code tiers.
+ */
+export function lienExterne(filepath: string | null | undefined): string | null {
+  const valeur = (filepath || '').trim()
+  return /^https?:\/\//i.test(valeur) ? valeur : null
+}
+
+/**
  * Copie dans le presse-papier, avec repli pour les contextes non
  * sécurisés (http:// hors localhost, ex: accès direct par IP en dev) où
  * l'API Clipboard est indisponible.

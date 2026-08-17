@@ -115,3 +115,50 @@ describe('lien d’aperçu', () => {
     expect(w.find('[data-testid="carte-resultat-apercu"]').exists()).toBe(false)
   })
 })
+
+describe('lien vers la page d’origine', () => {
+  // Sources web et documents de modules rangent une adresse dans
+  // `filepath` ; elle s'affichait en texte brut, sans moyen d'ouvrir la
+  // page. Une source fichier, elle, n'a rien à ouvrir.
+  function carte(filepath: string) {
+    setActivePinia(createPinia())
+    return mount(ResultCard, {
+      props: {
+        result: { id: 'x', filename: 'f', filepath, source: 'rss_presse', highlight: [] } as never,
+        selected: false,
+      },
+      global: { stubs: { DsfrButton: true, CopyPathButtons: true } },
+    })
+  }
+
+  it('rend une ancre quand le chemin est une adresse', () => {
+    const lien = carte('https://exemple.fr/article').find('[data-testid="carte-resultat-lien"]')
+    expect(lien.exists()).toBe(true)
+    expect(lien.attributes('href')).toBe('https://exemple.fr/article')
+  })
+
+  it('ouvre dans une nouvelle fenêtre, sans donner la main sur l’ouvreur', () => {
+    // `rel=noopener` n'est pas décoratif : sans lui, la page ouverte peut
+    // manipuler `window.opener`, et elle vient d'un tiers.
+    const lien = carte('https://exemple.fr/article').find('[data-testid="carte-resultat-lien"]')
+    expect(lien.attributes('target')).toBe('_blank')
+    expect(lien.attributes('rel')).toBe('noopener')
+  })
+
+  it('ne rend PAS d’ancre pour un chemin de fichier', () => {
+    const w = carte('/sources/finance/budget.pdf')
+    expect(w.find('[data-testid="carte-resultat-lien"]').exists()).toBe(false)
+    expect(w.text()).toContain('/sources/finance/budget.pdf')
+  })
+
+  it('ne rend PAS d’ancre pour un javascript:', () => {
+    // Le `filepath` d'un document de module vient d'un tiers — pour le
+    // module RSS, du `<link>` écrit par l'éditeur du flux.
+    // La règle vise le code qui FABRIQUE de telles URL, pas celui qui
+    // vérifie qu'on les refuse — et l'écrire autrement masquerait ce qui
+    // est éprouvé.
+    // eslint-disable-next-line no-script-url -- valeur éprouvée par ce test
+    const w = carte('javascript:alert(1)')
+    expect(w.find('[data-testid="carte-resultat-lien"]').exists()).toBe(false)
+  })
+})

@@ -10,6 +10,7 @@ import { extLabel, fmtSize } from '@/utils/format'
 import { useSearchStore } from '@/stores/search'
 import { useUiConfigStore } from '@/stores/uiConfig'
 import { extraFields } from '@/utils/extraFields'
+import { lienExterne } from '@/utils/paths'
 
 const props = defineProps<{ documentId: string | null }>()
 const emit = defineEmits<{ close: [] }>()
@@ -88,8 +89,20 @@ const showAcl = computed(() => uiConfig.isAdmin || uiConfig.config.acl_visible_e
  * L'aperçu convertit un FICHIER : sans chemin, il n'y a rien à
  * convertir. Une ligne de source SQL n'en a pas — le lien menait donc à
  * une erreur.
+ *
+ * La condition sur le TYPE de source est arrivée le 2026-08-17, en même
+ * temps que le lien externe ci-dessous. La carte de résultat l'avait reçue
+ * la veille (voir `previewable` dans ResultCard.vue) ; la fiche détail
+ * était restée en arrière, et proposait donc encore « Voir l'aperçu » sur
+ * une page web ou un document de module, où il n'y a aucun fichier à
+ * convertir. Le lien menait à une erreur de conversion.
  */
-const previewable = computed(() => !!doc.value?.filepath)
+const previewable = computed(
+  () => !!doc.value?.filepath && uiConfig.sourceType(doc.value?.source || '') === 'file',
+)
+
+/** Adresse ouvrable, quand le `filepath` en est une. */
+const lien = computed(() => lienExterne(doc.value?.filepath))
 
 /** Un membre d'archive a un chemin « archive.zip::interne/f.txt ». */
 const archive = computed(() => {
@@ -216,7 +229,29 @@ async function onRemoveKeyword(keyword: string) {
         <li v-if="doc.date_modified">
           <span>Modifié le</span><span>{{ doc.date_modified.slice(0, 10) }}</span>
         </li>
-        <li v-if="doc.folder || doc.filepath">
+        <!-- Une adresse plutôt qu'un dossier : sources web et documents de
+             modules rangent une URL dans `filepath`, et la ligne
+             « Dossier » affichait alors un tiret suivi des boutons de
+             copie, sans jamais permettre d'ouvrir la page. -->
+        <li v-if="lien">
+          <span>Adresse</span>
+          <span>
+            <a
+              class="fr-link fr-link--sm"
+              data-testid="detail-lien"
+              :href="lien"
+              :title="`${doc.filepath} — nouvelle fenêtre`"
+              target="_blank"
+              rel="noopener"
+              >{{ doc.filepath }}</a
+            >
+            <!-- `lien` vaut l'adresse, donc le chemin existe — mais le
+                 typage ne déduit pas l'un de l'autre à travers le `v-if`.
+                 On lui passe `lien`, qui est la même valeur nettoyée. -->
+            <CopyPathButtons :filepath="lien" />
+          </span>
+        </li>
+        <li v-else-if="doc.folder || doc.filepath">
           <span>Dossier</span>
           <span>
             {{ doc.folder || '—' }}
