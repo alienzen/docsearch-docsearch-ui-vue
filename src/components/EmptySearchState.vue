@@ -15,7 +15,7 @@
  * sombre en thème nuit. Un SVG en ligne peut, lui, consommer les jetons
  * DSFR et suivre le thème.
  */
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useSearchStore } from '@/stores/search'
 import { useUiConfigStore } from '@/stores/uiConfig'
 import { listerDocumentsRecents, purgerDocumentsRecents } from '@/api/historique'
@@ -116,18 +116,31 @@ const reducedMotion =
 // qu'on ne découvre autrement que dans l'aide. Seule leur présentation
 // change — la variante « suggestions » les fait défiler un à un, les
 // deux autres les affichent ensemble sous leur illustration.
-const EXAMPLES = [
-  'auteur:Dupont budget',
-  'type:pdf marché public',
-  '"délégation de service"',
-  'source:RH congés 2025',
-]
+//
+// Réglables depuis l'administration (« Exemples de recherche », un par
+// ligne) et non plus écrits ici : ils n'enseignent quelque chose que
+// s'ils parlent du corpus de l'installation — « source:RH congés 2025 »
+// ne veut rien dire là où la source s'appelle autrement. Le défaut
+// reprend les quatre exemples d'origine, et vider le réglage fait
+// disparaître le bloc.
+const examples = computed(() => uiConfig.searchExamples)
 
 const current = ref(0)
 let timer: ReturnType<typeof setInterval> | undefined
 
 /** Un exemple à la fois, qui tourne — sinon les quatre d'un bloc. */
 const rotating = variant === 'suggestions' && !reducedMotion
+
+/**
+ * Rang effectivement affiché. Ramené dans les bornes plutôt que lu tel
+ * quel : la liste vient de /ui-config, donc elle ARRIVE APRÈS le montage
+ * et peut raccourcir en route (un administrateur qui passe de quatre
+ * exemples à deux). Un `current` resté au-delà ne désignerait plus
+ * aucune ligne, et la rotation s'arrêterait sur un bloc vide.
+ */
+const currentIndex = computed(() =>
+  examples.value.length ? current.value % examples.value.length : 0,
+)
 
 function runExample(example: string) {
   store.query = example
@@ -138,7 +151,11 @@ function runExample(example: string) {
 
 onMounted(() => {
   if (!rotating) return
-  timer = setInterval(() => (current.value = (current.value + 1) % EXAMPLES.length), 3200)
+  // Incrément nu, sans modulo : la longueur peut être nulle au moment où
+  // le minuteur part (configuration pas encore chargée), et `% 0` vaut
+  // NaN — la rotation se figeait alors définitivement. C'est
+  // `currentIndex` qui ramène le rang dans les bornes, à l'affichage.
+  timer = setInterval(() => (current.value += 1), 3200)
 })
 
 onBeforeUnmount(() => clearInterval(timer))
@@ -281,18 +298,29 @@ onBeforeUnmount(() => clearInterval(timer))
     <div class="ds-empty__text">
       <p class="fr-h5 fr-mb-1w">Lancez une recherche</p>
 
-      <p v-if="variant !== 'suggestions'" class="fr-hint-text fr-mb-1w">
+      <!-- « Par exemple : » n'a plus rien à annoncer quand un
+           administrateur a vidé la liste : cette variante retombe alors
+           sur la même consigne que les autres. -->
+      <p v-if="variant !== 'suggestions' || !examples.length" class="fr-hint-text fr-mb-1w">
         Saisissez des mots-clés dans la barre ci-dessus, puis affinez avec les filtres.
       </p>
       <p v-else class="fr-hint-text fr-mb-1w">Par exemple :</p>
 
       <!-- `aria-live` explicitement à off : la rotation ne doit pas être
            annoncée en boucle par un lecteur d'écran. Sans rotation, les
-           quatre exemples sont donnés d'un coup — plus utile qu'un seul
-           figé. -->
-      <ul class="ds-empty__examples" aria-live="off">
-        <li v-for="(example, i) in EXAMPLES" :key="example" v-show="!rotating || i === current">
-          <button class="fr-tag fr-tag--sm" type="button" @click="runExample(example)">
+           exemples sont donnés d'un coup — plus utile qu'un seul figé. -->
+      <ul v-if="examples.length" class="ds-empty__examples" aria-live="off">
+        <li
+          v-for="(example, i) in examples"
+          :key="example"
+          v-show="!rotating || i === currentIndex"
+        >
+          <button
+            class="fr-tag fr-tag--sm"
+            type="button"
+            data-testid="exemple-recherche"
+            @click="runExample(example)"
+          >
             {{ example }}
           </button>
         </li>

@@ -122,6 +122,18 @@ onMounted(async () => {
       relative à la journée la plus chargée de la période, pas à une échelle absolue.
     </p>
     <p>
+      Ces compteurs portent sur les <strong>recherches véritables</strong> : les tours de page
+      en sont écartés, et la carte dit combien. Deux mesures y échappent délibérément.
+      Les <strong>avis</strong> d'abord : le pouce est rattaché à la dernière recherche
+      affichée, si bien qu'un avis donné depuis la page 3 porte sur une ligne « page 3 » —
+      l'écarter jetterait un avis réel, et la part positive est un rapport entre avis, pas
+      entre recherches. Les <strong>temps de recherche</strong> ensuite : un tour de page est
+      une requête pleine et entière, et c'est en pagination profonde que le moteur est le plus
+      lent ; les filtrer masquerait précisément les requêtes lentes qu'on veut voir. C'est
+      pourquoi la mention sous les temps compte des <em>lignes de journal</em>, plus nombreuses
+      que les recherches.
+    </p>
+    <p>
       Deux tableaux ventilent ensuite ces chiffres par groupe. « Recherches par groupe » les liste
       tous ; « Avis par groupe » ne retient que ceux ayant donné au moins un avis — un groupe qui
       cherche sans jamais se prononcer n'apprend rien sur la satisfaction. La part positive y est
@@ -154,6 +166,14 @@ onMounted(async () => {
       toutes les suggestions, pas sur la page affichée — il ne change donc pas quand on tourne les
       pages.
     </p>
+    <p>
+      Le bouton « Supprimer » efface une suggestion <strong>définitivement</strong>, après
+      confirmation : c'est le geste pour un doublon, un dépôt accidentel ou un texte nominatif
+      qu'on ne veut pas conserver. À ne pas confondre avec le statut « Traité », qui garde la
+      suggestion et sa trace. Une suggestion anonyme effacée ne peut plus être redemandée à son
+      auteur. La suppression est enregistrée dans le journal d'audit (qui, quand) ; le texte
+      supprimé, lui, n'y figure pas.
+    </p>
 
     <h2 id="aide-stats-zero" class="fr-h5">Recherches sans résultat</h2>
     <p>
@@ -166,6 +186,21 @@ onMounted(async () => {
       rien retourner désigne soit une source à indexer, soit un vocabulaire que les documents
       n'emploient pas.
     </p>
+    <p>
+      La colonne <strong>« Critères rencontrés »</strong> dit ce qui accompagnait la requête — type
+      de fichier, auteur, dossier, mot-clé, source, champ interrogé, période. Elle sépare deux
+      situations qui se ressemblent trait pour trait à l'écran de l'utilisateur : un résultat vide
+      parce que le contenu manque, et un résultat vide parce qu'un filtre était trop serré. C'est
+      l'étiquette <strong>« Sans filtre »</strong> qui tranche : des occurrences sans aucun filtre
+      désignent du contenu absent, leur absence désigne un filtrage.
+    </p>
+    <p>
+      Ces comptes ne s'additionnent pas jusqu'aux occurrences de la ligne : une recherche portant
+      deux filtres est comptée dans les deux, et une recherche sans filtre n'apparaît que dans
+      « Sans filtre ». « Recherche dans » n'est montré que lorsque la recherche était restreinte à
+      un champ — « Tout », qui est le cas courant, ne restreint rien et n'apprend rien. Au-delà de
+      cinq valeurs distinctes pour un même critère, seules les plus fréquentes sont affichées.
+    </p>
 
     <h2 id="aide-stats-historique" class="fr-h5">Historique des recherches</h2>
     <p>
@@ -173,6 +208,28 @@ onMounted(async () => {
       (« toutes » quand aucune n'était sélectionnée), critères actifs au moment de la recherche
       (extensions, auteur, dossier, période), nombre de résultats, trois premiers documents
       retournés suivis de « +N », avis donné et nombre de documents ouverts.
+    </p>
+    <p>
+      La colonne <strong>« Nature »</strong> distingue une <strong>recherche</strong> d'un
+      <strong>tour de page</strong>. C'est nécessaire parce que chaque clic sur « Suivant »
+      relance la recherche et écrit une ligne de plus, identique à la précédente : sans cette
+      colonne, une requête consultée sur cinq pages se lit comme cinq recherches. La case
+      « Recherches véritables seulement » masque les tours de page, à l'écran comme dans
+      l'export.
+    </p>
+    <p>
+      Un tiret dans cette colonne veut dire <strong>inconnu</strong>, et non « recherche » : les
+      lignes enregistrées avant la capture du numéro de page ne portent pas l'information. Elles
+      restent affichées même quand la case est cochée — les écarter reviendrait à faire
+      disparaître tout l'historique antérieur au nom d'une supposition. Même principe pour
+      « Recherche exacte », signalée parmi les critères : son absence sur une ligne ancienne ne
+      veut pas dire que la recherche n'était pas exacte.
+    </p>
+    <p>
+      La vue d'ensemble applique le même filtre : son total, les utilisateurs distincts, les
+      recherches par jour et par groupe ne comptent plus les tours de page, et la carte annonce
+      combien en ont été écartés. Les <strong>avis</strong> et les <strong>temps de
+      recherche</strong> y échappent volontairement — voir la vue d'ensemble ci-dessus.
     </p>
     <p>
       Le champ de filtre porte sur les mots de la requête ; il s'applique avec le bouton

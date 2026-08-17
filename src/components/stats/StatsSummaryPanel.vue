@@ -41,7 +41,16 @@ const timing = computed(() => data.value?.timing || null)
  * une moyenne dont on ignore l'assiette n'est pas une information.
  */
 const timingPartiel = computed(
-  () => !!data.value && !!timing.value && timing.value.measured < data.value.total_searches,
+  () => !!data.value && !!timing.value && timing.value.measured < data.value.total_logged,
+)
+
+/**
+ * Tours de page écartés du total. Affiché seulement quand il y en a :
+ * sur un historique entièrement antérieur à la capture du numéro de
+ * page, l'écart est nul et la mention n'apprendrait rien.
+ */
+const toursDePage = computed(() =>
+  data.value ? data.value.total_logged - data.value.total_searches : 0,
 )
 </script>
 
@@ -52,6 +61,12 @@ const timingPartiel = computed(
         <div class="ds-stats__card">
           <p class="fr-hint-text fr-mb-0">Recherches effectuées</p>
           <p class="ds-stats__value">{{ data.total_searches.toLocaleString('fr-FR') }}</p>
+          <!-- Sans cette mention, le total paraîtrait simplement avoir
+               baissé : il compte désormais les recherches, pas les
+               lignes du journal. -->
+          <p v-if="toursDePage > 0" id="summary-tours-de-page" class="fr-hint-text fr-mb-0">
+            hors {{ toursDePage.toLocaleString('fr-FR') }} tour(s) de page
+          </p>
         </div>
         <div class="ds-stats__card">
           <p class="fr-hint-text fr-mb-0">Utilisateurs distincts</p>
@@ -97,9 +112,11 @@ const timingPartiel = computed(
       </div>
 
       <p v-if="timingPartiel" id="summary-duree-assiette" class="fr-hint-text fr-mt-1w">
-        Temps calculés sur {{ timing?.measured.toLocaleString('fr-FR') }} recherches
-        mesurées, sur {{ data.total_searches.toLocaleString('fr-FR') }} enregistrées :
+        Temps calculés sur {{ timing?.measured.toLocaleString('fr-FR') }} lignes
+        mesurées, sur {{ data.total_logged.toLocaleString('fr-FR') }} enregistrées :
         celles effectuées avant la mise en place de la mesure n'ont pas de durée.
+        Les tours de page sont comptés ici — ce sont de vraies requêtes, et c'est en
+        pagination profonde que le moteur est le plus lent.
       </p>
 
       <template v-if="data.by_day.length">

@@ -39,7 +39,20 @@ export type TimingSummary = {
 }
 
 export type SearchLogsSummary = {
+  /**
+   * Recherches VÉRITABLES : les tours de page en sont écartés (voir
+   * `page` dans SearchLogEntry). Les lignes antérieures à la capture du
+   * numéro de page y restent comptées, faute de savoir ce qu'elles
+   * étaient.
+   */
   total_searches: number
+  /**
+   * Lignes du journal, tours de page compris. Sert la mention d'assiette
+   * des temps : `timing.measured` compte des lignes, pas des recherches,
+   * et les rapporter à `total_searches` comparerait deux ensembles
+   * différents.
+   */
+  total_logged: number
   unique_users: number
   unique_ips: number
   by_day: { date: string; count: number }[]
@@ -90,10 +103,31 @@ export type Suggestion = {
   username?: string | null
 }
 
+/**
+ * Un filtre rencontré avec une requête infructueuse. `champ` est le nom
+ * du champ du journal (extension, author, folder, keywords, source,
+ * search_in) ou `periode` — ce dernier sans valeur, seule sa PRÉSENCE
+ * compte (voir _zero_result_criteria côté API).
+ */
+export type ZeroResultCritere = {
+  champ: string
+  valeur: string
+  count: number
+}
+
 export type ZeroResultQuery = {
   query: string
   count: number
   last_seen: string
+  /**
+   * Filtres rencontrés avec cette requête, le plus fréquent d'abord.
+   * ⚠️ Les comptes ne s'additionnent pas jusqu'à `count` : une recherche
+   * portant deux filtres compte dans les deux, et une recherche sans
+   * filtre ne compte que dans `sans_critere`.
+   */
+  criteres: ZeroResultCritere[]
+  /** Occurrences lancées SANS aucun filtre — voir `criteres`. */
+  sans_critere: number
 }
 
 export type SearchLogEntry = {
@@ -125,6 +159,18 @@ export type SearchLogEntry = {
   // Absents des recherches antérieures à la mesure des temps.
   duration_ms?: number
   took_ms?: number
+  /**
+   * Numéro de page, 1 pour une recherche véritable et 2+ pour un tour de
+   * page (chaque clic sur « Suivant » relance /search et écrit une ligne
+   * de plus). ABSENT — et non 1 — pour les lignes antérieures à ce
+   * champ : on ne sait pas ce qu'elles étaient.
+   */
+  page?: number
+  /**
+   * Recherche exacte (sans racinisation, synonymes ni tolérance aux
+   * fautes). Absent, là encore, ne veut pas dire `false` mais inconnu.
+   */
+  exact?: boolean
 }
 
 export type AuditLogEntry = {
@@ -166,6 +212,16 @@ export function setSuggestionStatus(id: string, status: string): Promise<unknown
   })
 }
 
+/**
+ * Suppression DÉFINITIVE — pas un statut de plus : « Traité » sert au
+ * suivi, ceci sert à faire disparaître un doublon, un dépôt accidentel
+ * ou un texte nominatif qu'on ne veut pas conserver. L'API en garde une
+ * trace dans le journal d'audit (qui, quand), jamais le texte effacé.
+ */
+export function deleteSuggestion(id: string): Promise<unknown> {
+  return api(`/admin/suggestions/${id}`, { method: 'DELETE' })
+}
+
 export function getZeroResults(): Promise<{
   total_zero_result_searches: number
   results: ZeroResultQuery[]
@@ -178,9 +234,11 @@ export function getSearchLogs(
   size: number,
   from: number,
   q: string,
+  sansNavigation = false,
 ): Promise<Paginated<SearchLogEntry>> {
   const params = new URLSearchParams({ size: String(size), from: String(from) })
   if (q) params.set('q', q)
+  if (sansNavigation) params.set('exclude_pagination', 'true')
   return api<Paginated<SearchLogEntry>>(`/admin/search-logs?${params}`)
 }
 
@@ -193,8 +251,12 @@ export function getAuditLog(size: number, from: number): Promise<Paginated<Audit
  * mais PAS la pagination : l'export couvre toutes les lignes
  * correspondantes, pas la page affichée.
  */
-export function searchLogsExportUrl(q: string): string {
+export function searchLogsExportUrl(q: string, sansNavigation = false): string {
   const params = new URLSearchParams()
   if (q) params.set('q', q)
+  // Le filtre « recherches véritables », lui, EST repris : un export qui
+  // contiendrait les tours de page que l'écran masque ne serait pas
+  // l'export de ce qu'on regarde.
+  if (sansNavigation) params.set('exclude_pagination', 'true')
   return `/admin/search-logs/export?${params}`
 }

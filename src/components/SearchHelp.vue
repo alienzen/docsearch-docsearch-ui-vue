@@ -66,7 +66,10 @@ const operators: [string, string, string][] = [
       recherche lancée, ils disparaissent de la barre et deviennent des puces de filtre
       (comme un clic sur la facette correspondante) — la valeur doit donc correspondre
       exactement à ce qu'affiche la facette (pas de recherche approximative sur ces
-      champs-là).
+      champs-là). Seule tolérance&nbsp;: <code>mots-cles:</code> ignore la casse,
+      <code>mots-cles:budget</code> et <code>mots-cles:Budget</code> donnent le même
+      résultat. Les accents, eux, comptent toujours&nbsp;: écrivez-les, et évitez les
+      capitales sur un mot accentué (<code>congés</code>, pas <code>CONGÉS</code>).
     </p>
     <p>
       <code>exact:</code> fait exception&nbsp;: il ne pose pas de filtre mais coche la case

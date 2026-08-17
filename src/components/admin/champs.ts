@@ -127,6 +127,12 @@ export const CHAMPS_TEXTE_UI: ChampTexteUi[] = [
     hint: 'URL du portail de réinitialisation. Vide = lien masqué.',
   },
   {
+    key: 'search_examples',
+    label: 'Exemples de recherche (écran d’accueil)',
+    hint: "Un exemple par ligne, proposés tant qu'aucune recherche n'a été lancée. Cliquables : ils lancent la recherche. Les meilleurs parlent du corpus de l'installation et montrent un opérateur (auteur:, type:, source:, guillemets). Vide = aucun exemple affiché.",
+    multiline: true,
+  },
+  {
     key: 'sources_mount_display',
     label: 'Chemin affiché (bouton « Copier le chemin »)',
     hint: 'Ex. \\\\serveur\\partage — remplace le chemin interne aux conteneurs pour que le chemin copié soit utilisable.',

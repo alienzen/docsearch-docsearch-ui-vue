@@ -11,12 +11,23 @@ const from = ref(0)
 /** Filtre appliqué, distinct de la saisie en cours. */
 const query = ref('')
 const input = ref('')
+/**
+ * Masque les tours de page. Chaque clic sur « Suivant » relance /search
+ * et écrit une ligne de plus, identique à la précédente : sans ce
+ * filtre, une requête consultée sur cinq pages se lit comme cinq
+ * recherches.
+ *
+ * Coché seulement à la demande, et non par défaut : le journal est aussi
+ * une trace d'activité, où une consultation de la page 7 est un fait
+ * réel qu'on ne doit pas escamoter sans le dire.
+ */
+const sansNavigation = ref(false)
 
 const { data, error, refresh } = useStatsPanel(() =>
-  getSearchLogs(PAGE_SIZE, from.value, query.value),
+  getSearchLogs(PAGE_SIZE, from.value, query.value, sansNavigation.value),
 )
 
-watch([from, query], refresh)
+watch([from, query, sansNavigation], refresh)
 
 function applyFilter() {
   from.value = 0
@@ -27,6 +38,20 @@ function resetFilter() {
   input.value = ''
   from.value = 0
   query.value = ''
+  sansNavigation.value = false
+}
+
+/**
+ * Ce qu'était la ligne : une recherche, un tour de page, ou l'inconnu
+ * des lignes antérieures à la capture du numéro de page.
+ *
+ * Le tiret est le cas le plus important à ne pas déformer : afficher
+ * « Recherche » sur ces lignes-là présenterait comme un fait établi ce
+ * qui n'a jamais été enregistré.
+ */
+function navigation(entry: SearchLogEntry): string {
+  if (entry.page === undefined) return '—'
+  return entry.page > 1 ? `Page ${entry.page}` : 'Recherche'
 }
 
 /** extension/author/folder : liste, ou chaîne unique pour les vieilles lignes. */
@@ -47,6 +72,12 @@ function criteria(entry: SearchLogEntry): string {
   if (entry.date_from || entry.date_to) {
     tags.push(`Période : ${entry.date_from || '…'} → ${entry.date_to || '…'}`)
   }
+  // En tête des critères : la recherche exacte ne restreint pas le
+  // périmètre comme une facette, elle change la façon dont les mots sont
+  // cherchés (ni racinisation, ni synonymes, ni tolérance aux fautes).
+  // C'est souvent elle, et non un filtre, qui explique deux comptes
+  // différents pour la même requête.
+  if (entry.exact) tags.unshift('Recherche exacte')
   return tags.join(' · ') || '—'
 }
 
@@ -104,6 +135,16 @@ function clics(entry: SearchLogEntry): string {
         />
       </div>
       <DsfrButton id="logs-filtrer" size="sm" label="Filtrer" @click="applyFilter" />
+      <div class="fr-checkbox-group fr-checkbox-group--sm fr-mb-0">
+        <input id="logs-sans-navigation" v-model="sansNavigation" type="checkbox" />
+        <label class="fr-label" for="logs-sans-navigation">
+          Recherches véritables seulement
+          <span class="fr-hint-text">
+            masque les tours de page. Les recherches antérieures à la capture du numéro de
+            page restent affichées : on ignore ce qu'elles étaient.
+          </span>
+        </label>
+      </div>
       <DsfrButton
         id="logs-reinitialiser"
         size="sm"
@@ -117,7 +158,7 @@ function clics(entry: SearchLogEntry): string {
       <a
         id="logs-export"
         class="fr-btn fr-btn--secondary fr-btn--sm"
-        :href="searchLogsExportUrl(query)"
+        :href="searchLogsExportUrl(query, sansNavigation)"
         target="_blank"
         rel="noopener"
       >
@@ -131,6 +172,7 @@ function clics(entry: SearchLogEntry): string {
           <tr>
             <th scope="col">Date / heure</th>
             <th scope="col">Requête</th>
+            <th scope="col">Nature</th>
             <th scope="col">Source</th>
             <th scope="col">Critères</th>
             <th scope="col">Résultats</th>
@@ -142,11 +184,12 @@ function clics(entry: SearchLogEntry): string {
         </thead>
         <tbody>
           <tr v-if="!data?.results.length">
-            <td colspan="9" class="fr-hint-text">Aucune recherche ne correspond à ces critères.</td>
+            <td colspan="10" class="fr-hint-text">Aucune recherche ne correspond à ces critères.</td>
           </tr>
           <tr v-for="entry in data?.results || []" :key="entry.id" data-testid="log-ligne">
             <td>{{ fmtDateTime(entry.timestamp) }}</td>
             <td>{{ entry.query }}</td>
+            <td data-testid="log-nature">{{ navigation(entry) }}</td>
             <td>{{ asList(entry.source).join(', ') || 'toutes' }}</td>
             <td>{{ criteria(entry) }}</td>
             <td>{{ entry.total_results ?? 0 }}</td>

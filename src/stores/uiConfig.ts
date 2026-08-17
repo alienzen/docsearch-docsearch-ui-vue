@@ -102,6 +102,12 @@ export type UiConfig = {
   footer_text: string
   /** Mention tout en bas du pied de page. Vide = ligne masquée. */
   footer_bottom_text: string
+  /**
+   * Exemples de recherche de l'écran d'accueil, UN PAR LIGNE (voir
+   * `searchExamples` plus bas, qui les découpe). Vide = aucun exemple
+   * affiché.
+   */
+  search_examples: string
   sources_mount: string
   sources_mount_display: string
   /**
@@ -203,6 +209,10 @@ const DEFAULT_UI_CONFIG: UiConfig = {
   favicon_url: '',
   footer_text: '',
   footer_bottom_text: '',
+  // Repli identique au défaut de l'API (ui_config.py) : une /ui-config
+  // injoignable ne doit pas vider l'écran d'accueil de ses exemples.
+  search_examples:
+    'auteur:Dupont budget\ntype:pdf marché public\n"délégation de service"\nsource:RH congés 2025',
   sources_mount: '/sources',
   sources_mount_display: '',
   // Repli VIDE : une installation sans module, ou une API injoignable,
@@ -332,6 +342,23 @@ export const useUiConfigStore = defineStore('uiConfig', () => {
    */
   const footerBottomText = computed(() =>
     [config.value.footer_bottom_text, versionCourte].filter(Boolean).join(' · '),
+  )
+
+  /**
+   * Exemples de recherche de l'écran d'accueil, un par ligne dans le
+   * réglage (voir `search_examples`). Les lignes vides sont écartées :
+   * un retour à la ligne en trop dans la zone de saisie de
+   * l'administration ne doit pas produire un exemple vide, cliquable et
+   * qui lancerait une recherche sans texte.
+   *
+   * Liste vide (réglage vidé) = le bloc d'exemples disparaît de l'écran
+   * d'accueil, ce qui est la façon prévue de les retirer.
+   */
+  const searchExamples = computed(() =>
+    config.value.search_examples
+      .split('\n')
+      .map((exemple) => exemple.trim())
+      .filter(Boolean),
   )
 
   /**
@@ -500,6 +527,7 @@ export const useUiConfigStore = defineStore('uiConfig', () => {
     headerSubtitle,
     footerText,
     footerBottomText,
+    searchExamples,
     sourceLabel,
     sourceCardFields,
     sourceType,

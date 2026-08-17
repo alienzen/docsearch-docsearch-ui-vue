@@ -1,8 +1,9 @@
 <script setup lang="ts">
-/** Suggestions libres, avec changement de statut. */
+/** Suggestions libres, avec changement de statut et suppression. */
 import { ref, watch } from 'vue'
-import { getSuggestions, setSuggestionStatus, type Suggestion } from '@/api/stats'
+import { deleteSuggestion, getSuggestions, setSuggestionStatus, type Suggestion } from '@/api/stats'
 import { useStatsPanel } from '@/composables/useStatsPanel'
+import { useDialogs } from '@/composables/useDialogs'
 import { fmtDateTime } from '@/utils/format'
 
 const PAGE_SIZE = 20
@@ -13,9 +14,13 @@ const STATUS_LABELS: Record<string, string> = {
   traite: 'Traité',
 }
 
+/** Extrait cité dans la demande de confirmation, sans la noyer. */
+const EXTRAIT_MAX = 120
+
 const from = ref(0)
 const statusError = ref<string | null>(null)
 
+const { confirm } = useDialogs()
 const { data, error, refresh } = useStatsPanel(() => getSuggestions(PAGE_SIZE, from.value))
 
 watch(from, refresh)
@@ -30,6 +35,43 @@ async function updateStatus(suggestion: Suggestion, status: string) {
     suggestion.status = before
     statusError.value = e instanceof Error ? e.message : String(e)
   }
+}
+
+function extrait(texte: string): string {
+  return texte.length > EXTRAIT_MAX ? `${texte.slice(0, EXTRAIT_MAX)}…` : texte
+}
+
+/**
+ * Suppression définitive, d'où la confirmation citant le texte : une
+ * suggestion anonyme ne peut plus être retrouvée ni redemandée à son
+ * auteur, contrairement à une source ou un synonyme qu'on peut resaisir.
+ *
+ * Le rechargement est complet plutôt que le simple retrait de la ligne
+ * du tableau : la page affichée est une PAGE d'une liste paginée, dont
+ * le total et le décompte par groupe changent aussi. Et si la ligne
+ * effacée était la dernière de la dernière page, on recule d'une page
+ * plutôt que de laisser un tableau vide sous un total non nul.
+ */
+async function supprimer(suggestion: Suggestion) {
+  // Message d'une seule ligne : AppDialogs.vue le rend dans un <p>, où
+  // un saut de ligne serait avalé par HTML.
+  const ok = await confirm(
+    `Supprimer définitivement la suggestion « ${extrait(suggestion.text)} » ? Cette action est irréversible.`,
+    { title: 'Supprimer la suggestion', confirmLabel: 'Supprimer' },
+  )
+  if (!ok) return
+  statusError.value = null
+  try {
+    await deleteSuggestion(suggestion.id)
+  } catch (e) {
+    statusError.value = e instanceof Error ? e.message : String(e)
+    return
+  }
+  if (from.value > 0 && data.value?.results.length === 1) {
+    from.value -= PAGE_SIZE // `watch(from)` recharge
+    return
+  }
+  await refresh()
 }
 </script>
 
@@ -58,11 +100,12 @@ async function updateStatus(suggestion: Suggestion, status: string) {
             <th scope="col">Suggestion</th>
             <th scope="col">Utilisateur</th>
             <th scope="col">Statut</th>
+            <th scope="col"><span class="fr-sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="!data?.results.length">
-            <td colspan="5" class="fr-hint-text">Aucune suggestion pour l'instant.</td>
+            <td colspan="6" class="fr-hint-text">Aucune suggestion pour l'instant.</td>
           </tr>
           <tr
             v-for="suggestion in data?.results || []"
@@ -89,6 +132,16 @@ async function updateStatus(suggestion: Suggestion, status: string) {
                   {{ label }}
                 </option>
               </select>
+            </td>
+            <td>
+              <DsfrButton
+                size="sm"
+                secondary
+                label="Supprimer"
+                data-testid="suggestion-supprimer"
+                :aria-label="`Supprimer la suggestion du ${fmtDateTime(suggestion.timestamp)}`"
+                @click="supprimer(suggestion)"
+              />
             </td>
           </tr>
         </tbody>

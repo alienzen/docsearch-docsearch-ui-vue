@@ -1637,6 +1637,23 @@ body.ds-resizing {
 .ds-stats__table {
   overflow-x: auto;
 }
+/* Critères d'une requête sans résultat : des étiquettes qui se replient,
+   dans une liste sans puces — c'est une énumération, pas une liste à
+   lire. `max-width` pour que cette colonne ne pousse pas les autres hors
+   de l'écran sur une requête à nombreux filtres, le tableau défilant
+   déjà horizontalement (.ds-stats__table). */
+.ds-stats__criteres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-width: 28rem;
+}
+.ds-stats__criteres .fr-hint-text {
+  margin: 0 0 0 0.25rem;
+}
 .ds-stats__filters {
   display: flex;
   flex-wrap: wrap;

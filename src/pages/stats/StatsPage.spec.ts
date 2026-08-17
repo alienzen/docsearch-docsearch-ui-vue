@@ -16,6 +16,9 @@ import { idsDupliques } from '@/test/ids'
 const RESPONSES: Record<string, unknown> = {
   '/admin/search-logs/summary': {
     total_searches: 2736,
+    // Supérieur au total : la différence est le nombre de tours de page,
+    // que le total écarte et que la mention d'assiette des temps compte.
+    total_logged: 2801,
     unique_users: 7,
     unique_ips: 3,
     by_day: [
@@ -36,7 +39,7 @@ const RESPONSES: Record<string, unknown> = {
       { group: 'docsearch-users', count: 2000 },
       { group: '__sans_groupe__', count: 736 },
     ],
-    // `measured` volontairement inférieur à `total_searches` : c'est le
+    // `measured` volontairement inférieur à `total_logged` : c'est le
     // cas durable (les recherches d'avant la mesure n'ont pas de durée),
     // et celui qui doit faire apparaître la mention de l'assiette.
     timing: {
@@ -106,8 +109,20 @@ const RESPONSES: Record<string, unknown> = {
   '/admin/search-logs/zero-results': {
     total_zero_result_searches: 12,
     results: [
-      { query: 'xyzzy', count: 3, last_seen: '2026-07-20T10:00:00Z' },
-      { query: 'plugh', count: 1, last_seen: '2026-07-21T08:00:00Z' },
+      {
+        query: 'xyzzy',
+        count: 3,
+        last_seen: '2026-07-20T10:00:00Z',
+        criteres: [{ champ: 'extension', valeur: '.pdf', count: 2 }],
+        sans_critere: 1,
+      },
+      {
+        query: 'plugh',
+        count: 1,
+        last_seen: '2026-07-21T08:00:00Z',
+        criteres: [],
+        sans_critere: 1,
+      },
     ],
     by_group: [
       { group: 'docsearch-users', count: 3 },

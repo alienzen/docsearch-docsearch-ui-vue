@@ -12,7 +12,8 @@ import type {
 // EXACTEMENT comme un clic sur la facette correspondante : même
 // sélection cumulative, mêmes puces retirables, même correspondance
 // EXACTE (pas de recherche floue — la valeur doit correspondre à ce
-// qu'affiche la facette). Valeur sur un seul mot (auteur:dupont) ou
+// qu'affiche la facette ; seul "mots-cles:" ignore la casse, côté API,
+// voir _keywords_filter() dans search_api.py). Valeur sur un seul mot (auteur:dupont) ou
 // entre guillemets pour les espaces (auteur:"Jean Dupont"). Un
 // opérateur non reconnu (ex: "foo:bar") est laissé tel quel dans le
 // texte libre plutôt que silencieusement supprimé.
