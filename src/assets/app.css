@@ -621,6 +621,16 @@
   display: grid;
   gap: 1rem;
 }
+/* Même raison que le `minmax(0, 1fr)` de la grille à trois colonnes plus
+   bas, pour le cas qu'il ne couvrait pas : hors de ce mode — filtres
+   repliés, ou sous 48em — la colonne unique est implicite, et un enfant
+   de grille garde alors `min-width: auto`. Un titre de résultat
+   insécable imposait sa largeur à la colonne : la page entière défilait
+   horizontalement au lieu que le titre se tronque, alors qu'il est déjà
+   gréé pour ça (`nowrap` + ellipse). */
+.ds-search-layout > * {
+  min-width: 0;
+}
 @media (min-width: 48em) {
   .ds-search-layout--split {
     /* `minmax(0, 1fr)` et non `1fr` : sans le minimum à zéro, un titre
@@ -802,11 +812,39 @@ body.ds-resizing {
   gap: 0.5rem;
 }
 .ds-result__path-text {
-  flex: 1;
+  /* `0 1 auto` et NON `1` : un lien DSFR peint son soulignement sur toute
+     la largeur de sa boîte (background-image), pas seulement sous son
+     texte. Étirée jusqu'aux boutons de copie, la boîte prolongeait le
+     trait bien au-delà de l'adresse — d'autant plus visible depuis que
+     celle-ci est abrégée.
+     Le facteur de rétrécissement et `min-width: 0` restent : c'est le
+     couple qui laisse l'ellipse opérer sur un chemin trop long. */
+  flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* L'ellipse ci-dessus ne s'appliquait PAS au cas du lien : le DSFR pose
+   `overflow: initial` sur `.fr-link[target="_blank"]` — deux classes et
+   un attribut, donc plus spécifique que la règle de classe seule. Le
+   texte débordait alors de sa boîte et se superposait aux boutons de
+   copie dès que la ligne devenait plus courte que l'adresse (fenêtre
+   étroite, colonne de filtres ouverte).
+   Sélecteur volontairement PLUS spécifique, et non simplement placé
+   après : l'ordre des feuilles n'est pas le même une fois le CSS
+   minifié, et un correctif qui en dépendrait ne tiendrait qu'en
+   développement. */
+.ds-result__path a.ds-result__path-text {
+  overflow: hidden;
+}
+/* Le chemin ne pousse plus les boutons de copie vers la droite : ils s'y
+   tiennent d'eux-mêmes, à la place qu'ils occupaient quand il remplissait
+   la ligne. Alignés d'une carte à l'autre, ils restent balayables du
+   regard — collés à la fin de chaque adresse, ils sauteraient d'une
+   ligne à l'autre au gré de sa longueur. */
+.ds-result__path .ds-copy {
+  margin-inline-start: auto;
 }
 /* Liseré de couleur d'une source personnalisée (`accent` dans
    public/custom-sources.js). La règle n'a d'effet que si la variable est
