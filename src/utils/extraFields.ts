@@ -55,6 +55,14 @@ const TECHNIQUES = new Set([
   // 2026-08-17T15:46:47.930402+00:00-b8bb » au milieu des métadonnées.
   // Même nature que `folder_top` juste au-dessus : une donnée de service.
   'run_id',
+  // Illustration d'un document poussé par un module : RENDUE AILLEURS,
+  // en vignette (DocumentVignette.vue), sur la carte comme dans la fiche.
+  // Laissée ici, elle s'affichait AUSSI en clair — « Image :
+  // https://intranet.exemple.fr/img/une.jpg » au milieu des
+  // métadonnées — et sans moyen de la masquer : `card_fields` ne
+  // couvre que les sources SQL, une source de module reçoit toujours
+  // une table de libellés vide.
+  'image',
 ])
 
 /**

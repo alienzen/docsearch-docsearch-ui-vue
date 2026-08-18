@@ -798,6 +798,39 @@ body.ds-resizing {
     transition: none;
   }
 }
+/* Vignette d'article (champ `image` d'un module — voir DocumentVignette.vue).
+
+   L'image vient d'un serveur tiers, dont on ne connaît à l'avance ni les
+   dimensions ni le rapport : la carte impose donc les siennes et recadre
+   (`cover`). Sans cela, une image de 4 000 pixels de large déformerait la
+   liste, et un panorama y laisserait un ruban. La hauteur est fixe pour
+   la même raison qu'elle l'est ailleurs dans cette feuille : c'est ce qui
+   empêche la liste de sauter pendant que les images arrivent.
+
+   Le fond gris tient la place avant l'arrivée de l'image ; il ne se voit
+   plus une fois celle-ci peinte. */
+.ds-vignette {
+  display: block;
+  border-radius: 0.25rem;
+  background-color: var(--background-alt-grey);
+}
+.ds-vignette--carte {
+  width: 12rem;
+  max-width: 100%;
+  height: 7rem;
+  margin-bottom: 0.75rem;
+  object-fit: cover;
+}
+/* La fiche détail, elle, montre l'image ENTIÈRE : c'est le seul endroit
+   où l'on regarde un document pour lui-même, et un recadrage y couperait
+   ce qu'on est venu voir. D'où des dimensions libres sous plafond, et
+   pas de `object-fit` — l'image garde son rapport naturel. */
+.ds-vignette--detail {
+  width: auto;
+  max-width: 100%;
+  max-height: 16rem;
+  margin-bottom: 1rem;
+}
 .ds-result__meta {
   display: flex;
   flex-wrap: wrap;

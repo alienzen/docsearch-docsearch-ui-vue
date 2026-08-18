@@ -145,6 +145,7 @@ describe('plomberie des modules complémentaires', () => {
     author: 'Camille Rey',
     run_id: '2026-08-17T15:46:47.930402+00:00-b8bb',
     flux: 'Le Monde — Une',
+    image: 'https://intranet.exemple.fr/img/une.jpg',
   }
 
   it('n’affiche pas l’identifiant de passe', () => {
@@ -160,5 +161,26 @@ describe('plomberie des modules complémentaires', () => {
     const cles = extraFields(article, {}).map((c) => c.key)
 
     expect(cles).toContain('flux')
+  })
+
+  /**
+   * L'illustration est rendue AILLEURS, en vignette (DocumentVignette.vue) : ici
+   * elle s'affichait aussi en clair, « Image : https://… » au milieu des
+   * métadonnées. Et rien ne permettait de la masquer côté administration
+   * — `card_fields` ne couvre que les sources SQL, une source de module
+   * reçoit toujours une table de libellés vide, d'où l'exclusion en dur.
+   */
+  it('n’affiche pas l’adresse de l’illustration', () => {
+    const cles = extraFields(article, {}).map((c) => c.key)
+
+    expect(cles).not.toContain('image')
+  })
+
+  it('l’exclut même d’un administrateur', () => {
+    // Ce n'est pas une donnée réservée mais une donnée DÉJÀ RENDUE : la
+    // montrer en double à l'administrateur n'aurait aucun sens.
+    const cles = extraFields(article, {}, { admin: true }).map((c) => c.key)
+
+    expect(cles).not.toContain('image')
   })
 })

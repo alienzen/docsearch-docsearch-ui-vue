@@ -216,6 +216,11 @@ const selectable = computed(
       class="ds-result__body"
       :class="{ 'ds-result__body--replie': !expanded }"
     >
+      <!-- L'illustration d'un article de flux, quand la source en
+           fournit une. Dans le corps et non dans l'en-tête : elle suit
+           le pli, et la vue compacte reste une liste de titres. -->
+      <DocumentVignette :url="result.image" format="carte" />
+
       <ul class="ds-result__meta fr-text--sm">
         <li v-if="result.source">Source : {{ uiConfig.sourceLabel(result.source) }}</li>
         <li v-if="result.author">Auteur : {{ result.author }}</li>

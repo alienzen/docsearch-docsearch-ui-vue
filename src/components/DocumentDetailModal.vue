@@ -203,6 +203,10 @@ async function onRemoveKeyword(keyword: string) {
         </a>
       </p>
 
+      <!-- Plus grande que sur la carte : la fiche a la place, et c'est
+           le seul endroit où l'on regarde un document pour lui-même. -->
+      <DocumentVignette :url="doc.image" format="detail" />
+
       <ul id="document-champs" class="ds-detail__rows fr-text--sm">
         <li v-if="doc.author"><span>Auteur</span><span>{{ doc.author }}</span></li>
         <!-- Masquée s'il n'y a ni mot-clé ni possibilité d'en ajouter :

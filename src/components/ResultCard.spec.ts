@@ -247,3 +247,53 @@ describe('lien vers la page d’origine', () => {
     expect(w.find('[data-testid="carte-resultat-lien"]').exists()).toBe(false)
   })
 })
+
+/**
+ * L'illustration d'un article de flux (champ `image` du module RSS). Le
+ * piège n'est pas de l'afficher, c'est de l'afficher DEUX FOIS : tout
+ * champ apporté par une source passe par extraFields, qui la rendait en
+ * clair — « Image : https://… » au milieu des métadonnées — et sans
+ * moyen de la masquer, `card_fields` ne couvrant que les sources SQL.
+ */
+describe('ResultCard — vignette d’article', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  const ARTICLE = {
+    id: 'doc-2',
+    title: 'Le budget 2027 en discussion',
+    source: 'rss_presse',
+    score: 4,
+    flux: 'Le Quotidien',
+    image: 'https://intranet.exemple.fr/img/une.jpg',
+  }
+
+  function carte(result: Record<string, unknown>) {
+    return mount(ResultCard, {
+      props: { result: result as never, selected: false },
+      global: { stubs: { DsfrButton: true, CopyPathButtons: true } },
+    })
+  }
+
+  it('affiche l’image de l’article', () => {
+    const vignette = carte(ARTICLE).find('[data-testid="vignette"]')
+
+    expect(vignette.exists()).toBe(true)
+    expect(vignette.attributes('src')).toBe('https://intranet.exemple.fr/img/une.jpg')
+  })
+
+  it('ne montre pas son adresse en clair parmi les métadonnées', () => {
+    const texte = carte(ARTICLE).text()
+
+    expect(texte).not.toContain('Image')
+    expect(texte).not.toContain('img/une.jpg')
+    // Le témoin : les AUTRES champs de la source restent affichés, ce
+    // n'est pas extraFields entier qui a été désarmé.
+    expect(texte).toContain('Le Quotidien')
+  })
+
+  it('ne laisse pas de place vide sur un document sans image', () => {
+    const w = carte({ id: 'doc-3', title: 'Rapport', source: 'documents', score: 4 })
+
+    expect(w.find('[data-testid="vignette"]').exists()).toBe(false)
+  })
+})

@@ -40,6 +40,7 @@ declare module 'vue' {
     CollectionsPanel: typeof import('./components/CollectionsPanel.vue')['default']
     CopyPathButtons: typeof import('./components/CopyPathButtons.vue')['default']
     DocumentDetailModal: typeof import('./components/DocumentDetailModal.vue')['default']
+    DocumentVignette: typeof import('./components/DocumentVignette.vue')['default']
     DsfrAlert: typeof import('@gouvminint/vue-dsfr')['DsfrAlert']
     DsfrBackToTop: typeof import('@gouvminint/vue-dsfr')['DsfrBackToTop']
     DsfrBadge: typeof import('@gouvminint/vue-dsfr')['DsfrBadge']

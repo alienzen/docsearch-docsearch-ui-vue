@@ -60,6 +60,11 @@ export type SearchResult = {
   date_created?: string
   date_modified?: string
   size?: number
+  /** Adresse de l'illustration, quand un module en fournit une (champ
+   *  supplémentaire `image` du module RSS). Déclarée explicitement bien
+   *  que l'index de secours l'admette déjà : sans cela, elle serait
+   *  typée `unknown`, donc impossible à passer en propriété. */
+  image?: string
   [key: string]: unknown
 }
 

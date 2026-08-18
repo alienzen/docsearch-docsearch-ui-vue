@@ -88,7 +88,7 @@ côtés se trompent de la même façon.
 | `src/stores/` | Pinia : `search` (critères, résultats), `uiConfig` (bascules d'administration), `preferences` (réglages locaux persistés), `selection`. |
 | `src/components/` | Composants partagés, auto-importés (voir `components.d.ts`). |
 | `src/pages/` | Une page = une entrée du build. |
-| `src/composables/` | Raccourcis clavier, hauteur d'en-tête, NPS. |
+| `src/composables/` | Raccourcis clavier, hauteur d'en-tête, en-tête réduit au défilement, NPS. |
 | `src/assets/app.css` | **Le strict complément à DSFR.** S'il regrossit, c'est qu'on réimplémente à la main ce que les classes `fr-*` savent déjà faire. |
 
 ## Conventions et pièges rencontrés
@@ -132,6 +132,15 @@ coûté une séance de débogage.
   une clé suppose en outre de la **purger de Redis** : `get_config()`
   fusionne le JSON stocké par-dessus les défauts, une clé disparue du
   code y survivrait.
+- **Champ de source rendu autrement qu'en texte** (une adresse d'image en
+  vignette, par exemple) : il faut l'**ajouter à `TECHNIQUES` dans
+  `utils/extraFields.ts`**, sinon il s'affiche AUSSI en clair parmi les
+  métadonnées — « Image : https://… » — sur la carte comme dans la fiche,
+  qui rendent les mêmes champs par la même fonction. Et il n'y a pas de
+  contournement côté administration : `card_fields`, qui permet de masquer
+  un champ par un libellé vide, n'est calculé que pour les sources **SQL**
+  (`/searchable-sources`) ; une source portée par un module reçoit
+  toujours une table de libellés vide.
 - **Repli de `DEFAULT_UI_CONFIG` (`stores/uiConfig.ts`)** : « tout
   activé », à une exception près, `search_time_enabled`, qui suit le
   défaut de l'API (`false`). La règle réelle n'est pas « tout à `true` »

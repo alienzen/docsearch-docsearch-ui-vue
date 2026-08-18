@@ -206,3 +206,59 @@ describe('DocumentDetailModal — lien d’aperçu', () => {
     expect(w.find('a[href="/api/preview/doc-1"]').exists()).toBe(false)
   })
 })
+
+/**
+ * Même illustration que sur la carte, même piège du double affichage —
+ * et la fiche rend les mêmes champs par la même fonction, donc l'oubli
+ * s'y produirait à l'identique. Elle la montre en grand : c'est le seul
+ * écran où l'on regarde un document pour lui-même.
+ */
+describe('DocumentDetailModal — vignette d’article', () => {
+  const ARTICLE = {
+    id: 'doc-1',
+    title: 'Le budget 2027',
+    source: 'rss_presse',
+    filepath: 'https://exemple.fr/budget-2027',
+    flux: 'Le Quotidien',
+    image: 'https://intranet.exemple.fr/img/une.jpg',
+  }
+
+  async function fiche(document: Record<string, unknown>) {
+    setActivePinia(createPinia())
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(document) }),
+    )
+    const w = mount(DocumentDetailModal, {
+      props: { documentId: 'doc-1' },
+      global: {
+        stubs: {
+          DsfrModal: { template: '<div><slot /></div>' },
+          DsfrAlert: true,
+          DsfrButton: true,
+          CopyPathButtons: true,
+        },
+      },
+    })
+    await flushPromises()
+    return w
+  }
+
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('affiche l’image, au format de la fiche', async () => {
+    const vignette = (await fiche(ARTICLE)).find('[data-testid="vignette"]')
+
+    expect(vignette.attributes('src')).toBe('https://intranet.exemple.fr/img/une.jpg')
+    expect(vignette.classes()).toContain('ds-vignette--detail')
+  })
+
+  it('ne montre pas son adresse en clair parmi les champs', async () => {
+    const texte = (await fiche(ARTICLE)).text()
+
+    expect(texte).not.toContain('img/une.jpg')
+    // Témoin, comme sur la carte : les autres champs de la source sont
+    // toujours là.
+    expect(texte).toContain('Le Quotidien')
+  })
+})
