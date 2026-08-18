@@ -152,11 +152,28 @@ describe('ResultsToolbar — sélecteur de tri', () => {
     expect(vi.mocked(fetch)).toHaveBeenCalled()
   })
 
-  // Les quatre ordres et RIEN d'autre : l'option d'invite vide et
+  it('propose la date de publication, et la transmet telle quelle', async () => {
+    // `date_created` n'était proposé nulle part alors que la carte
+    // l'affiche sous « Publié ». Le champ part tel quel vers l'API, qui
+    // le passe à Elasticsearch : le libellé ne doit donc pas être ce qui
+    // circule.
+    const store = useSearchStore()
+    const w = monterAvecTri()
+    store.query = 'rapport'
+
+    const option = w.find('select#resultats-tri option[value="date_created"]')
+    expect(option.exists()).toBe(true)
+    expect(option.text()).toBe('Date de publication')
+
+    await w.find('select#resultats-tri').setValue('date_created')
+    expect(store.sort).toBe('date_created')
+  })
+
+  // Les ordres déclarés et RIEN d'autre : l'option d'invite vide et
   // désactivée que DsfrSelect ajoutait en tête ne désignait aucun tri.
   // C'est ce contrôle qui empêche de revenir au composant par commodité
   // sans voir réapparaître cette entrée.
-  it('propose les quatre ordres de tri, sans option vide', () => {
+  it('propose les ordres de tri déclarés, sans option vide', () => {
     const options = monterAvecTri()
       .findAll('select#resultats-tri option')
       .map((o) => o.attributes('value'))

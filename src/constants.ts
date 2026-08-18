@@ -106,14 +106,25 @@ export const SEARCH_IN_LABELS: Record<string, string> = {
 }
 
 export const SORT_LABELS: Record<string, string> = {
+  date_created: 'Date de publication',
   date_modified: 'Date de modification',
   filename: 'Nom',
   size: 'Taille',
 }
 
-/** Options du sélecteur de tri (l'ordre est celui affiché). */
+/**
+ * Options du sélecteur de tri (l'ordre est celui affiché).
+ *
+ * `date_created` porte la publication d'un article de flux et la
+ * création d'un fichier : trier par cette date était impossible, alors
+ * que la carte l'affiche désormais sous « Publié ». Un document qui ne la
+ * porte pas — une page web, une ligne de source SQL, dont l'index ne
+ * mappe même pas le champ — part en fin de liste, comme pour tout autre
+ * tri (`"missing": "_last"` côté API).
+ */
 export const SORT_OPTIONS = [
   { value: '_score', text: 'Pertinence' },
+  { value: 'date_created', text: 'Date de publication' },
   { value: 'date_modified', text: 'Date de modification' },
   { value: 'filename', text: 'Nom' },
   { value: 'size', text: 'Taille' },
