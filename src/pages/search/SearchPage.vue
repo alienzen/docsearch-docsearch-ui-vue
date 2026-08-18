@@ -20,6 +20,7 @@ import { useHeaderReduit } from '@/composables/useHeaderReduit'
 import { useAutocompleteOff } from '@/composables/useAutocompleteOff'
 import { useDialogs } from '@/composables/useDialogs'
 import { usePermalien } from '@/composables/usePermalien'
+import { useRechercheParDefaut } from '@/composables/useRechercheParDefaut'
 
 const store = useSearchStore()
 const uiConfig = useUiConfigStore()
@@ -210,6 +211,10 @@ useAutocompleteOff()
 // retour arrière du navigateur. L'écriture de l'URL, elle, se fait dans
 // le store à chaque recherche.
 usePermalien()
+// APRÈS usePermalien, et l'ordre compte : les critères du visiteur — lien
+// partagé, signet, rechargement — priment sur la recherche que
+// l'administrateur affiche par défaut.
+useRechercheParDefaut()
 
 onMounted(() => {
   headerSearch.value = document.querySelector('.fr-header__search')

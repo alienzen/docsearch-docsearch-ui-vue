@@ -133,6 +133,11 @@ export const CHAMPS_TEXTE_UI: ChampTexteUi[] = [
     multiline: true,
   },
   {
+    key: 'default_search',
+    label: 'Recherche affichée par défaut (écran d’accueil)',
+    hint: "Jouée à l'ouverture de la page de recherche, à la place de l'écran d'accueil. Même syntaxe que la barre de recherche, opérateurs compris (source:RH type:pdf note de service). Chacun ne voit que les documents auxquels il a droit. Sans effet quand le visiteur arrive par un lien de recherche ou un signet : ses critères priment. Vide = écran d'accueil habituel.",
+  },
+  {
     key: 'sources_mount_display',
     label: 'Chemin affiché (bouton « Copier le chemin »)',
     hint: 'Ex. \\\\serveur\\partage — remplace le chemin interne aux conteneurs pour que le chemin copié soit utilisable.',

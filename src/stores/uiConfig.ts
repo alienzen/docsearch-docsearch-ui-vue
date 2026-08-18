@@ -108,6 +108,12 @@ export type UiConfig = {
    * affiché.
    */
   search_examples: string
+  /**
+   * Recherche jouée d'office à l'ouverture de la page de recherche,
+   * dans la syntaxe de la barre de recherche (opérateurs compris). Vide
+   * = écran d'accueil habituel. Voir useRechercheParDefaut.
+   */
+  default_search: string
   sources_mount: string
   sources_mount_display: string
   /**
@@ -213,6 +219,10 @@ const DEFAULT_UI_CONFIG: UiConfig = {
   // injoignable ne doit pas vider l'écran d'accueil de ses exemples.
   search_examples:
     'auteur:Dupont budget\ntype:pdf marché public\n"délégation de service"\nsource:RH congés 2025',
+  // Repli VIDE, et pas seulement par prudence : jouer une recherche
+  // d'office est une décision d'administrateur, qu'une /ui-config
+  // injoignable ne permet justement pas de connaître.
+  default_search: '',
   sources_mount: '/sources',
   sources_mount_display: '',
   // Repli VIDE : une installation sans module, ou une API injoignable,
