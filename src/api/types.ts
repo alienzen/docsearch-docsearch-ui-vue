@@ -22,6 +22,16 @@ export type SearchFacets = {
   sources: FacetBucket[]
   /** {champ ES: facette} — varie selon les sources interrogées. */
   custom: Record<string, CustomFacet>
+  /**
+   * Nombre de résultats portant une `date_modified` — un compte, pas des
+   * seaux : la facette « Période » n'affiche pas de valeurs, elle a
+   * seulement besoin de savoir s'il y a quelque chose à filtrer.
+   *
+   * Facultatif à dessein : une API antérieure à cette clé ne la renvoie
+   * pas, et « je ne sais pas » ne doit pas faire disparaître la section
+   * — même repli tolérant que dimensionsAffichables().
+   */
+  with_date?: number
 }
 
 /**

@@ -25,6 +25,9 @@ const FACETTES_SQL: SearchFacets = {
       ],
     },
   },
+  // Aucun agent n'a de `date_modified` : c'est ce compte, et non un seau
+  // vide, qui dit à la section « Période » qu'elle n'a rien à filtrer.
+  with_date: 0,
 }
 
 function monter() {
@@ -40,6 +43,10 @@ function monter() {
       collectable: false,
       card_fields: { nom: null, bureau: 'Bureau' },
     },
+    // Source portée par un module complémentaire : ni extension ni
+    // dossier (le contrat les lui refuse), et une date qui dépend du
+    // module, pas du type.
+    { name: 'rss_presse', label: 'Presse', type: 'plugin', collectable: true },
   ]
   const store = useSearchStore()
   store.facets = { ...FACETTES_SQL }
@@ -100,6 +107,45 @@ describe('FacetsSidebar', () => {
     await nextTick()
 
     expect(sections(wrapper.html())).toContain('facet-authors')
+  })
+
+  it('retire type de fichier et dossier sur une source de module', async () => {
+    const { wrapper, store } = monter()
+    store.source = ['rss_presse']
+    // Un module qui pousse des dates (docsearch-plugin-rss depuis sa
+    // 0.1.1) : la période, elle, a de quoi filtrer.
+    store.facets = { ...FACETTES_SQL, with_date: 12 }
+    await nextTick()
+
+    const rendues = sections(wrapper.html())
+    expect(rendues).not.toContain('facet-extensions')
+    expect(rendues).not.toContain('facet-folders')
+    expect(rendues).toContain('facet-dates')
+  })
+
+  it('retire la période quand aucun résultat n’est daté', async () => {
+    const { wrapper, store } = monter()
+    store.source = ['rss_presse']
+    // Un module qui n'en pousse pas (docsearch-plugin-annuaire, dont les
+    // données ne portent aucune date) : le sélecteur de période aurait
+    // vidé l'écran au premier clic, le filtre étant un `range` sur
+    // `date_modified`.
+    store.facets = { ...FACETTES_SQL, with_date: 0 }
+    await nextTick()
+
+    expect(sections(wrapper.html())).not.toContain('facet-dates')
+  })
+
+  it('garde la période tant qu’un intervalle est coché, même sans résultat daté', async () => {
+    const { wrapper, store } = monter()
+    store.source = ['rss_presse']
+    store.facets = { ...FACETTES_SQL, with_date: 0 }
+    store.dateFrom = '2026-01-01'
+    await nextTick()
+
+    // Sans quoi le seul endroit d'où décocher l'intervalle disparaîtrait
+    // avec les résultats qu'il vient de faire disparaître.
+    expect(sections(wrapper.html())).toContain('facet-dates')
   })
 
   it('rétablit les facettes fixes dès qu’une source fichier est sélectionnée', async () => {

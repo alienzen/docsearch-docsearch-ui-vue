@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { dimensionsAffichables, seauxAffichables } from './facettes'
+import {
+  dimensionsAffichables,
+  periodeAffichable,
+  seauxAffichables,
+  type DimensionFacette,
+} from './facettes'
 import type { SearchableSource } from '@/stores/uiConfig'
 
 // Les trois types de source tels que /searchable-sources les renvoie.
@@ -66,10 +71,10 @@ describe('dimensions de facettes selon les sources sélectionnées', () => {
   it('retire extension et dossier à une source de module', () => {
     // Le contrat écrit `extension: ""` sur tout document poussé par un
     // module et lui interdit `folder` : les deux sections seraient vides
-    // à coup sûr. Restent les trois champs du schéma commun qu'un module
-    // renseigne vraiment.
+    // à coup sûr. La date, elle, ne se devine pas depuis le type — voir
+    // periodeAffichable().
     const d = dimensionsAffichables(['rss_presse'], SOURCES)
-    expect([...d].sort()).toEqual(['author', 'date', 'keywords'])
+    expect([...d].sort()).toEqual(['author', 'keywords'])
   })
 
   it('rend son extension à une source de module dès que la recherche en trouve', () => {
@@ -97,6 +102,31 @@ describe('dimensions de facettes selon les sources sélectionnées', () => {
       'folder',
       'keywords',
     ])
+  })
+})
+
+describe('affichage de la période de modification', () => {
+  const AUCUNE = new Set<DimensionFacette>()
+  const AVEC_DATE = new Set<DimensionFacette>(['date'])
+
+  it('suit la sélection de sources quand elle déclare porter des dates', () => {
+    expect(periodeAffichable(AVEC_DATE, 0, false)).toBe(true)
+  })
+
+  it('suit les résultats quand la sélection ne déclare rien', () => {
+    expect(periodeAffichable(AUCUNE, 3, false)).toBe(true)
+    expect(periodeAffichable(AUCUNE, 0, false)).toBe(false)
+  })
+
+  it('garde la section tant qu’un intervalle est coché', () => {
+    // Sinon le seul endroit d'où décocher disparaît avec les résultats
+    // que le critère vient de faire disparaître.
+    expect(periodeAffichable(AUCUNE, 0, true)).toBe(true)
+  })
+
+  it('ne masque rien face à une API qui ne renvoie pas le compte', () => {
+    // Interface plus récente que l'API : à défaut de savoir, on affiche.
+    expect(periodeAffichable(AUCUNE, undefined, false)).toBe(true)
   })
 })
 

@@ -18,8 +18,9 @@
  *   `sql`  → uniquement les colonnes que la source déclare, une source
  *            SQL ayant le droit de mapper `author`, `keywords` ou
  *            `date_modified` comme n'importe quel autre nom de champ ;
- *   `plugin` → ni extension ni dossier, que le contrat lui refuse (voir
- *            ci-dessous).
+ *   `plugin` → ni extension ni dossier, que le contrat lui refuse, et
+ *            une date qui ne se devine pas depuis le type — voir
+ *            `periodeAffichable()` en fin de fichier.
  *
  * Les facettes SQL personnalisées, elles, n'ont pas besoin de ce
  * traitement : l'API ne les renvoie déjà que pour les sources en jeu.
@@ -64,17 +65,18 @@ function dimensionsDeLaSource(source: SearchableSource): DimensionFacette[] {
       // pas le droit de renseigner. Deux sections vides, sur toute
       // source de module, garanties par le contrat lui-même.
       //
-      // Restent les trois champs du schéma commun qu'un module remplit
-      // vraiment. `date` est de la liste parce qu'un module PEUT pousser
-      // `date_modified` (docsearch-plugin-rss le fait depuis sa 0.1.1) ;
-      // celui qui ne le fait pas laisse une section « Période » qui ne
-      // filtre rien, faute pour l'interface de pouvoir le deviner —
-      // aucune agrégation ne dit si les résultats portent une date.
+      // Restent les deux champs du schéma commun qu'un module remplit
+      // vraiment. La DATE ne se devine pas depuis le type : un module
+      // peut pousser `date_modified` (docsearch-plugin-rss le fait
+      // depuis sa 0.1.1) comme n'en pousser aucune
+      // (docsearch-plugin-annuaire, dont les données n'en portent pas).
+      // Elle est donc tranchée sur les résultats, par
+      // `periodeAffichable()`, et non ici.
       //
       // Un module qui poserait de VRAIES extensions n'est pas perdant :
       // le second terme d'`affiche()` rattrape la section dès qu'elle a
       // des seaux non vides.
-      return ['author', 'keywords', 'date']
+      return ['author', 'keywords']
     default:
       // Type inconnu — ou source d'une installation plus récente que
       // cette interface : on affiche tout plutôt que de masquer une
@@ -105,6 +107,39 @@ export function dimensionsAffichables(
     for (const dimension of dimensionsDeLaSource(source)) dimensions.add(dimension)
   }
   return dimensions
+}
+
+/**
+ * La section « Période de modification » a-t-elle sa place à l'écran ?
+ *
+ * Les quatre autres facettes fixes se retirent d'elles-mêmes quand elles
+ * n'ont rien à montrer : plus de seaux, plus de section. La période, elle,
+ * n'a pas de seaux — deux sélecteurs de date, rien à agréger — et
+ * s'affichait donc même là où le filtre ne pouvait RIEN rendre : il porte
+ * sur `date_modified`, et un document sans ce champ n'entre dans aucun
+ * intervalle. `facets.with_date`, ajouté côté API, est l'équivalent des
+ * seaux pour cette facette-là.
+ *
+ * Trois raisons de l'afficher, dans l'ordre :
+ *
+ *   - la sélection de sources DÉCLARE porter des dates de modification
+ *     (comme pour les autres facettes fixes) ;
+ *   - les résultats en portent, quoi qu'annonce la sélection ;
+ *   - une période est déjà cochée. Celle-là n'est pas une facilité :
+ *     masquer la section retirerait le seul endroit d'où décocher le
+ *     critère, et une période sans résultat est justement le cas où l'on
+ *     veut la corriger.
+ *
+ * `avecDate` indéfini = API antérieure à cette clé : on ne masque rien.
+ */
+export function periodeAffichable(
+  dimensions: Set<DimensionFacette>,
+  avecDate: number | undefined,
+  periodeCochee: boolean,
+): boolean {
+  return (
+    dimensions.has('date') || avecDate === undefined || avecDate > 0 || periodeCochee
+  )
 }
 
 /**

@@ -15,7 +15,12 @@ import { useUiConfigStore } from '@/stores/uiConfig'
 import { usePreferencesStore } from '@/stores/preferences'
 import { extLabel } from '@/utils/format'
 import { folderBasename } from '@/utils/paths'
-import { dimensionsAffichables, seauxAffichables, type DimensionFacette } from '@/utils/facettes'
+import {
+  dimensionsAffichables,
+  periodeAffichable,
+  seauxAffichables,
+  type DimensionFacette,
+} from '@/utils/facettes'
 import type { FacetBucket } from '@/api/types'
 
 const store = useSearchStore()
@@ -40,6 +45,19 @@ const dimensions = computed(() => dimensionsAffichables(store.source, uiConfig.a
 function affiche(dimension: DimensionFacette, buckets: FacetBucket[] = []) {
   return dimensions.value.has(dimension) || seauxAffichables(buckets).length > 0
 }
+
+/**
+ * La période ne se décide pas comme les quatre autres facettes fixes :
+ * elle n'a pas de seaux, c'est le compte `with_date` de la réponse qui en
+ * tient lieu. Voir periodeAffichable().
+ */
+const affichePeriode = computed(() =>
+  periodeAffichable(
+    dimensions.value,
+    facets.value?.with_date,
+    Boolean(store.dateFrom || store.dateTo),
+  ),
+)
 
 // Les dates passent par des champs locaux : on ne relance la recherche
 // qu'à la validation, pas à chaque frappe dans le sélecteur de date.
@@ -146,7 +164,7 @@ const dateTo = computed({
            `v-else` : hors de lui, elle s'affichait alors que les autres
            étaient absentes, ce qui la faisait paraître d'une autre
            nature. -->
-      <FacetSection v-if="affiche('date')" id="facet-dates" title="Période de modification">
+      <FacetSection v-if="affichePeriode" id="facet-dates" title="Période de modification">
         <div class="fr-input-group fr-input-group--sm">
           <label class="fr-label" for="date-from">Du</label>
           <input id="date-from" v-model="dateFrom" class="fr-input" type="date" />
