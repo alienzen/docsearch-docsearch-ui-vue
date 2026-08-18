@@ -133,16 +133,6 @@ async function exportAs(format: ExportFormat) {
         Filtres
       </button>
 
-      <DsfrSelect
-        v-if="uiConfig.config.sort_enabled"
-        select-id="resultats-tri"
-        :model-value="store.sort"
-        label="Trier par"
-        label-visible
-        :options="SORT_OPTIONS"
-        @update:model-value="store.setSort(String($event))"
-      />
-
       <!-- Rien à densifier quand la liste est vide. -->
       <DsfrButton
         v-if="store.total > 0"
@@ -197,6 +187,31 @@ async function exportAs(format: ExportFormat) {
           @click="exportAs('docx')"
         />
       </template>
+
+      <!-- En dernier, donc tout à droite de la barre : le tri est le seul
+           contrôle qui porte sur l'ordre de la liste, les autres sur son
+           affichage ou son export. Le groupe reste plus haut que les
+           boutons, son libellé occupant une ligne au-dessus ; placé en
+           bout de rangée, il ne la coupe plus en deux. -->
+      <div v-if="uiConfig.config.sort_enabled" class="fr-select-group fr-mb-0">
+        <label class="fr-label" for="resultats-tri">Trier par</label>
+        <!-- Balisage DSFR direct plutôt que DsfrSelect : ce composant
+             ajoute toujours en tête une option « Sélectionner une
+             option » vide et désactivée, destinée aux formulaires où
+             rien n'est encore choisi. Le tri, lui, a toujours une
+             valeur — au minimum la pertinence — et cette entrée grisée
+             n'y désigne rien. Aucune prop ne la retire. -->
+        <select
+          id="resultats-tri"
+          class="fr-select fr-select--sm"
+          :value="store.sort"
+          @change="store.setSort(($event.target as HTMLSelectElement).value)"
+        >
+          <option v-for="option in SORT_OPTIONS" :key="option.value" :value="option.value">
+            {{ option.text }}
+          </option>
+        </select>
+      </div>
     </div>
 
     <!-- Avertissement plutôt qu'information : le tri par pertinence
