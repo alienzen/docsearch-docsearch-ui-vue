@@ -49,7 +49,7 @@ export type CriteresPermalien = {
   custom: Record<string, string[]>
   dateFrom: string | null
   dateTo: string | null
-  sort: string
+  sort: string | null
   page: number
   exact: boolean
 }
@@ -90,8 +90,6 @@ const PREFIXE_CUSTOM = 'f.'
 
 /** Les seuls tris que le sélecteur propose — voir SORT_OPTIONS. */
 const TRIS_CONNUS = new Set(SORT_OPTIONS.map((o) => o.value))
-
-const TRI_DEFAUT = '_score'
 
 /**
  * Garde-fous de lecture. Une URL est une entrée utilisateur comme une
@@ -146,8 +144,11 @@ export function versParametres(criteres: CriteresPermalien): string {
   if (dateSaine(criteres.dateTo)) params.set('au', criteres.dateTo as string)
 
   // Valeurs par défaut omises : une URL de recherche simple reste lisible
-  // (`?q=budget` plutôt que `?q=budget&tri=_score&page=1`).
-  if (criteres.sort && criteres.sort !== TRI_DEFAUT) params.set('tri', criteres.sort)
+  // (`?q=budget` plutôt que `?q=budget&tri=_score&page=1`). `tri` n'est
+  // porté que si l'utilisateur en a CHOISI un — un lien sans `tri` laisse
+  // donc la source imposer le sien à la relecture, comme la recherche
+  // d'origine le faisait.
+  if (criteres.sort) params.set('tri', criteres.sort)
   if (criteres.page > 1) params.set('page', String(criteres.page))
   // Le mode exact fait partie de la recherche, pas de l'affichage : deux
   // liens qui ne diffèrent que par lui ne ramènent pas les mêmes
@@ -196,7 +197,7 @@ export function depuisParametres(chaine: string): CriteresPermalien | null {
     dateTo: dateSaine(params.get('au')),
     // Un tri inconnu part tel quel vers Elasticsearch, qui refuse de
     // trier sur un champ qu'il n'a pas : on retombe sur la pertinence.
-    sort: tri && TRIS_CONNUS.has(tri) ? tri : TRI_DEFAUT,
+    sort: tri && TRIS_CONNUS.has(tri) ? tri : null,
     page: Number.isFinite(page) && page > 1 ? Math.min(page, MAX_PAGE) : 1,
     // Seul `1` active — toute autre valeur (`exact=0`, `exact=oui`,
     // `exact=` d'une URL tronquée) retombe sur la recherche ordinaire.

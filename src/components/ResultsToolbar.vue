@@ -195,7 +195,13 @@ async function exportAs(format: ExportFormat) {
            bout de rangée, il ne la coupe plus en deux. -->
       <div v-if="uiConfig.config.sort_enabled" class="fr-select-group fr-mb-0">
         <label class="fr-label" for="resultats-tri">Trier par</label>
-        <!-- Balisage DSFR direct plutôt que DsfrSelect : ce composant
+        <!-- Affiche `triApplique` et non `sort` : tant que
+             l'utilisateur n'a rien choisi, `sort` vaut null et c'est la
+             source interrogée qui décide de l'ordre (contrat 0.8). Poser
+             null ici laisserait le champ sur sa première option, en
+             contradiction avec la liste affichée.
+
+             Balisage DSFR direct plutôt que DsfrSelect : ce composant
              ajoute toujours en tête une option « Sélectionner une
              option » vide et désactivée, destinée aux formulaires où
              rien n'est encore choisi. Le tri, lui, a toujours une
@@ -204,7 +210,7 @@ async function exportAs(format: ExportFormat) {
         <select
           id="resultats-tri"
           class="fr-select fr-select--sm"
-          :value="store.sort"
+          :value="store.triApplique"
           @change="store.setSort(($event.target as HTMLSelectElement).value)"
         >
           <option v-for="option in SORT_OPTIONS" :key="option.value" :value="option.value">

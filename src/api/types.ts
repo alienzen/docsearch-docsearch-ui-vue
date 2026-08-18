@@ -80,6 +80,13 @@ export type SearchResponse = {
   total: number
   username: string
   search_id: string | null
+  /**
+   * Le tri RÉELLEMENT appliqué, qui n'est pas toujours celui qu'on a
+   * demandé : sans choix de l'utilisateur, une source peut imposer le
+   * sien (contrat 0.8, `tri_defaut`). Optionnel — une API antérieure ne
+   * renvoie pas ce champ.
+   */
+  sort?: string
   results: SearchResult[]
   facets: SearchFacets
   /** Optionnel : une API antérieure à la mesure des temps n'en renvoie pas. */
@@ -133,7 +140,8 @@ export type SearchIn = 'all' | 'title' | 'author' | 'keywords' | 'filepath'
  */
 export type SearchCriteria = {
   query: string
-  sort: string
+  /** `null` = rien n'a été choisi ; la source décide (contrat 0.8). */
+  sort: string | null
   extension: string[] | null
   author: string[]
   keywords: string[]

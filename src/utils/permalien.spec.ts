@@ -22,7 +22,11 @@ const VIDE: CriteresPermalien = {
   custom: {},
   dateFrom: null,
   dateTo: null,
-  sort: '_score',
+  // `null` et non '_score' : depuis le contrat 0.8, ne rien avoir choisi
+  // n'est plus la même chose qu'avoir choisi la pertinence. Le premier
+  // laisse la source imposer son ordre, le second l'interdit — et l'URL
+  // doit donc porter `tri=_score` dans ce cas, alors qu'elle l'omettait.
+  sort: null,
   page: 1,
   exact: false,
 }
@@ -111,8 +115,18 @@ describe('robustesse', () => {
     expect(lus).toEqual(criteres({ query: 'budget', dateFrom: null, dateTo: '2025-12-31' }))
   })
 
-  it('retombe sur la pertinence pour un tri inconnu', () => {
-    expect(depuisParametres('?q=x&tri=rm-rf')?.sort).toBe('_score')
+  it('ignore un tri inconnu au lieu de l’imposer', () => {
+    // `null` et non '_score' : une URL bricolée ne doit pas se muer en
+    // choix explicite de la pertinence, qui priverait la source de son
+    // tri par défaut. Le lien se lit comme s'il ne portait pas de tri.
+    expect(depuisParametres('?q=x&tri=rm-rf')?.sort).toBeNull()
+  })
+
+  it('conserve la pertinence quand elle a été explicitement choisie', () => {
+    // Le pendant du test précédent : `tri=_score` est une valeur CONNUE,
+    // et la porter dans l'URL est le seul moyen de partager « trié par
+    // pertinence » sur une source qui trie autrement par défaut.
+    expect(depuisParametres('?q=x&tri=_score')?.sort).toBe('_score')
   })
 
   // Dans le doute, la recherche ORDINAIRE : une valeur qu'on ne comprend

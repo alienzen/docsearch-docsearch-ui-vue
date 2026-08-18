@@ -63,7 +63,22 @@ export const useSearchStore = defineStore('search', () => {
   const custom = ref<Record<string, string[]>>({})
   const dateFrom = ref<string | null>(null)
   const dateTo = ref<string | null>(null)
-  const sort = ref('_score')
+  /**
+   * Le tri CHOISI par l'utilisateur, `null` tant qu'il n'a rien choisi.
+   * Ce n'est pas la même chose que « pertinence » : une source peut
+   * demander son propre ordre (contrat 0.8, `tri_defaut`), et l'API ne
+   * peut l'appliquer que si elle distingue les deux. C'est cette valeur
+   * qui part dans la requête et dans le permalien.
+   */
+  const sort = ref<string | null>(null)
+  /**
+   * Le tri RÉELLEMENT appliqué, tel que l'API le rapporte. Sert à
+   * l'affichage seul — sans lui, le sélecteur annoncerait « Pertinence »
+   * au-dessus d'une liste rangée par date. Séparé de `sort` à dessein :
+   * le recopier dans le choix figerait un ordre que l'utilisateur n'a
+   * jamais demandé, et le lui collerait ensuite sur les autres sources.
+   */
+  const triApplique = ref('_score')
   const page = ref(1)
   /**
    * Recherche exacte — case à cocher de la barre, ou opérateur `exact:`.
@@ -304,6 +319,10 @@ export const useSearchStore = defineStore('search', () => {
       results.value = data.results
       facets.value = data.facets
       searchId.value = data.search_id || null
+      // L'API tranche seule : c'est elle qui connaît le tri demandé par
+      // les sources interrogées. Repli sur la pertinence pour une API
+      // antérieure à ce champ.
+      triApplique.value = data.sort || '_score' 
       // Les épinglés EN TÊTE, comme à l'écran (voir ResultsList) : c'est
       // de cette liste que sort la position envoyée au suivi de clic, et
       // elle doit décrire ce que l'utilisateur a vu. Les ignorer donnait
@@ -414,7 +433,8 @@ export const useSearchStore = defineStore('search', () => {
     custom.value = {}
     dateFrom.value = null
     dateTo.value = null
-    sort.value = '_score'
+    sort.value = null
+    triApplique.value = '_score'
     page.value = 1
     exact.value = false
     results.value = []
@@ -468,7 +488,7 @@ export const useSearchStore = defineStore('search', () => {
     custom.value = saved.custom || {}
     dateFrom.value = saved.date_from || null
     dateTo.value = saved.date_to || null
-    sort.value = saved.sort || '_score'
+    sort.value = saved.sort || null
     page.value = 1
     // Absent des enregistrements antérieurs à la recherche exacte : ils
     // redeviennent des recherches ordinaires, ce qu'ils étaient.
@@ -496,6 +516,7 @@ export const useSearchStore = defineStore('search', () => {
     dateFrom,
     dateTo,
     sort,
+    triApplique,
     page,
     exact,
     results,

@@ -187,10 +187,24 @@ describe('ResultsToolbar — sélecteur de tri', () => {
   // liste montre comme sélectionné au premier rendu.
   it('montre l’ordre courant comme sélectionné', () => {
     const store = useSearchStore()
-    store.sort = 'size'
+    store.triApplique = 'size'
     const select = monterAvecTri().find('select#resultats-tri')
       .element as HTMLSelectElement
     expect(select.value).toBe('size')
+  })
+
+  // Le cœur du contrat 0.8 vu de l'interface : l'utilisateur n'a rien
+  // choisi, la source a imposé son ordre, et c'est CET ordre que le
+  // sélecteur doit annoncer. Afficher `sort` — donc rien, donc la
+  // première option — mettrait le champ en contradiction avec la liste
+  // qu'il surmonte.
+  it('annonce le tri imposé par la source quand l’utilisateur n’a rien choisi', () => {
+    const store = useSearchStore()
+    store.sort = null
+    store.triApplique = 'date_modified'
+    const select = monterAvecTri().find('select#resultats-tri')
+      .element as HTMLSelectElement
+    expect(select.value).toBe('date_modified')
   })
 
   it('rattache le libellé au champ', () => {

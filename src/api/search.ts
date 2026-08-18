@@ -142,7 +142,7 @@ export function parseAdvancedQuery(
 export function buildSearchCriteria(
   query: string,
   filters: {
-    sort: string
+    sort: string | null
     ext: string[]
     author: string[]
     keywords: string[]

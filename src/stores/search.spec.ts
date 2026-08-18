@@ -197,7 +197,11 @@ describe('useSearchStore', () => {
     store.resetSearch()
 
     expect(store.query).toBe('')
-    expect(store.sort).toBe('_score')
+    // Retour à « rien choisi », pas à « pertinence choisie » : une
+    // remise à zéro ne doit pas laisser derrière elle un choix que
+    // l'utilisateur n'a pas fait.
+    expect(store.sort).toBeNull()
+    expect(store.triApplique).toBe('_score')
     expect(store.ext).toEqual([])
     expect(store.hasSearched).toBe(false)
     expect(store.results).toEqual([])
