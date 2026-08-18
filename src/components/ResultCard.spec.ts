@@ -151,6 +151,17 @@ describe('lien vers la page d’origine', () => {
     expect(w.text()).toContain('/sources/finance/budget.pdf')
   })
 
+  it("abrège le TEXTE d'une adresse longue, sans toucher à ce qui est ouvert", () => {
+    const url =
+      'https://www.exemple.gouv.fr/politiques-publiques/transition-ecologique/mobilites/rapport-annuel-2026.pdf'
+    const lien = carte(url).find('[data-testid="carte-resultat-lien"]')
+    // Ouvert et survolé : l'adresse entière. Affiché : la forme courte,
+    // qui garde l'hôte et le nom du document.
+    expect(lien.attributes('href')).toBe(url)
+    expect(lien.attributes('title')).toContain(url)
+    expect(lien.text()).toBe('exemple.gouv.fr/…/rapport-annuel-2026.pdf')
+  })
+
   it('ne rend PAS d’ancre pour un javascript:', () => {
     // Le `filepath` d'un document de module vient d'un tiers — pour le
     // module RSS, du `<link>` écrit par l'éditeur du flux.

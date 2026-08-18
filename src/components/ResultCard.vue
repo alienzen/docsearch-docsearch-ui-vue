@@ -17,7 +17,7 @@ import { extLabel, fmtSize } from '@/utils/format'
 import { parseHighlights } from '@/utils/highlight'
 import { sourceCardCustom } from '@/utils/sourceCards'
 import { extraFields } from '@/utils/extraFields'
-import { lienExterne } from '@/utils/paths'
+import { lienExterne, urlAbregee } from '@/utils/paths'
 import { usePreferencesStore } from '@/stores/preferences'
 import { useUiConfigStore } from '@/stores/uiConfig'
 
@@ -90,6 +90,13 @@ const isArchiveMember = computed(() => (props.result.filepath || '').includes(':
 
 /** Adresse ouvrable, quand le `filepath` en est une. */
 const lien = computed(() => lienExterne(props.result.filepath))
+
+/**
+ * Texte du lien : la forme courte de l'adresse. Le `href`, l'infobulle
+ * et les boutons de copie continuent de porter l'adresse entière — ce
+ * qui est raccourci, c'est l'affichage, jamais ce qu'on ouvre ou copie.
+ */
+const lienTexte = computed(() => (lien.value ? urlAbregee(lien.value) : ''))
 
 /**
  * L'aperçu convertit un FICHIER : sans chemin, il n'y a rien à
@@ -225,7 +232,7 @@ const selectable = computed(
           :title="`${result.filepath} — nouvelle fenêtre`"
           target="_blank"
           rel="noopener"
-          >{{ result.filepath }}</a
+          >{{ lienTexte }}</a
         >
         <span v-else class="ds-result__path-text" :title="result.filepath">{{ result.filepath }}</span>
         <!-- Conservés dans les deux cas : copier une adresse est aussi

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { lienExterne } from './paths'
+import { lienExterne, urlAbregee } from './paths'
 
 /**
  * `lienExterne` décide si un `filepath` devient un lien cliquable. Elle
@@ -56,5 +56,61 @@ describe('lienExterne — ce qui reste du texte', () => {
     expect(lienExterne('')).toBeNull()
     expect(lienExterne(null)).toBeNull()
     expect(lienExterne(undefined)).toBeNull()
+  })
+})
+
+/**
+ * `urlAbregee` ne touche QUE le texte affiché. Ce qui compte ici : rien
+ * ne doit disparaître silencieusement d'un bout ou de l'autre — l'hôte
+ * dit d'où vient le document, le dernier segment dit ce que c'est.
+ */
+describe('urlAbregee', () => {
+  it("retire le schéma, le « www. » et le slash final, qui ne distinguent rien", () => {
+    expect(urlAbregee('https://www.exemple.fr/actualites/')).toBe('exemple.fr/actualites')
+    expect(urlAbregee('http://intranet.local/page')).toBe('intranet.local/page')
+  })
+
+  it('laisse une adresse courte intacte', () => {
+    const court = 'exemple.fr/a/b/c'
+    expect(urlAbregee(`https://${court}`)).toBe(court)
+  })
+
+  it("garde l'hôte et le dernier segment, et élide les rubriques du milieu", () => {
+    const abrege = urlAbregee(
+      'https://www.exemple.gouv.fr/politiques-publiques/transition-ecologique/mobilites/rapport-annuel-2026.pdf',
+    )
+    expect(abrege.startsWith('exemple.gouv.fr/…/')).toBe(true)
+    expect(abrege.endsWith('rapport-annuel-2026.pdf')).toBe(true)
+    expect(abrege.length).toBeLessThanOrEqual(72)
+  })
+
+  it('coupe au milieu du dernier segment quand lui seul est démesuré', () => {
+    const abrege = urlAbregee(`https://exemple.fr/${'a'.repeat(200)}-fin.html`)
+    expect(abrege.startsWith('exemple.fr/aaa')).toBe(true)
+    expect(abrege.endsWith('fin.html')).toBe(true)
+    expect(abrege).toContain('…')
+    expect(abrege.length).toBeLessThanOrEqual(72)
+  })
+
+  it('garde les paramètres de requête lisibles quand ils sont courts', () => {
+    expect(urlAbregee('https://exemple.fr/rubrique/sous/article.php?id=42')).toBe(
+      'exemple.fr/rubrique/sous/article.php?id=42',
+    )
+  })
+
+  it('coupe un hôte à lui seul trop long, faute de chemin où élider', () => {
+    const abrege = urlAbregee(`https://${'s'.repeat(90)}.exemple.fr`)
+    expect(abrege.endsWith('.exemple.fr')).toBe(true)
+    expect(abrege.length).toBeLessThanOrEqual(72)
+  })
+
+  it("coupe l'ensemble quand l'hôte ne laisse pas la place à un segment lisible", () => {
+    const abrege = urlAbregee(`https://${'h'.repeat(68)}.fr/rubrique/document-final.pdf`)
+    expect(abrege.length).toBeLessThanOrEqual(72)
+    expect(abrege.endsWith('document-final.pdf')).toBe(true)
+  })
+
+  it("n'invente rien sur une valeur vide", () => {
+    expect(urlAbregee('')).toBe('')
   })
 })

@@ -122,6 +122,16 @@ describe('DocumentDetailModal — lien vers la page d’origine', () => {
     expect(lien.attributes('rel')).toBe('noopener')
   })
 
+  it("abrège le TEXTE d'une adresse longue, sans toucher à ce qui est ouvert", async () => {
+    const url =
+      'https://www.exemple.gouv.fr/politiques-publiques/transition-ecologique/mobilites/rapport-annuel-2026.pdf'
+    const lien = (await fiche({ ...ARTICLE, filepath: url })).find('[data-testid="detail-lien"]')
+
+    expect(lien.attributes('href')).toBe(url)
+    expect(lien.attributes('title')).toContain(url)
+    expect(lien.text()).toBe('exemple.gouv.fr/…/rapport-annuel-2026.pdf')
+  })
+
   it('ne rend PAS d’ancre pour un javascript:', async () => {
     // La règle vise le code qui FABRIQUE de telles URL, pas celui qui
     // vérifie qu'on les refuse — et l'écrire autrement masquerait ce qui

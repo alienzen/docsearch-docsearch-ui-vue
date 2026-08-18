@@ -89,3 +89,61 @@ export async function copyText(text: string): Promise<void> {
   document.execCommand('copy')
   document.body.removeChild(ta)
 }
+
+/**
+ * Longueur au-delà de laquelle une adresse est abrégée à l'affichage.
+ * Choisie pour tenir sur la ligne de chemin d'une carte à la largeur
+ * courante, boutons de copie compris.
+ */
+const URL_LONGUEUR_MAX = 72
+
+/** Élision au MILIEU : garde le début et la fin, coupe entre les deux. */
+function elide(texte: string, max: number): string {
+  if (texte.length <= max) return texte
+  if (max <= 1) return '…'
+  const tete = Math.ceil((max - 1) / 2)
+  const queue = max - 1 - tete
+  return texte.slice(0, tete) + '…' + (queue > 0 ? texte.slice(texte.length - queue) : '')
+}
+
+/**
+ * Forme courte d'une adresse, pour le TEXTE du lien uniquement — le
+ * `href`, l'infobulle et la copie gardent l'adresse entière.
+ *
+ * L'ellipse CSS de `.ds-result__path-text` coupait en FIN de ligne, donc
+ * exactement là où une URL est informative : le nom de la page part, le
+ * « https://www. » et les rubriques intermédiaires restent. On enlève
+ * donc d'abord ce qui ne distingue aucun résultat d'un autre (schéma,
+ * « www. », slash final), puis on élide les rubriques du milieu pour
+ * garder l'hôte ET le dernier segment.
+ *
+ * Les paramètres de requête suivent le dernier segment et sont élidés
+ * avec lui : « article.php?id=42 » reste lisible, une URL de suivi de
+ * 300 caractères est coupée en son milieu.
+ *
+ * L'ellipse CSS reste en place derrière : elle rattrape les fenêtres
+ * étroites, où même cette forme courte déborde.
+ */
+export function urlAbregee(url: string, max: number = URL_LONGUEUR_MAX): string {
+  const sansSchema = (url || '')
+    .trim()
+    .replace(/^https?:\/\//i, '')
+    .replace(/^www\./i, '')
+  const nu = sansSchema.replace(/\/+$/, '')
+  if (nu.length <= max) return nu
+
+  const finHote = nu.indexOf('/')
+  // Pas de chemin du tout : il ne reste que l'hôte à couper.
+  if (finHote < 0) return elide(nu, max)
+
+  const hote = nu.slice(0, finHote)
+  const chemin = nu.slice(finHote + 1)
+  const dernier = chemin.slice(chemin.lastIndexOf('/') + 1)
+  // Un seul segment : rien au milieu à élider, on coupe dans le segment.
+  const separateur = chemin.includes('/') ? '/…/' : '/'
+  const place = max - hote.length - separateur.length
+  // L'hôte mange déjà toute la place : le montrer entier avec un reste
+  // illisible n'aide pas, on coupe l'ensemble.
+  if (place < 8) return elide(nu, max)
+  return hote + separateur + elide(dernier, place)
+}

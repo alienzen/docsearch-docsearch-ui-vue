@@ -10,7 +10,7 @@ import { extLabel, fmtSize } from '@/utils/format'
 import { useSearchStore } from '@/stores/search'
 import { useUiConfigStore } from '@/stores/uiConfig'
 import { extraFields } from '@/utils/extraFields'
-import { lienExterne } from '@/utils/paths'
+import { lienExterne, urlAbregee } from '@/utils/paths'
 
 const props = defineProps<{ documentId: string | null }>()
 const emit = defineEmits<{ close: [] }>()
@@ -103,6 +103,16 @@ const previewable = computed(
 
 /** Adresse ouvrable, quand le `filepath` en est une. */
 const lien = computed(() => lienExterne(doc.value?.filepath))
+
+/**
+ * Texte du lien, abrégé comme sur la carte de résultat — le `href`,
+ * l'infobulle et la copie gardent l'adresse entière.
+ *
+ * La ligne n'a ici AUCUNE ellipse CSS, contrairement à la carte : une
+ * adresse longue, qui n'offre aucune espace où couper, poussait la
+ * colonne de valeurs et débordait de la fenêtre modale.
+ */
+const lienTexte = computed(() => (lien.value ? urlAbregee(lien.value) : ''))
 
 /** Un membre d'archive a un chemin « archive.zip::interne/f.txt ». */
 const archive = computed(() => {
@@ -243,7 +253,7 @@ async function onRemoveKeyword(keyword: string) {
               :title="`${doc.filepath} — nouvelle fenêtre`"
               target="_blank"
               rel="noopener"
-              >{{ doc.filepath }}</a
+              >{{ lienTexte }}</a
             >
             <!-- `lien` vaut l'adresse, donc le chemin existe — mais le
                  typage ne déduit pas l'un de l'autre à travers le `v-if`.
