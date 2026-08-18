@@ -54,6 +54,10 @@ export type SearchResult = {
   source?: string
   folder?: string
   filepath?: string
+  /** Date de publication d'un article poussé par un module, de création
+   *  ailleurs. Absente quand la source n'en fournit pas — le cœur retire
+   *  les dates nulles plutôt que de les indexer à null. */
+  date_created?: string
   date_modified?: string
   size?: number
   [key: string]: unknown

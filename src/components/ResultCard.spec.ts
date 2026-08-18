@@ -70,6 +70,80 @@ describe('ResultCard — pourcentage de pertinence', () => {
   })
 })
 
+describe('les deux dates', () => {
+  // `date_created` ne s'affichait nulle part dans la liste — la carte ne
+  // rendait que `date_modified`, sous le mot « Modifié ». Sur un article
+  // de flux, la publication est pourtant l'information, et la mise à jour
+  // l'exception.
+  function carte(dates: { date_created?: string; date_modified?: string }) {
+    setActivePinia(createPinia())
+    return mount(ResultCard, {
+      props: {
+        result: { id: 'x', title: 'Article', source: 'rss_presse', highlight: [], ...dates } as never,
+        selected: false,
+      },
+      global: { stubs: { DsfrButton: true, CopyPathButtons: true } },
+    })
+  }
+
+  it('affiche la publication', () => {
+    expect(carte({ date_created: '2026-08-18T06:30:00+00:00' }).text()).toContain(
+      'Publié : 2026-08-18',
+    )
+  })
+
+  it('masque « Modifié » quand les deux dates tombent le même jour', () => {
+    // Le cas ORDINAIRE d'un flux RSS 2.0 : `pubDate` seul, recopié dans
+    // les deux champs par le module. Sans ce masquage, chaque article
+    // affichait deux fois la même date, sous deux mots différents.
+    const texte = carte({
+      date_created: '2026-08-18T06:30:00+00:00',
+      date_modified: '2026-08-18T06:30:00+00:00',
+    }).text()
+    expect(texte).toContain('Publié : 2026-08-18')
+    expect(texte).not.toContain('Modifié')
+  })
+
+  it('masque « Modifié » même quand les horodatages diffèrent dans la journée', () => {
+    // La comparaison porte sur le jour, c'est-à-dire sur ce qui est
+    // AFFICHÉ : comparer les horodatages entiers rendrait deux lignes
+    // identiques à l'écran.
+    const texte = carte({
+      date_created: '2026-08-18T06:30:00+00:00',
+      date_modified: '2026-08-18T18:05:00+00:00',
+    }).text()
+    expect(texte).not.toContain('Modifié')
+  })
+
+  it('affiche les deux quand la correction est un autre jour', () => {
+    // Un Atom portant `published` ET `updated` : les deux dates disent
+    // alors deux choses distinctes, et la carte ne montrait que la
+    // seconde.
+    const texte = carte({
+      date_created: '2026-08-18T06:30:00+00:00',
+      date_modified: '2026-08-20T09:00:00+00:00',
+    }).text()
+    expect(texte).toContain('Publié : 2026-08-18')
+    expect(texte).toContain('Modifié : 2026-08-20')
+  })
+
+  it('garde « Modifié » seul pour un document sans date de publication', () => {
+    // Les articles indexés avant que le module renseigne ses dates, et
+    // toute source qui ne fournit que la modification.
+    const texte = carte({ date_modified: '2026-08-20T09:00:00+00:00' }).text()
+    expect(texte).toContain('Modifié : 2026-08-20')
+    expect(texte).not.toContain('Publié')
+  })
+
+  it('n’affiche aucune ligne de date quand le document n’en porte pas', () => {
+    // Une ligne de source SQL : « Publié : — / Modifié : — » au milieu de
+    // ses vraies données n'apprend rien.
+    const texte = carte({}).text()
+    expect(texte).not.toContain('Publié')
+    expect(texte).not.toContain('Modifié')
+  })
+})
+
 describe('lien d’aperçu', () => {
   // L'aperçu convertit un fichier : ne l'offrir que quand il y en a un.
   // Le test est arrivé APRÈS le défaut — « :: » dans le chemin masquait

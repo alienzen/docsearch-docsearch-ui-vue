@@ -85,6 +85,24 @@ const snippets = computed(() => parseHighlights(props.result.highlight || []))
 const scorePct = computed(() =>
   props.result.score == null ? null : Math.min(100, Math.round(props.result.score * 20)),
 )
+/**
+ * Les deux dates de la carte, réduites au jour — c'est la maille
+ * affichée, et comparer autre chose que ce qui est affiché ferait
+ * ressortir deux lignes identiques.
+ *
+ * « Modifié » disparaît quand il tombe le même jour que « Publié ». Le
+ * doublon est la RÈGLE et non l'exception sur un document poussé par un
+ * module : un flux RSS 2.0 n'a que `pubDate`, dont le plugin RSS
+ * renseigne les deux champs à l'identique (voir `_dates()` côté module).
+ * Un fichier jamais retouché depuis sa création affichait la même
+ * redondance.
+ */
+const publie = computed(() => (props.result.date_created || '').slice(0, 10))
+const modifie = computed(() => {
+  const jour = (props.result.date_modified || '').slice(0, 10)
+  return jour === publie.value ? '' : jour
+})
+
 /** Un membre d'archive a un chemin de la forme "archive.zip::interne". */
 const isArchiveMember = computed(() => (props.result.filepath || '').includes('::'))
 
@@ -201,10 +219,15 @@ const selectable = computed(
       <ul class="ds-result__meta fr-text--sm">
         <li v-if="result.source">Source : {{ uiConfig.sourceLabel(result.source) }}</li>
         <li v-if="result.author">Auteur : {{ result.author }}</li>
-        <!-- Date et taille sous condition : une ligne de source SQL n'a
-             ni l'une ni l'autre, et affichait « Modifié : — / Taille : — »
-             au milieu de ses vraies données. -->
-        <li v-if="result.date_modified">Modifié : {{ result.date_modified.slice(0, 10) }}</li>
+        <!-- Dates et taille sous condition : une ligne de source SQL n'a
+             ni les unes ni l'autre, et affichait « Modifié : — / Taille : — »
+             au milieu de ses vraies données.
+
+             « Publié » et non « Créé » comme la fiche détail : c'est le
+             mot juste pour ce que porte `date_created` sur un article de
+             flux, et il ne dit rien de faux d'un fichier. -->
+        <li v-if="publie">Publié : {{ publie }}</li>
+        <li v-if="modifie">Modifié : {{ modifie }}</li>
         <li v-if="result.folder">Dossier : {{ result.folder }}</li>
         <li v-if="result.size">Taille : {{ fmtSize(result.size) }}</li>
         <li v-if="isArchiveMember">Extrait d'une archive</li>
