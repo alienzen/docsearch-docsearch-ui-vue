@@ -24,6 +24,10 @@ const SOURCES: SearchableSource[] = [
     // Une source SQL a le droit de mapper les noms du schéma commun.
     card_fields: { objet: null, author: 'Rédacteur', date_modified: 'Rédigée le' },
   },
+  // Source portée par un module complémentaire. Le type est "plugin" au
+  // singulier quel que soit le module (voir REGISTRES côté API), et
+  // aucune de ces sources ne déclare de `card_fields`.
+  { name: 'rss_presse', label: 'Presse', type: 'plugin', collectable: true },
 ]
 
 describe('dimensions de facettes selon les sources sélectionnées', () => {
@@ -57,6 +61,24 @@ describe('dimensions de facettes selon les sources sélectionnées', () => {
   it('réunit les dimensions de plusieurs sources sélectionnées', () => {
     const d = dimensionsAffichables(['intranet', 'notes'], SOURCES)
     expect([...d].sort()).toEqual(['author', 'date', 'ext'])
+  })
+
+  it('retire extension et dossier à une source de module', () => {
+    // Le contrat écrit `extension: ""` sur tout document poussé par un
+    // module et lui interdit `folder` : les deux sections seraient vides
+    // à coup sûr. Restent les trois champs du schéma commun qu'un module
+    // renseigne vraiment.
+    const d = dimensionsAffichables(['rss_presse'], SOURCES)
+    expect([...d].sort()).toEqual(['author', 'date', 'keywords'])
+  })
+
+  it('rend son extension à une source de module dès que la recherche en trouve', () => {
+    // Ce n'est pas cette fonction qui le fait, mais `affiche()` dans
+    // FacetsSidebar : la dimension absente n'empêche jamais une facette
+    // qui a des seaux de s'afficher. Le rappel est ici parce que c'est
+    // la seule chose qui rattrape un module posant de vraies extensions.
+    expect(seauxAffichables([{ key: '', doc_count: 12 }])).toEqual([])
+    expect(seauxAffichables([{ key: 'pdf', doc_count: 4 }])).toHaveLength(1)
   })
 
   it('affiche tout si une source sélectionnée est inconnue du registre', () => {

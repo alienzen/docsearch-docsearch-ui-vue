@@ -17,7 +17,9 @@
  *            par web_indexer.py ;
  *   `sql`  → uniquement les colonnes que la source déclare, une source
  *            SQL ayant le droit de mapper `author`, `keywords` ou
- *            `date_modified` comme n'importe quel autre nom de champ.
+ *            `date_modified` comme n'importe quel autre nom de champ ;
+ *   `plugin` → ni extension ni dossier, que le contrat lui refuse (voir
+ *            ci-dessous).
  *
  * Les facettes SQL personnalisées, elles, n'ont pas besoin de ce
  * traitement : l'API ne les renvoie déjà que pour les sources en jeu.
@@ -54,6 +56,25 @@ function dimensionsDeLaSource(source: SearchableSource): DimensionFacette[] {
       // (voir /searchable-sources) ; une valeur vide n'y masque que le
       // libellé dans la carte de résultat, la colonne existe quand même.
       return TOUTES.filter((d) => CHAMP_ES[d] in (source.card_fields || {}))
+    case 'plugin':
+      // Une source portée par un module complémentaire ne peut porter ni
+      // `extension` — le contrat l'écrit VIDE sur tout document poussé,
+      // sans exception (documents.py, construire_document) — ni
+      // `folder`, qui fait partie des champs réservés qu'un module n'a
+      // pas le droit de renseigner. Deux sections vides, sur toute
+      // source de module, garanties par le contrat lui-même.
+      //
+      // Restent les trois champs du schéma commun qu'un module remplit
+      // vraiment. `date` est de la liste parce qu'un module PEUT pousser
+      // `date_modified` (docsearch-plugin-rss le fait depuis sa 0.1.1) ;
+      // celui qui ne le fait pas laisse une section « Période » qui ne
+      // filtre rien, faute pour l'interface de pouvoir le deviner —
+      // aucune agrégation ne dit si les résultats portent une date.
+      //
+      // Un module qui poserait de VRAIES extensions n'est pas perdant :
+      // le second terme d'`affiche()` rattrape la section dès qu'elle a
+      // des seaux non vides.
+      return ['author', 'keywords', 'date']
     default:
       // Type inconnu — ou source d'une installation plus récente que
       // cette interface : on affiche tout plutôt que de masquer une
