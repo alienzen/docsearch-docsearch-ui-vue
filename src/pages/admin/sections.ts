@@ -14,17 +14,13 @@
  * duplication est assumée, mais elle est vérifiée.
  */
 
-export type Panneau = {
-  /** Identifiant du `<details>`, et clé de pli dans le store. */
-  id: string
-  titre: string
-}
+import type { Section } from '@/utils/sommaire'
 
-export type Groupe = {
-  id: string
-  titre: string
-  panneaux: Panneau[]
-}
+/** Un panneau, feuille de l'arbre : pas de sous-niveau. */
+export type Panneau = Section
+
+/** Un groupe, qui a toujours au moins un panneau. */
+export type Groupe = Section & { panneaux: Panneau[] }
 
 export const SECTIONS: Groupe[] = [
   {
@@ -84,8 +80,3 @@ export const SECTIONS: Groupe[] = [
 export const GROUP_IDS = SECTIONS.map((groupe) => groupe.id)
 
 export const PANEL_IDS = SECTIONS.flatMap((groupe) => groupe.panneaux.map((p) => p.id))
-
-/** Le groupe qui contient ce panneau, ou undefined pour un identifiant inconnu. */
-export function groupeDuPanneau(idPanneau: string): Groupe | undefined {
-  return SECTIONS.find((groupe) => groupe.panneaux.some((p) => p.id === idPanneau))
-}

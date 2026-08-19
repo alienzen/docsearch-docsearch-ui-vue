@@ -67,9 +67,9 @@ onMounted(async () => {
     <h2 id="aide-admin-sommaire" class="fr-h5">Se déplacer dans la page</h2>
     <p>
       La colonne de gauche de la page d'administration suit le défilement : elle liste les sections
-      et leurs panneaux, et la ligne « Aller à un réglage » y cherche par titre de section ou par
+      et leurs panneaux, et la ligne « Aller à une section » y cherche par titre de section ou par
       libellé de réglage. Choisir un résultat déplie la section et le panneau, amène le réglage à
-      l'écran et l'y désigne quelques secondes.
+      l'écran et l'y désigne quelques secondes. La page de statistiques a le même sommaire.
     </p>
     <p>
       Cette recherche porte sur l'<strong>interface</strong>, pas sur les données : le nom d'une

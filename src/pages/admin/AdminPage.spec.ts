@@ -237,7 +237,7 @@ describe('AdminPage', () => {
     const wrapper = mountPage()
     await flush()
 
-    expect(wrapper.findAll('[data-testid="sommaire-groupe"]').map((a) => a.text())).toEqual(
+    expect(wrapper.findAll('[data-testid="sommaire-section"]').map((a) => a.text())).toEqual(
       SECTIONS.map((g) => g.titre),
     )
     expect(wrapper.findAll('[data-testid="sommaire-panneau"]').map((a) => a.text())).toEqual(
@@ -379,7 +379,7 @@ describe('AdminPage', () => {
     const wrapper = mountPage(document.body)
     await flush()
 
-    const sommaire = wrapper.findComponent({ name: 'AdminSommaire' })
+    const sommaire = wrapper.findComponent({ name: 'SommaireLateral' })
     await sommaire.vm.allerA('ancre-inexistante', 'scan-panel')
     await flush()
 

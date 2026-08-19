@@ -1527,14 +1527,14 @@ body.ds-resizing {
   }
 }
 
-/* ── Administration : sommaire collant ─────────────────────── */
+/* ── Sommaire collant (administration et statistiques) ─────── */
 
 /* Deux colonnes à partir de 48em seulement — le point de rupture du
    `fr-sidemenu`, qui range le sommaire derrière son bouton en deçà. En
    dessous, tout retombe dans le flux : une colonne de navigation de
    18rem ne tiendrait pas à côté des panneaux. */
 @media (min-width: 48em) {
-  .ds-admin-layout--sommaire {
+  .ds-sommaire-layout--sommaire {
     display: grid;
     grid-template-columns: minmax(0, 19rem) minmax(0, 1fr);
     gap: 2rem;
@@ -1556,7 +1556,7 @@ body.ds-resizing {
      s'étirer sur toute la hauteur de la ligne, faute de quoi son enfant
      collant n'a aucune course pour glisser et le sommaire remonte avec
      le contenu. Même mécanique que la colonne de facettes. */
-  .ds-admin-layout__collant {
+  .ds-sommaire-layout__collant {
     position: sticky;
     /* `+ 0.5rem` et non `+ 1rem` : le remplissage de 0,5rem ajouté
        ci-dessous décale déjà le contenu d'autant, et l'espace sous
@@ -1590,14 +1590,16 @@ body.ds-resizing {
    sommaire : la bascule qui escamote celui-ci doit lui survivre, sans
    quoi rien ne permettrait de le rouvrir. « Sommaire » est poussé à
    gauche, les commandes de panneaux restant groupées à droite. */
-.ds-admin-layout__outils {
+.ds-sommaire-layout__outils {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   justify-content: flex-end;
   margin-bottom: 0.5rem;
 }
-.ds-admin-layout__outils > #admin-sommaire-bascule {
+/* Une classe et non l'identifiant du bouton : les deux pages ont chacune
+   le leur (`admin-sommaire-bascule`, `stats-sommaire-bascule`). */
+.ds-sommaire-layout__bascule {
   margin-right: auto;
 }
 
@@ -1650,10 +1652,6 @@ body.ds-resizing {
 }
 
 /* ── Statistiques ──────────────────────────────────────────── */
-.ds-stats__toolbar {
-  display: flex;
-  justify-content: flex-end;
-}
 .ds-panel-block {
   margin-bottom: 1rem;
 }

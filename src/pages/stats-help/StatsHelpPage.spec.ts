@@ -49,6 +49,7 @@ describe('StatsHelpPage', () => {
     const wrapper = await monter()
     for (const id of [
       'aide-stats-titre',
+      'aide-stats-sommaire',
       'aide-stats-raccourcis',
       'aide-stats-raccourcis-tableau',
       'aide-stats-panneaux',

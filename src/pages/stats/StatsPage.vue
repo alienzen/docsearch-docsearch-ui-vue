@@ -7,21 +7,45 @@
  * un endpoint en erreur n'empêche pas les autres de s'afficher, comme le
  * faisait le Promise.allSettled() d'origine. Seul un refus d'accès
  * (401/403) remplace toute la page, puisqu'il vaut pour tous.
+ *
+ * Même sommaire collant que l'administration (voir SommaireLateral) :
+ * six panneaux de plusieurs écrans chacun, la page se parcourait au
+ * défilement seul.
  */
-import { computed, onMounted, provide, ref } from 'vue'
+import { computed, nextTick, onMounted, provide, ref, useTemplateRef } from 'vue'
 import { useUiConfigStore } from '@/stores/uiConfig'
 import { useStatsPanelsStore } from '@/stores/statsPanels'
+import { usePreferencesStore } from '@/stores/preferences'
 import { ApiError } from '@/api/client'
 import { useAdminShortcuts } from '@/composables/useAdminShortcuts'
+import { useHeaderHeight } from '@/composables/useHeaderHeight'
 import { useHeaderReduit } from '@/composables/useHeaderReduit'
 import { STATS_SHORTCUTS } from '@/constants'
+import { PANEL_IDS, SECTIONS } from './sections'
+import { construireIndex } from './sommaire'
 
 const uiConfig = useUiConfigStore()
+const preferences = usePreferencesStore()
 const panels = useStatsPanelsStore()
+
+/** Statique : l'index ne dépend d'aucune donnée chargée. */
+const INDEX = construireIndex()
+
+/**
+ * Un seul niveau de pli sur cette page, contrairement à
+ * l'administration : le sommaire n'a donc qu'un store à ouvrir. Le
+ * tableau est sorti du gabarit pour garder la même identité d'un rendu
+ * à l'autre.
+ */
+const STORES = [panels]
 
 // En-tête replié au défilement, si l'administrateur l'a demandé : les
 // tableaux de cette page sont longs.
 useHeaderReduit(() => uiConfig.config.header_shrink_enabled)
+
+// Publie --ds-header-height : le sommaire est collant sous un en-tête
+// lui-même collant, et le saut vers une ancre doit décaler d'autant.
+useHeaderHeight()
 
 /**
  * Mêmes raccourcis que l'administration, dont cette page partage la
@@ -32,9 +56,25 @@ useHeaderReduit(() => uiConfig.config.header_shrink_enabled)
  */
 const shortcutsOpen = ref(false)
 
+const sommaire = useTemplateRef<{ focaliserChamp: () => void }>('sommaire')
+
+/**
+ * Chercher suppose de voir le sommaire : « / » le rouvre d'abord. Sans
+ * ça, la touche paraîtrait morte une fois la colonne escamotée. Le
+ * `nextTick` est indispensable — la colonne est en `v-if`, la référence
+ * n'existe donc qu'au rendu suivant.
+ */
+async function focaliserSommaire() {
+  preferences.sommaireHidden = false
+  await nextTick()
+  sommaire.value?.focaliserChamp()
+}
+
 useAdminShortcuts({
   toggleAll: () => panels.toggleAll(),
   toggleShortcuts: () => (shortcutsOpen.value = !shortcutsOpen.value),
+  focusSearch: focaliserSommaire,
+  toggleSommaire: () => (preferences.sommaireHidden = !preferences.sommaireHidden),
   toggleAt: (i) => {
     const id = PANEL_IDS[i]
     if (id) panels.toggle(id)
@@ -54,14 +94,11 @@ provide('reportError', (e: unknown) => {
   }
 })
 
-const PANEL_IDS = [
-  'summary-panel',
-  'nps-panel',
-  'suggestions-panel',
-  'zero-results-panel',
-  'logs-panel',
-  'audit-log-panel',
-]
+/**
+ * Le sommaire disparaît aussi bien sur demande que sur refus d'accès —
+ * dans ce dernier cas il ne reste plus une seule section à sommairiser.
+ */
+const sommaireVisible = computed(() => !accessDenied.value && !preferences.sommaireHidden)
 
 const toggleAllLabel = computed(() => (panels.anyExpanded ? 'Tout replier' : 'Tout déplier'))
 
@@ -118,37 +155,75 @@ onMounted(() => {
     </template>
   </DsfrHeader>
 
-  <main id="main-content" class="fr-container fr-my-4w">
-    <DsfrAlert
-      v-if="accessDenied"
-      id="stats-acces-refuse"
-      type="error"
-      title="Accès refusé"
-      :description="accessDenied"
-    />
-
-    <template v-else>
-      <div id="stats-outils" class="ds-stats__toolbar">
-        <DsfrButton
-          id="stats-tout-replier"
-          size="sm"
-          tertiary
-          no-outline
-          :label="toggleAllLabel"
-          :title="`${toggleAllLabel} (t)`"
-          aria-keyshortcuts="t"
-          @click="panels.toggleAll()"
+  <!-- Deux colonnes : le sommaire collant à gauche, les panneaux à
+       droite. La grille ne se forme qu'à partir de 48em — le point de
+       rupture du `fr-sidemenu`, qui range le sommaire derrière un bouton
+       en deçà. Refus d'accès : une seule colonne, il n'y a plus rien à
+       sommairiser. -->
+  <div
+    class="fr-container fr-my-4w ds-sommaire-layout"
+    :class="{ 'ds-sommaire-layout--sommaire': sommaireVisible }"
+  >
+    <div v-if="sommaireVisible" class="ds-sommaire-layout__cote">
+      <div class="ds-sommaire-layout__collant">
+        <SommaireLateral
+          ref="sommaire"
+          menu-id="stats-sommaire"
+          :sections="SECTIONS"
+          :index="INDEX"
+          :stores="STORES"
         />
       </div>
+    </div>
 
-      <StatsSummaryPanel />
-      <StatsNpsPanel />
-      <StatsSuggestionsPanel />
-      <StatsZeroResultsPanel />
-      <StatsSearchLogsPanel />
-      <StatsAuditLogPanel />
-    </template>
-  </main>
+    <main id="main-content">
+      <DsfrAlert
+        v-if="accessDenied"
+        id="stats-acces-refuse"
+        type="error"
+        title="Accès refusé"
+        :description="accessDenied"
+      />
+
+      <template v-else>
+        <div id="stats-outils" class="ds-sommaire-layout__outils">
+          <!-- Cette bascule vit ICI et non dans le sommaire : placée
+               dedans, elle disparaîtrait avec lui et il n'y aurait plus
+               aucun moyen de le rouvrir. `aria-expanded` porte l'état,
+               ce qui évite un libellé changeant à chaque clic. -->
+          <button
+            id="stats-sommaire-bascule"
+            class="fr-btn fr-btn--sm fr-btn--tertiary-no-outline fr-btn--icon-left fr-icon-menu-2-fill ds-sommaire-layout__bascule"
+            type="button"
+            aria-controls="stats-sommaire"
+            title="Afficher ou masquer le sommaire (s)"
+            aria-keyshortcuts="s"
+            :aria-expanded="!preferences.sommaireHidden"
+            @click="preferences.sommaireHidden = !preferences.sommaireHidden"
+          >
+            Sommaire
+          </button>
+          <DsfrButton
+            id="stats-tout-replier"
+            size="sm"
+            tertiary
+            no-outline
+            :label="toggleAllLabel"
+            :title="`${toggleAllLabel} (t)`"
+            aria-keyshortcuts="t"
+            @click="panels.toggleAll()"
+          />
+        </div>
+
+        <StatsSummaryPanel />
+        <StatsNpsPanel />
+        <StatsSuggestionsPanel />
+        <StatsZeroResultsPanel />
+        <StatsSearchLogsPanel />
+        <StatsAuditLogPanel />
+      </template>
+    </main>
+  </div>
 
   <ShortcutsModal
     :opened="shortcutsOpen"

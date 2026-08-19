@@ -1,7 +1,9 @@
 <script setup lang="ts">
 /**
- * Sommaire collant de la page d'administration : une ligne de recherche,
- * puis les groupes et leurs panneaux.
+ * Sommaire collant d'une page à panneaux : une ligne de recherche, puis
+ * l'arbre des sections. Partagé par l'administration et les
+ * statistiques, qui lui passent leurs sections et leur index — il ne
+ * connaît ni les unes ni les autres (voir `utils/sommaire.ts`).
  *
  * Deux modes, jamais les deux à la fois : saisie vide, l'arbre des
  * sections ; saisie non vide, la liste des résultats. Les résultats
@@ -14,20 +16,35 @@
  * que le défilement : sans lui, on retombe devant une liste de vingt-cinq
  * cases à cocher sans savoir laquelle était visée.
  *
- * Le sommaire n'est PAS l'inventaire du repli : c'est `sections.ts` qui
- * l'est, et il sert aussi bien à « Tout replier » qu'aux raccourcis
- * chiffrés.
+ * Le sommaire n'est PAS l'inventaire du repli : c'est le `sections.ts`
+ * de chaque page qui l'est, et il sert aussi bien à « Tout replier »
+ * qu'aux raccourcis chiffrés.
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
-import { useAdminGroupsStore, useAdminPanelsStore } from '@/stores/adminPanels'
-import { SECTIONS } from '@/pages/admin/sections'
-import { chercher, construireIndex, type Entree } from '@/pages/admin/sommaire'
+import { chercher, type Entree, type Section } from '@/utils/sommaire'
+
+/** Ce que le sommaire demande à un store de pli, et rien de plus. */
+type StoreDePli = { deplier: (id: string) => void }
+
+const props = defineProps<{
+  /**
+   * Identifiant du `<nav>` : la bascule qui escamote le sommaire vit
+   * dans la page et le désigne par `aria-controls`.
+   */
+  menuId: string
+  sections: Section[]
+  index: Entree[]
+  /**
+   * Stores de pli à ouvrir pour atteindre une ancre. Chacun est
+   * sollicité pour chaque identifiant : un identifiant qu'un store ne
+   * connaît pas ne lui coûte rien, et ça évite d'avoir à savoir si
+   * `group-interface` est un groupe ou un panneau.
+   */
+  stores: StoreDePli[]
+}>()
 
 const ID_CHAMP = 'sommaire-recherche'
 const ID_RESULTATS = 'sommaire-resultats'
-
-/** Statique : l'index ne dépend d'aucune donnée chargée. */
-const INDEX = construireIndex()
 
 /** Espace laissé entre le haut de la fenêtre et la cible, après défilement. */
 const MARGE_PX = 16
@@ -38,14 +55,11 @@ const SURBRILLANCE_MS = 2000
 /** Un peu plus que la transition d'ouverture d'un panneau — voir defiler(). */
 const DUREE_OUVERTURE_MS = 350
 
-const groupes = useAdminGroupsStore()
-const panneaux = useAdminPanelsStore()
-
 const champ = useTemplateRef<HTMLInputElement>('champ')
 const saisie = ref('')
 const actif = ref(-1)
 
-const resultats = computed(() => chercher(INDEX, saisie.value))
+const resultats = computed(() => chercher(props.index, saisie.value))
 const enRecherche = computed(() => normaliseeNonVide(saisie.value))
 const listeOuverte = computed(() => enRecherche.value && resultats.value.entrees.length > 0)
 
@@ -60,18 +74,12 @@ const idOption = (index: number) => `${ID_RESULTATS}-option-${index}`
 let minuteur: ReturnType<typeof setTimeout> | undefined
 let minuteurOuverture: ReturnType<typeof setTimeout> | undefined
 
-/**
- * Déplie tous les `<details>` qui contiennent l'élément, lui-même
- * compris. Les deux stores sont sollicités pour chaque identifiant : un
- * identifiant que l'un ne connaît pas ne lui coûte rien, et ça évite
- * d'avoir à savoir si `group-interface` est un groupe ou un panneau.
- */
+/** Déplie tous les `<details>` qui contiennent l'élément, lui-même compris. */
 function deplierAncetres(element: HTMLElement) {
   let details = element.closest('details')
   while (details) {
     if (details.id) {
-      groupes.deplier(details.id)
-      panneaux.deplier(details.id)
+      for (const store of props.stores) store.deplier(details.id)
     }
     details = details.parentElement?.closest('details') ?? null
   }
@@ -198,21 +206,21 @@ function surClic(event: MouseEvent, entree: Entree) {
 
 /* ── Section active au défilement ─────────────────────────────────── */
 
-const groupeActif = ref(SECTIONS[0]?.id ?? '')
+const sectionActive = ref(props.sections[0]?.id ?? '')
 
 /**
- * Le dernier groupe dont le haut est passé au-dessus du quart supérieur
- * de la fenêtre. Un seuil et non l'intersection exacte : les groupes sont
- * hauts, et plusieurs sont visibles à la fois.
+ * La dernière section dont le haut est passé au-dessus du quart supérieur
+ * de la fenêtre. Un seuil et non l'intersection exacte : les sections sont
+ * hautes, et plusieurs sont visibles à la fois.
  */
-function majGroupeActif() {
+function majSectionActive() {
   const seuil = window.innerHeight * 0.25
-  let trouve = SECTIONS[0]?.id ?? ''
-  for (const groupe of SECTIONS) {
-    const element = document.getElementById(groupe.id)
-    if (element && element.getBoundingClientRect().top <= seuil) trouve = groupe.id
+  let trouve = props.sections[0]?.id ?? ''
+  for (const section of props.sections) {
+    const element = document.getElementById(section.id)
+    if (element && element.getBoundingClientRect().top <= seuil) trouve = section.id
   }
-  groupeActif.value = trouve
+  sectionActive.value = trouve
 }
 
 let enAttente = false
@@ -222,19 +230,19 @@ function surDefilement() {
   enAttente = true
   requestAnimationFrame(() => {
     enAttente = false
-    majGroupeActif()
+    majSectionActive()
   })
 }
 
 onMounted(() => {
   window.addEventListener('scroll', surDefilement, { passive: true })
-  majGroupeActif()
+  majSectionActive()
   // Lien profond : /admin.html#ui-alerts_enabled ouvre le panneau et
-  // pointe le réglage. C'est ce qui permet à l'aide administrateur de
-  // renvoyer vers un réglage précis plutôt que vers la page entière.
+  // pointe le réglage. C'est ce qui permet à l'aide de renvoyer vers un
+  // réglage précis plutôt que vers la page entière.
   const ancre = decodeURIComponent(location.hash.slice(1))
   if (ancre) {
-    const entree = INDEX.find((candidate) => candidate.id === ancre)
+    const entree = props.index.find((candidate) => candidate.id === ancre)
     allerA(ancre, entree?.panneau)
   }
 })
@@ -255,16 +263,16 @@ defineExpose({ focaliserChamp, allerA, resultats, saisie })
 
 <template>
   <DsfrSideMenu
-    id="admin-sommaire"
+    :id="menuId"
     class="ds-sommaire"
     heading-title="Sections"
     button-label="Aller à une section"
-    side-menu-list-id="admin-sommaire-liste"
+    :side-menu-list-id="`${menuId}-liste`"
   >
     <div class="fr-input-group ds-sommaire__recherche">
       <label class="fr-label" :for="ID_CHAMP">
-        Aller à un réglage
-        <span class="fr-hint-text">Titre de section ou libellé d’un réglage (/)</span>
+        Aller à une section
+        <span class="fr-hint-text">Titre de section, de réglage ou d’action (/)</span>
       </label>
       <!-- `type="search"` pour la croix d'effacement native, et
            `autocomplete="off"` pour que le navigateur ne superpose pas
@@ -292,7 +300,7 @@ defineExpose({ focaliserChamp, allerA, resultats, saisie })
       :id="ID_RESULTATS"
       class="fr-sidemenu__list ds-sommaire__resultats"
       role="listbox"
-      aria-label="Réglages correspondants"
+      aria-label="Entrées correspondantes"
     >
       <li
         v-for="(entree, index) in resultats.entrees"
@@ -317,7 +325,7 @@ defineExpose({ focaliserChamp, allerA, resultats, saisie })
       id="sommaire-sans-resultat"
       class="fr-hint-text fr-mt-1w"
     >
-      Aucun réglage ne correspond. Le sommaire ne cherche que dans l’interface, pas dans les données
+      Aucune entrée ne correspond. Le sommaire ne cherche que dans l’interface, pas dans les données
       des panneaux.
     </p>
 
@@ -333,22 +341,24 @@ defineExpose({ focaliserChamp, allerA, resultats, saisie })
 
     <ul v-show="!enRecherche" class="fr-sidemenu__list">
       <li
-        v-for="groupe in SECTIONS"
-        :key="groupe.id"
+        v-for="section in sections"
+        :key="section.id"
         class="fr-sidemenu__item"
-        :class="{ 'fr-sidemenu__item--active': groupe.id === groupeActif }"
+        :class="{ 'fr-sidemenu__item--active': section.id === sectionActive }"
       >
         <a
           class="fr-sidemenu__link"
-          :href="`#${groupe.id}`"
-          :aria-current="groupe.id === groupeActif ? 'true' : undefined"
-          data-testid="sommaire-groupe"
-          @click.prevent="allerA(groupe.id)"
+          :href="`#${section.id}`"
+          :aria-current="section.id === sectionActive ? 'true' : undefined"
+          data-testid="sommaire-section"
+          @click.prevent="allerA(section.id)"
         >
-          {{ groupe.titre }}
+          {{ section.titre }}
         </a>
-        <ul class="fr-sidemenu__list">
-          <li v-for="panneau in groupe.panneaux" :key="panneau.id" class="fr-sidemenu__item">
+        <!-- Second niveau seulement s'il y en a un : sur les
+             statistiques, chaque section EST un panneau. -->
+        <ul v-if="section.panneaux?.length" class="fr-sidemenu__list">
+          <li v-for="panneau in section.panneaux" :key="panneau.id" class="fr-sidemenu__item">
             <a
               class="fr-sidemenu__link"
               :href="`#${panneau.id}`"

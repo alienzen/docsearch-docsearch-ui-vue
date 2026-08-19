@@ -6,6 +6,7 @@ import { VIcon } from '@gouvminint/vue-dsfr'
 import StatsPage from './StatsPage.vue'
 import RouterLinkShim from '@/components/RouterLinkShim.vue'
 import { idsDupliques } from '@/test/ids'
+import { SECTIONS } from './sections'
 
 // Même garde-fou que ChatPage : monter la page détecte une boucle de
 // rendu (dépassement de délai) et vérifie que les six panneaux se
@@ -195,8 +196,15 @@ function respondWith(status = 200) {
   })
 }
 
-function mountPage() {
+/**
+ * `attachTo` seulement pour les tests qui regardent le focus : il ne
+ * s'établit que sur un élément réellement dans le document, et attacher
+ * systématiquement laisserait le corps du document jonché entre les
+ * tests.
+ */
+function mountPage(attachTo?: HTMLElement) {
   return mount(StatsPage, {
+    attachTo,
     global: {
       plugins: [createPinia()],
       components: { VIcon, RouterLink: RouterLinkShim },
@@ -221,6 +229,18 @@ function normalize(text: string) {
 describe('StatsPage', () => {
   beforeEach(() => {
     localStorage.clear()
+    // jsdom n'implémente ni ResizeObserver — dont `useHeaderHeight` se
+    // sert pour caler le sommaire sous l'en-tête collant — ni le
+    // défilement, où `window.scrollTo` lève « Not implemented ».
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    )
+    vi.stubGlobal('scrollTo', vi.fn())
   })
 
   it('se monte sans boucle de rendu', () => {
@@ -284,7 +304,10 @@ describe('StatsPage', () => {
     await flush()
     for (const id of [
       'stats-outils',
+      'stats-sommaire-bascule',
       'stats-tout-replier',
+      'sommaire-recherche',
+      'sommaire-resultats',
       'summary-cartes',
       'summary-histogramme',
       'summary-groupes',
@@ -336,6 +359,153 @@ describe('StatsPage', () => {
     wrapper.unmount()
   })
 
+  // sections.ts est la source du sommaire, du bouton « Tout replier » et
+  // des raccourcis chiffrés : ce qu'elle déclare doit être EXACTEMENT ce
+  // que le gabarit rend, dans le même ordre. C'est ce contrôle qui rend
+  // la duplication des titres acceptable.
+  it('rend exactement les panneaux déclarés dans sections.ts', async () => {
+    vi.stubGlobal('fetch', respondWith())
+    const wrapper = mountPage()
+    await flush()
+
+    // Le premier nœud texte du <summary> seulement : le sous-titre le
+    // suit dans un <small>, et `text()` recollerait les deux.
+    const rendus = wrapper.findAll('details.ds-panel-block').map((d) => ({
+      id: d.attributes('id'),
+      titre: d.find('summary').element.childNodes[0]?.textContent?.trim(),
+    }))
+    expect(rendus).toEqual(SECTIONS.map((s) => ({ id: s.id, titre: s.titre })))
+  })
+
+  it('liste tous les panneaux dans le sommaire', async () => {
+    vi.stubGlobal('fetch', respondWith())
+    const wrapper = mountPage()
+    await flush()
+
+    expect(wrapper.findAll('[data-testid="sommaire-section"]').map((a) => a.text())).toEqual(
+      SECTIONS.map((s) => s.titre),
+    )
+    // Un seul niveau sur cette page : chaque section EST un panneau.
+    expect(wrapper.findAll('[data-testid="sommaire-panneau"]')).toHaveLength(0)
+  })
+
+  // Le geste que le sommaire doit rendre possible : taper ce dont on se
+  // souvient et atterrir SUR la commande, panneau replié compris.
+  it('mène de la recherche du sommaire au lien d’export, panneau replié compris', async () => {
+    document.body.innerHTML = ''
+    localStorage.setItem('docsearch-stats-collapsed-panels', '["logs-panel"]')
+    vi.stubGlobal('fetch', respondWith())
+    const wrapper = mountPage(document.body)
+    await flush()
+
+    expect(wrapper.find('details#logs-panel').attributes('open')).toBeUndefined()
+
+    const champ = wrapper.find('#sommaire-recherche')
+    await champ.setValue('export')
+    const propositions = wrapper.findAll('[data-testid="sommaire-resultat"]')
+    expect(propositions[0].attributes('data-cible')).toBe('logs-export')
+
+    await champ.trigger('keydown', { key: 'Enter' })
+    await flush()
+
+    expect(wrapper.find('details#logs-panel').attributes('open')).toBe('')
+    expect(document.activeElement?.id).toBe('logs-export')
+    // Le champ se vide, sinon la liste masquerait le sommaire au retour.
+    expect((champ.element as HTMLInputElement).value).toBe('')
+
+    wrapper.unmount()
+  })
+
+  // La bascule doit SURVIVRE à ce qu'elle escamote : dans le sommaire,
+  // elle disparaîtrait avec lui et rien ne permettrait de le rouvrir.
+  it('escamote et rétablit le sommaire, la bascule restant atteignable', async () => {
+    vi.stubGlobal('fetch', respondWith())
+    const wrapper = mountPage()
+    await flush()
+
+    const bascule = () => wrapper.find('#stats-sommaire-bascule')
+    expect(bascule().attributes('aria-expanded')).toBe('true')
+    expect(wrapper.find('#stats-sommaire').exists()).toBe(true)
+
+    await bascule().trigger('click')
+    await flush()
+    expect(wrapper.find('#stats-sommaire').exists()).toBe(false)
+    expect(bascule().exists()).toBe(true)
+    expect(bascule().attributes('aria-expanded')).toBe('false')
+    // La préférence est la même que sur l'administration : escamoter la
+    // colonne est un choix de mise en page, pas l'état d'un panneau.
+    expect(localStorage.getItem('docsearch-admin-sommaire-hidden')).toBe('1')
+
+    await bascule().trigger('click')
+    await flush()
+    expect(wrapper.find('#stats-sommaire').exists()).toBe(true)
+  })
+
+  it('rouvre le sommaire escamoté quand on le cherche avec « / »', async () => {
+    document.body.innerHTML = ''
+    localStorage.setItem('docsearch-admin-sommaire-hidden', '1')
+    vi.stubGlobal('fetch', respondWith())
+    const wrapper = mountPage(document.body)
+    await flush()
+    expect(wrapper.find('#stats-sommaire').exists()).toBe(false)
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '/' }))
+    await flush()
+    expect(wrapper.find('#stats-sommaire').exists()).toBe(true)
+    expect(document.activeElement?.id).toBe('sommaire-recherche')
+
+    wrapper.unmount()
+  })
+
+  it('bascule le sommaire sur « s »', async () => {
+    vi.stubGlobal('fetch', respondWith())
+    const wrapper = mountPage()
+    await flush()
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 's' }))
+    await flush()
+    expect(wrapper.find('#stats-sommaire').exists()).toBe(false)
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 's' }))
+    await flush()
+    expect(wrapper.find('#stats-sommaire').exists()).toBe(true)
+  })
+
+  // /stats.html#logs-export : c'est ce qui permet à l'aide de renvoyer
+  // vers une commande précise plutôt que vers la page entière.
+  it('ouvre le panneau visé par l’ancre de l’URL', async () => {
+    document.body.innerHTML = ''
+    localStorage.setItem('docsearch-stats-collapsed-panels', '["logs-panel"]')
+    history.replaceState(null, '', '/stats.html#logs-export')
+    vi.stubGlobal('fetch', respondWith())
+    const wrapper = mountPage(document.body)
+    await flush()
+
+    expect(wrapper.find('details#logs-panel').attributes('open')).toBe('')
+
+    history.replaceState(null, '', '/stats.html')
+    wrapper.unmount()
+  })
+
+  // Une ancre qui n'existe pas encore — un tableau pas encore chargé —
+  // ne doit pas rendre l'entrée inerte : on atterrit sur son panneau.
+  it('se rabat sur le panneau quand l’ancre visée manque', async () => {
+    document.body.innerHTML = ''
+    localStorage.setItem('docsearch-stats-collapsed-panels', '["nps-panel"]')
+    vi.stubGlobal('fetch', respondWith())
+    const wrapper = mountPage(document.body)
+    await flush()
+
+    const sommaire = wrapper.findComponent({ name: 'SommaireLateral' })
+    await sommaire.vm.allerA('ancre-inexistante', 'nps-panel')
+    await flush()
+
+    expect(wrapper.find('details#nps-panel').attributes('open')).toBe('')
+    wrapper.unmount()
+  })
+
+  // Le sommaire disparaît avec les panneaux : sans eux, il n'y a plus
+  // une seule section à sommairiser.
   it('remplace la page par un bandeau unique en cas de refus d’accès', async () => {
     // Un 403 vaut pour les six panneaux : mieux vaut un message clair
     // que six erreurs identiques empilées.
@@ -344,5 +514,6 @@ describe('StatsPage', () => {
     await flush()
     expect(wrapper.text()).toContain('Accès refusé')
     expect(wrapper.text()).not.toContain("Journal d'audit")
+    expect(wrapper.find('#stats-sommaire').exists()).toBe(false)
   })
 })

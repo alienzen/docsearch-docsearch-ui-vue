@@ -126,10 +126,16 @@ export const usePreferencesStore = defineStore('preferences', () => {
   const facetsHidden = ref(readFacetsHidden())
 
   /**
-   * Sommaire de la page d'administration escamoté. Même geste que
-   * `facetsHidden` sur la recherche : le contenu récupère toute la
-   * largeur, et la bascule qui le rouvre vit HORS de la colonne (voir
-   * AdminPage), faute de quoi elle disparaîtrait avec elle.
+   * Sommaire escamoté. Même geste que `facetsHidden` sur la recherche :
+   * le contenu récupère toute la largeur, et la bascule qui le rouvre
+   * vit HORS de la colonne (voir AdminPage et StatsPage), faute de quoi
+   * elle disparaîtrait avec elle.
+   *
+   * UNE seule préférence pour les deux pages qui ont un sommaire —
+   * contrairement au pli des panneaux, qui a sa clé par page : escamoter
+   * la colonne est un choix de mise en page, pas l'état d'un panneau
+   * donné. La clé de stockage garde son nom d'origine, la renommer
+   * perdrait le choix des utilisateurs.
    */
   const sommaireHidden = ref(readSommaireHidden())
 

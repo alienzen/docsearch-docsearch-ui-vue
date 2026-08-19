@@ -72,6 +72,29 @@ onMounted(async () => {
       utilisateur n'obtient qu'un bandeau « Accès refusé » à la place des panneaux.
     </p>
 
+    <h2 id="aide-stats-sommaire" class="fr-h5">Se déplacer dans la page</h2>
+    <p>
+      La colonne de gauche suit le défilement : elle liste les six panneaux, et la ligne « Aller à
+      une section » y cherche aussi les tableaux et les commandes qu'ils contiennent — l'export du
+      journal, le filtre par mot-clé, les ventilations par groupe. Choisir un résultat déplie le
+      panneau, amène la cible à l'écran et l'y désigne quelques secondes. C'est le même sommaire
+      que sur la page d'administration, au clavier près.
+    </p>
+    <p>
+      Cette recherche porte sur l'<strong>interface</strong>, pas sur les données : le texte d'une
+      suggestion ou la requête d'une ligne de journal ne s'y trouvent pas, le panneau qui les
+      montre si.
+    </p>
+    <p>
+      Le bouton « Sommaire », en tête des panneaux, escamote cette colonne pour laisser toute la
+      largeur au contenu ; le choix est retenu d'une visite à l'autre, et vaut pour les deux pages
+      qui ont un sommaire. Chercher avec <kbd>/</kbd> la rétablit au passage.
+    </p>
+    <p>
+      Chaque entrée a une adresse propre, qu'on peut mettre en favori ou transmettre — par exemple
+      <code>/stats.html#logs-export</code> pour l'export du journal des recherches.
+    </p>
+
     <h2 id="aide-stats-raccourcis" class="fr-h5">Raccourcis clavier</h2>
     <div class="fr-table fr-table--bordered">
       <table id="aide-stats-raccourcis-tableau">

@@ -22,12 +22,23 @@ import { useAdminShortcuts } from '@/composables/useAdminShortcuts'
 import { useHeaderHeight } from '@/composables/useHeaderHeight'
 import { useHeaderReduit } from '@/composables/useHeaderReduit'
 import { ADMIN_SHORTCUTS } from '@/constants'
-import { GROUP_IDS, PANEL_IDS } from './sections'
+import { GROUP_IDS, PANEL_IDS, SECTIONS } from './sections'
+import { construireIndex } from './sommaire'
 
 const uiConfig = useUiConfigStore()
 const preferences = usePreferencesStore()
 const panels = useAdminPanelsStore()
 const groups = useAdminGroupsStore()
+
+/** Statique : l'index ne dépend d'aucune donnée chargée. */
+const INDEX = construireIndex()
+
+/**
+ * Les deux niveaux de pli, que le sommaire ouvre pour atteindre une
+ * ancre. Sorti du gabarit pour garder la même identité d'un rendu à
+ * l'autre.
+ */
+const STORES = [groups, panels]
 
 // En-tête replié au défilement, si l'administrateur l'a demandé : la
 // page empile une vingtaine de panneaux.
@@ -190,12 +201,18 @@ onMounted(() => {
        en deçà. Refus d'accès : une seule colonne, il n'y a plus rien à
        sommairiser. -->
   <div
-    class="fr-container fr-my-4w ds-admin-layout"
-    :class="{ 'ds-admin-layout--sommaire': sommaireVisible }"
+    class="fr-container fr-my-4w ds-sommaire-layout"
+    :class="{ 'ds-sommaire-layout--sommaire': sommaireVisible }"
   >
-    <div v-if="sommaireVisible" class="ds-admin-layout__cote">
-      <div class="ds-admin-layout__collant">
-        <AdminSommaire ref="sommaire" />
+    <div v-if="sommaireVisible" class="ds-sommaire-layout__cote">
+      <div class="ds-sommaire-layout__collant">
+        <SommaireLateral
+          ref="sommaire"
+          menu-id="admin-sommaire"
+          :sections="SECTIONS"
+          :index="INDEX"
+          :stores="STORES"
+        />
       </div>
     </div>
 
@@ -209,7 +226,7 @@ onMounted(() => {
       />
 
       <template v-else>
-        <div id="admin-outils" class="ds-admin-layout__outils">
+        <div id="admin-outils" class="ds-sommaire-layout__outils">
           <!-- Cette bascule vit ICI et non dans le sommaire : placée
                dedans, elle disparaîtrait avec lui et il n'y aurait plus
                aucun moyen de le rouvrir. Même raisonnement — et mêmes
@@ -218,7 +235,7 @@ onMounted(() => {
                changeant à chaque clic. -->
           <button
             id="admin-sommaire-bascule"
-            class="fr-btn fr-btn--sm fr-btn--tertiary-no-outline fr-btn--icon-left fr-icon-menu-2-fill"
+            class="fr-btn fr-btn--sm fr-btn--tertiary-no-outline fr-btn--icon-left fr-icon-menu-2-fill ds-sommaire-layout__bascule"
             type="button"
             aria-controls="admin-sommaire"
             title="Afficher ou masquer le sommaire (s)"

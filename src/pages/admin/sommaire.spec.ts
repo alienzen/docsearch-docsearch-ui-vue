@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { chercher, construireIndex, normaliser, MAX_RESULTATS } from './sommaire'
+import { chercher, MAX_RESULTATS, normaliser } from '@/utils/sommaire'
+import { construireIndex } from './sommaire'
 import { GROUP_IDS, PANEL_IDS } from './sections'
 
 const INDEX = construireIndex()

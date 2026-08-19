@@ -87,11 +87,13 @@ export const ADMIN_SHORTCUTS: Shortcut[] = [
 /**
  * Touches branchées par la seule page d'administration : « r » pour le
  * rechargement global — la page de statistiques n'en a pas, chaque
- * panneau s'y recharge seul — et « / » comme « s » pour le sommaire,
- * qu'elle n'a pas non plus. Publier une touche inopérante est pire que
+ * panneau s'y recharge seul. Publier une touche inopérante est pire que
  * ne rien publier.
+ *
+ * « / » et « s » n'en font plus partie depuis que la page de
+ * statistiques a, elle aussi, un sommaire.
  */
-const TOUCHES_ADMIN_SEULEMENT = ['r', '/', 's']
+const TOUCHES_ADMIN_SEULEMENT = ['r']
 
 /** Liste publiée par la page de statistiques. */
 export const STATS_SHORTCUTS: Shortcut[] = ADMIN_SHORTCUTS.filter(
