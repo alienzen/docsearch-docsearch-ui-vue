@@ -87,6 +87,14 @@ async function enregistrer(nom: string, module: ModuleComplementaire) {
     >
       <h4 class="fr-h6 fr-mb-1w">
         {{ nom }}
+        <!-- La version vient du manifeste installé. Absente pour un
+             module installé avant qu'elle soit recopiée dans Redis : on
+             le dit, une réinstallation la renseigne. -->
+        <span
+          class="fr-text--sm fr-text--regular"
+          data-testid="module-version"
+          :title="module.version ? undefined : `Module installé avant que la version soit publiée : sudo ./manage.sh plugin appliquer ${nom} la renseigne.`"
+        >{{ module.version ? `version ${module.version}` : 'version inconnue' }}</span>
         <DsfrBadge :type="module.enabled ? 'success' : 'info'" :label="module.enabled ? 'actif' : 'arrêté'" small />
       </h4>
 

@@ -12,6 +12,7 @@ import AdminPluginsPanel from './AdminPluginsPanel.vue'
 const MODULES = {
   jira: {
     enabled: true,
+    version: '1.2.0',
     restart_requis: false,
     reglages: { actif: 'true', bureaux: 'Paris,Reims' },
     admin_panel: [
@@ -50,8 +51,23 @@ describe('AdminPluginsPanel', () => {
     expect(w.find('[data-testid="module"]').attributes('data-module')).toBe('jira')
   })
 
+  it('affiche la version du module', async () => {
+    const w = monter()
+    await flushPromises()
+    expect(w.find('[data-testid="module-version"]').text()).toBe('version 1.2.0')
+  })
+
+  it('dit « version inconnue » plutôt que de laisser un blanc', async () => {
+    // Cas d'un module installé avant que la version soit recopiée dans
+    // Redis : un blanc se lirait comme un défaut d'affichage.
+    repondre({ jira: { ...MODULES.jira, version: '' } })
+    const w = monter()
+    await flushPromises()
+    expect(w.find('[data-testid="module-version"]').text()).toBe('version inconnue')
+  })
+
   it('dit qu’un module sans réglage n’en déclare aucun', async () => {
-    repondre({ vide: { enabled: false, restart_requis: false, reglages: {}, admin_panel: [] } })
+    repondre({ vide: { enabled: false, version: '0.1.0', restart_requis: false, reglages: {}, admin_panel: [] } })
     const w = monter()
     await flushPromises()
     expect(w.text()).toContain('ne déclare aucun réglage')

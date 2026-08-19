@@ -523,6 +523,12 @@ export type ReglageDeclare = {
 
 export type ModuleComplementaire = {
   enabled: boolean
+  /**
+   * Version du manifeste installé, recopiée dans Redis à l'installation.
+   * Vide pour un module installé avant que l'API la publie : l'écran le
+   * dit plutôt que de laisser un blanc.
+   */
+  version: string
   admin_panel: ReglageDeclare[]
   reglages: Record<string, string>
   /**
