@@ -1345,6 +1345,14 @@ body.ds-resizing {
 .ds-detail__rows > li > span:first-child {
   color: var(--text-mention-grey);
 }
+/* L'extrait se lit comme une citation du document, pas comme une phrase
+   de l'interface : un filet et un fond le détachent des champs. */
+.ds-detail__extrait {
+  margin-bottom: 1rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--border-default-grey);
+  background: var(--background-alt-grey);
+}
 .ds-detail__keywords {
   display: flex;
   flex-wrap: wrap;

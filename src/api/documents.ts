@@ -5,6 +5,14 @@ import type { SearchResult } from './types'
 export type DocumentDetail = SearchResult & {
   type?: string
   date_created?: string
+  /**
+   * Texte extrait du document à l'indexation. Présent ICI seulement :
+   * /search l'écarte de ses réponses parce qu'il est volumineux
+   * (`source_excludes` côté search_api.py), là où /document/{id} renvoie
+   * la source entière. C'est ce qui permet à la fiche de montrer un
+   * extrait même ouverte hors recherche.
+   */
+  content?: string
   acl?: {
     owner?: string
     groups?: string[]

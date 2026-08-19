@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import DocumentDetailModal from './DocumentDetailModal.vue'
+import { useSearchStore } from '@/stores/search'
 import { useUiConfigStore } from '@/stores/uiConfig'
+import type { SearchResult } from '@/api/types'
 
 /**
  * La fiche détail rend les mêmes champs que la carte de résultat, par la
@@ -260,5 +262,104 @@ describe('DocumentDetailModal — vignette d’article', () => {
     // Témoin, comme sur la carte : les autres champs de la source sont
     // toujours là.
     expect(texte).toContain('Le Quotidien')
+  })
+})
+
+/**
+ * L'extrait, et l'ordre de ses deux origines : le surlignage de la
+ * recherche qui a mené ici d'abord, le début du contenu indexé à défaut.
+ *
+ * Le surlignage ne peut PAS venir de /document/{id} — sans requête,
+ * Elasticsearch n'a rien à surligner — mais du résultat déjà en mémoire.
+ * Seule une fiche montée avec un magasin garni le vérifie : bouchonner
+ * la réponse de l'API ne dirait rien de cette reprise.
+ */
+describe('DocumentDetailModal — extrait', () => {
+  function resultat(highlight: string[]): SearchResult {
+    return { id: 'doc-1', score: 1, highlight }
+  }
+
+  async function fiche(
+    document: Record<string, unknown>,
+    { results = [], pinned = [] }: { results?: SearchResult[]; pinned?: SearchResult[] } = {},
+  ) {
+    setActivePinia(createPinia())
+    const store = useSearchStore()
+    store.results = results
+    store.pinnedResults = pinned
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(document) }),
+    )
+    const w = mount(DocumentDetailModal, {
+      props: { documentId: 'doc-1' },
+      global: {
+        stubs: {
+          DsfrModal: { template: '<div><slot /></div>' },
+          DsfrAlert: true,
+          DsfrButton: true,
+          CopyPathButtons: true,
+        },
+      },
+    })
+    await flushPromises()
+    return w
+  }
+
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('reprend le surlignage du résultat de recherche', async () => {
+    const w = await fiche(
+      { id: 'doc-1', title: 'Rapport annuel', content: 'Texte intégral du document.' },
+      { results: [resultat(['un <mark class="highlight">rapport</mark> annuel'])] },
+    )
+    const extrait = w.find('#document-extrait')
+
+    expect(extrait.text()).toContain('un rapport annuel')
+    expect(extrait.find('mark').text()).toBe('rapport')
+    // Le surlignage passe AVANT le contenu : les termes cherchés dans
+    // leur phrase valent mieux que le début du document.
+    expect(extrait.text()).not.toContain('Texte intégral')
+  })
+
+  it('reprend aussi celui d’un document mis en avant', async () => {
+    // Un document épinglé est retiré de `results` par l'API pour aller
+    // dans `pinned` : le chercher dans la seule liste des résultats
+    // laisserait la fiche ouverte depuis un tel document sans extrait.
+    const w = await fiche(
+      { id: 'doc-1', title: 'Rapport annuel' },
+      { pinned: [resultat(['le <mark class="highlight">budget</mark> 2027'])] },
+    )
+
+    expect(w.find('#document-extrait').find('mark').text()).toBe('budget')
+  })
+
+  it('à défaut, montre le début du contenu, remis d’aplomb', async () => {
+    // Sauts de ligne et espaces de mise en page d'un PDF : affichés tels
+    // quels, l'extrait se lirait en escalier.
+    const w = await fiche({ id: 'doc-1', content: 'Ligne un.\n\n   Ligne  deux.' })
+
+    expect(w.find('#document-extrait').text()).toBe('Ligne un. Ligne deux.')
+  })
+
+  it('coupe un contenu long sans trancher de mot', async () => {
+    const w = await fiche({ id: 'doc-1', content: Array(120).fill('abcdefgh').join(' ') })
+    const texte = w.find('#document-extrait').text()
+
+    expect(texte.endsWith('…')).toBe(true)
+    expect(texte.length).toBeLessThanOrEqual(501)
+    // Aucun mot amputé : la coupe tombe sur une espace, pas au milieu
+    // d'« abcdefgh ».
+    const mots = texte.slice(0, -1).trim().split(' ')
+    expect(mots.every((mot) => mot === 'abcdefgh')).toBe(true)
+  })
+
+  it('n’affiche pas de bloc vide sans surlignage ni contenu', async () => {
+    // Le cas d'une ligne de source SQL, qui n'a pas de texte indexé.
+    const w = await fiche({ id: 'doc-1', title: 'Dupont Marie', bureau: 'B12' })
+
+    expect(w.find('#document-extrait').exists()).toBe(false)
+    // Témoin : la fiche est bien chargée.
+    expect(w.text()).toContain('B12')
   })
 })

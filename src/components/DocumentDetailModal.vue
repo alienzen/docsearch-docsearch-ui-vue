@@ -10,6 +10,7 @@ import { extLabel, fmtSize } from '@/utils/format'
 import { useSearchStore } from '@/stores/search'
 import { useUiConfigStore } from '@/stores/uiConfig'
 import { extraFields } from '@/utils/extraFields'
+import { parseHighlights, type HighlightSegment } from '@/utils/highlight'
 import { lienExterne, urlAbregee } from '@/utils/paths'
 
 const props = defineProps<{ documentId: string | null }>()
@@ -73,6 +74,49 @@ const extras = computed(() =>
     admin: uiConfig.isAdmin,
   }),
 )
+
+/**
+ * Extrait du document, rendu comme sur la carte de résultat : le
+ * surlignage d'Elasticsearch est le seul balisage conservé, tout le
+ * reste passe par Vue, donc échappé (voir parseHighlight).
+ *
+ * Il vient du RÉSULTAT déjà en mémoire, pas de la fiche : /document/{id}
+ * ne renvoie aucun surlignage, et il ne le peut pas — sans requête,
+ * Elasticsearch n'a rien à surligner. Les documents mis en avant sont
+ * cherchés eux aussi : ils sortent de `results` pour aller dans
+ * `pinnedResults`, et la fiche ouverte depuis l'un d'eux serait sinon la
+ * seule sans extrait.
+ */
+const surlignage = computed(() => {
+  const resultat = [...store.pinnedResults, ...store.results].find(
+    (r) => r.id === props.documentId,
+  )
+  return parseHighlights(resultat?.highlight || [])
+})
+
+/** Longueur du repli sur le contenu, en caractères. */
+const EXTRAIT_MAX = 500
+
+/**
+ * Repli : le début du texte indexé. La fiche s'ouvre aussi hors
+ * recherche — depuis une collection, depuis l'état d'accueil — et elle
+ * ne montrait alors rien du contenu du document.
+ */
+const debutContenu = computed(() => {
+  // Le texte d'un PDF arrive criblé de sauts de ligne et d'espaces de
+  // mise en page : sans normalisation, l'extrait s'affiche en escalier.
+  const contenu = (doc.value?.content || '').replace(/\s+/g, ' ').trim()
+  if (contenu.length <= EXTRAIT_MAX) return contenu
+  // Coupe sur la dernière espace pour ne pas trancher un mot en deux.
+  const coupe = contenu.slice(0, EXTRAIT_MAX)
+  const espace = coupe.lastIndexOf(' ')
+  return `${espace > 0 ? coupe.slice(0, espace) : coupe}…`
+})
+
+const extrait = computed<HighlightSegment[]>(() => {
+  if (surlignage.value.length) return surlignage.value
+  return debutContenu.value ? [{ text: debutContenu.value, marked: false }] : []
+})
 
 /**
  * Section « Droits d'accès » : toujours visible d'un administrateur,
@@ -206,6 +250,16 @@ async function onRemoveKeyword(keyword: string) {
       <!-- Plus grande que sur la carte : la fiche a la place, et c'est
            le seul endroit où l'on regarde un document pour lui-même. -->
       <DocumentVignette :url="doc.image" format="detail" />
+
+      <!-- Sous le titre et la vignette, AVANT les champs : c'est le texte
+           du document, et le placer après le reléguerait derrière
+           l'enfilade de colonnes d'une source SQL. -->
+      <p v-if="extrait.length" id="document-extrait" class="ds-detail__extrait fr-text--sm">
+        <template v-for="(segment, i) in extrait" :key="i">
+          <mark v-if="segment.marked">{{ segment.text }}</mark>
+          <template v-else>{{ segment.text }}</template>
+        </template>
+      </p>
 
       <ul id="document-champs" class="ds-detail__rows fr-text--sm">
         <li v-if="doc.author"><span>Auteur</span><span>{{ doc.author }}</span></li>
